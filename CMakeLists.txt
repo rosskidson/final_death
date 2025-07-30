@@ -21,6 +21,13 @@ set(SOURCE_DIR "${CMAKE_SOURCE_DIR}")
 configure_file(config.h.in config.h)
 
 if(WIN32)
+    include(FetchContent)
+    FetchContent_Declare(
+       json
+       URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
+    )
+    FetchContent_MakeAvailable(json)
+
     cmake_policy(SET CMP0015 NEW)
 else()
     FIND_PACKAGE(PNG REQUIRED)
