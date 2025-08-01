@@ -15,10 +15,12 @@ using Clock = std::chrono::high_resolution_clock;
 
 constexpr int kPixelSize = 2;
 
+constexpr double kMaxVel = 2.5;
+constexpr double kAcceleration = 5.0;
+
 namespace platformer {
 
 void Physics(Player& player) {
-  constexpr double kMaxVel = 2.5;
   auto now = Clock::now();
   const double delta_t = (now - player.last_update).count() / 1e9;
 
@@ -51,7 +53,7 @@ bool Platformer::OnUserCreate() {
     return false;
   }
   config_ = std::move(*config);
-  level_ = 0;
+  level_idx_ = 0;
   const auto& tile_grid = GetCurrentLevel().tile_grid;
   camera_ = std::make_unique<Camera>(this, GetCurrentLevel());
 
@@ -71,6 +73,7 @@ bool Platformer::OnUserCreate() {
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   this->Keyboard();
   Physics(player_);
+  CollisionCheckPlayer(player_);
   camera_->KeepPlayerInFrame(player_, 0.3);
   camera_->RenderBackground();
   camera_->RenderTiles();
@@ -78,6 +81,45 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
   return true;
+}
+
+void Platformer::CollisionCheckPlayer(Player& player) {
+  const auto& collision_grid = GetCurrentLevel().property_grid;
+  const int tile_size = GetCurrentLevel().level_tileset->GetTileSize();
+  // TODO:: Change to proper hitbox with offsets
+  const double collision_width = static_cast<double>(player.sprite->width) / tile_size;
+  const double collision_height = static_cast<double>(player.sprite->height) / tile_size;
+  // TODO:: 2. if top and bottom collide then squish death.
+  // Check top side.
+  // TODO:: This onlys check the two corners. If the sprite is super wide this won't work.
+  // Check left
+  for (int y = player.position.y; y > player.position.y - 1 - collision_height; --y) {
+    if (collision_grid.GetTile(player.position.x, y) == 1) {
+      player_.velocity.x = 0;
+      player_.position.x = static_cast<int>(player.position.x) + 1;
+    }
+  }
+  // Check top
+  if (collision_grid.GetTile(player.position.x, player.position.y) == 1 ||
+      collision_grid.GetTile(player.position.x + collision_width, player.position.y) == 1) {
+    player_.velocity.y = 0;
+    player_.position.y = static_cast<int>(player.position.y) - 0.01;
+  }
+  // // Check bottom side.
+  // if (collision_grid.GetTile(player.position.x, player.position.y - collision_height) == 1 ||
+  //     collision_grid.GetTile(player.position.x + collision_width,
+  //                            player.position.y - collision_height) == 1) {
+  //   player_.velocity.y = 0;
+  //   player_.position.y = static_cast<int>(player.position.y) + 1;
+  // }
+
+  // Check bottom side.
+  // if (collision_grid.GetTile(player.position.x, player.position.y - collision_height) == 1 ||
+  //     collision_grid.GetTile(player.position.x + collision_width,
+  //                            player.position.y - collision_height) == 1) {
+  //   player_.velocity.y = 0;
+  //   player_.position.y = static_cast<int>(player.position.y) + 1;
+  // }
 }
 
 void Platformer::Keyboard() {
@@ -100,16 +142,16 @@ void Platformer::Keyboard() {
   camera_->MoveCamera(pos);
 
   if (this->GetKey(olc::Key::LEFT).bHeld) {
-    player_.acceleration.x = -3.0;
+    player_.acceleration.x = -kAcceleration;
   } else if (this->GetKey(olc::Key::RIGHT).bHeld) {
-    player_.acceleration.x = +3.0;
+    player_.acceleration.x = +kAcceleration;
   } else {
     player_.acceleration.x = 0.0;
   }
   if (this->GetKey(olc::Key::UP).bHeld) {
-    player_.acceleration.y = +3.0;
+    player_.acceleration.y = +kAcceleration;
   } else if (this->GetKey(olc::Key::DOWN).bHeld) {
-    player_.acceleration.y = -3.0;
+    player_.acceleration.y = -kAcceleration;
   } else {
     player_.acceleration.y = 0.0;
   }

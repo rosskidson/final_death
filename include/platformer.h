@@ -7,7 +7,6 @@
 #include "camera.h"
 #include "game_configuration.h"
 #include "olcPixelGameEngine.h"
-#include "tileset.h"
 
 namespace platformer {
 class Platformer : public olc::PixelGameEngine {
@@ -17,12 +16,12 @@ class Platformer : public olc::PixelGameEngine {
   bool OnUserUpdate(float fElapsedTime) override;
 
  private:
-  void Render(const double x, const double y);
+  void CollisionCheckPlayer(Player& player);
   void Keyboard();
-  Level& GetCurrentLevel() { return config_.levels.at(level_); };
+  Level& GetCurrentLevel() { return config_.levels.at(level_idx_); };
 
   GameConfiguration config_;
-  int level_;
+  int level_idx_;
   std::unique_ptr<Camera> camera_;
 
   Player player_{};
