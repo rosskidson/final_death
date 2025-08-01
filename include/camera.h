@@ -19,22 +19,24 @@ class Camera {
 
   Vector2d GetCameraPosition() const;
 
-  void Render();
+  void RenderBackground();
+  void RenderTiles();
+  void RenderPlayer(const Player& player);
 
  private:
-  void RenderTiles();
   void KeepCameraInBounds();
 
   olc::PixelGameEngine* engine_ptr_;
+  // Position is the middle of the screen.
   Vector2d position_;
   Level level_;
 
-  //   int grid_width_;
-  //   int grid_height_;
   int tile_size_;
   double viewport_width_;   // The width in tile units.
   double viewport_height_;  // The height in tile units.
   Bounds camera_bounds_;
+
+  olc::Sprite player_sprite_;
 };
 
 }  // namespace platformer

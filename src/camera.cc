@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "basic_types.h"
+#include "config.h"  //             TODO REMOVE
 #include "game_configuration.h"
 #include "global_defs.h"
 #include "tileset.h"
@@ -26,6 +27,11 @@ Camera::Camera(olc::PixelGameEngine* engine_ptr, Level level)
   camera_bounds_ = {max_x, min_x, max_y, min_y};
 
   position_ = {10., 10.};
+
+  const auto sprite_path = std::filesystem::path(SOURCE_DIR) / "assets" / "white_box_32.png";
+  if (player_sprite_.LoadFromFile(sprite_path.string()) != olc::rcode::OK) {
+    exit(1);
+  }
 }
 
 void Camera::UpdatePosition(const Vector2d& absolute_vec) {
@@ -41,12 +47,23 @@ void Camera::MoveCamera(const Vector2d& relative_vec) {
 
 Vector2d Camera::GetCameraPosition() const { return position_; }
 
-void Camera::Render() {
-  KeepCameraInBounds();
-  RenderTiles();
+void Camera::RenderBackground() {
+  for (int y = 0; y < kScreenHeightPx; ++y) {
+    for (int x = 0; x < kScreenWidthPx; ++x) {
+      engine_ptr_->Draw(x, y, olc::BLACK);
+    }
+  }
 }
 
 void Camera::RenderTiles() {
+  KeepCameraInBounds();
+
+  // Discretize the camera position.
+  // This
+  position_.x = static_cast<int>(position_.x * tile_size_) / static_cast<double>(tile_size_);
+  position_.y = static_cast<int>(position_.y * tile_size_) / static_cast<double>(tile_size_);
+  std::cout << position_.x << " " << position_.y << std::endl;
+
   const auto& tilemap = level_.tile_grid;
   const auto& tileset = *level_.level_tileset;
   for (int y_itr = 0; y_itr <= viewport_height_ + 1; ++y_itr) {
@@ -61,6 +78,9 @@ void Camera::RenderTiles() {
         tile_idx = tilemap.GetTile(lookup_x_int, lookup_y_int).tile_id;
       }
       auto* tile = tileset.GetTile(tile_idx);
+      if (tile_idx == 0) {
+        continue;
+      }
 
       const double x_fraction = lookup_x - lookup_x_int;
       const double y_fraction = lookup_y - lookup_y_int;
@@ -77,6 +97,20 @@ void Camera::RenderTiles() {
       engine_ptr_->DrawSprite(x_px, y_px, tile);
     }
   }
+}
+
+void Camera::RenderPlayer(const Player& player) {
+  const auto screen_bottom_right = position_ - Vector2d{viewport_width_ / 2, viewport_height_ / 2};
+  const auto position_in_screen = player.position - screen_bottom_right;
+  if (position_in_screen.x < 0 || position_in_screen.y < 0 ||
+      position_in_screen.x > viewport_width_ || position_in_screen.y > viewport_height_) {
+    return;
+  }
+  //   std::cout << "posinscr " << position_in_screen.x << " " << position_in_screen.y << std::endl;
+  int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
+  int position_px_y = kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
+  //   std::cout << position_px_x << " " << position_px_y << std::endl;
+  engine_ptr_->DrawSprite(position_px_x, position_px_y, &player_sprite_);
 }
 
 void Camera::KeepCameraInBounds() {
