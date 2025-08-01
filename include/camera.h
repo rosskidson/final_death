@@ -6,19 +6,24 @@
 
 namespace platformer {
 
+// The Camera class is responsible for all the rendering.
+// (probably should be called Renderer or similar)
+// It should abstract away all pixel math with regards to sprites, drawing, etc.
 class Camera {
  public:
   // The level is copied in, as opposed to a ref or pointer.
   // This class has invariants based on the level grids, so a reference could
-  // result in having the rug pulled out from underneath.
+  // result in having the rug pulled from its feet.
   Camera(olc::PixelGameEngine* engine_ptr, Level level);
 
-  void UpdatePosition(const Vector2d& absolute_vec);
-
+  Vector2d GetCameraPosition() const;
+  void SetCameraPosition(const Vector2d& absolute_vec);
   void MoveCamera(const Vector2d& relative_vec);
 
-  // Returns the camera position in tile coordinates.
-  Vector2d GetCameraPosition() const;
+  // Move the camera to keep it focused on the player.
+  // The screen ratio is how much of a buffer from the player to the side of the screen
+  // as a fraction of the screen size.
+  void KeepPlayerInFrame(const Player& player, double screen_ratio);
 
   void RenderBackground();
   void RenderTiles();

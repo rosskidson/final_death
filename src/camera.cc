@@ -25,7 +25,7 @@ Camera::Camera(olc::PixelGameEngine* engine_ptr, Level level)
   cam_position_px_y_ = 0;
 }
 
-void Camera::UpdatePosition(const Vector2d& absolute_vec) {
+void Camera::SetCameraPosition(const Vector2d& absolute_vec) {
   cam_position_px_x_ = absolute_vec.x * tile_size_;
   cam_position_px_y_ = absolute_vec.y * tile_size_;
   KeepCameraInBounds();
@@ -40,6 +40,19 @@ void Camera::MoveCamera(const Vector2d& relative_vec) {
 Vector2d Camera::GetCameraPosition() const {
   return Vector2d{static_cast<double>(cam_position_px_x_) / tile_size_,
                   static_cast<double>(cam_position_px_y_) / tile_size_};
+}
+
+void Camera::KeepPlayerInFrame(const Player& player, double screen_ratio) {
+  const auto position = GetCameraPosition();
+  const auto convert_to_px = [&](double val) -> int { return val * tile_size_; };
+  const int x_max_px = convert_to_px(player.position.x - viewport_width_ * screen_ratio);
+  const int x_min_px = convert_to_px(player.position.x - viewport_width_ * (1 - screen_ratio));
+  const int y_max_px = convert_to_px(player.position.y - viewport_height_ * screen_ratio);
+  const int y_min_px = convert_to_px(player.position.y - viewport_height_ * (1 - screen_ratio));
+  cam_position_px_x_ = std::max(cam_position_px_x_, x_min_px);
+  cam_position_px_x_ = std::min(cam_position_px_x_, x_max_px);
+  cam_position_px_y_ = std::max(cam_position_px_y_, y_min_px);
+  cam_position_px_y_ = std::min(cam_position_px_y_, y_max_px);
 }
 
 void Camera::RenderBackground() {

@@ -71,6 +71,7 @@ bool Platformer::OnUserCreate() {
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   this->Keyboard();
   Physics(player_);
+  camera_->KeepPlayerInFrame(player_, 0.3);
   camera_->RenderBackground();
   camera_->RenderTiles();
   camera_->RenderPlayer(player_);
@@ -100,15 +101,17 @@ void Platformer::Keyboard() {
 
   if (this->GetKey(olc::Key::LEFT).bHeld) {
     player_.acceleration.x = -3.0;
-  }
-  if (this->GetKey(olc::Key::RIGHT).bHeld) {
+  } else if (this->GetKey(olc::Key::RIGHT).bHeld) {
     player_.acceleration.x = +3.0;
+  } else {
+    player_.acceleration.x = 0.0;
   }
   if (this->GetKey(olc::Key::UP).bHeld) {
     player_.acceleration.y = +3.0;
-  }
-  if (this->GetKey(olc::Key::DOWN).bHeld) {
+  } else if (this->GetKey(olc::Key::DOWN).bHeld) {
     player_.acceleration.y = -3.0;
+  } else {
+    player_.acceleration.y = 0.0;
   }
 
   if (this->GetKey(olc::Key::Q).bReleased) {
