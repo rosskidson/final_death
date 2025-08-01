@@ -3,13 +3,12 @@
 #include <memory>
 #include <optional>
 
+#include "config.h"
 #include "game_configuration.h"
 #include "grid.h"
 #include "nlohmann/json.hpp"
 #include "tileset.h"
 #include "utils/logging.h"
-
-#include "config.h"
 
 using json = nlohmann::json;
 
@@ -21,7 +20,7 @@ std::shared_ptr<TileSet> LoadTileSet(const json& tileset_json) {
   const int tile_size = tileset_json["tileGridSize"];
   const std::string identifier = tileset_json["identifier"];
   const int uid = tileset_json["uid"];
-  auto tileset_ptr = std::make_shared<TileSet>(identifier, uid, width, height);
+  auto tileset_ptr = std::make_shared<TileSet>(identifier, uid, width, height, tile_size);
 
   const std::string path_from_config = tileset_json["relPath"];
   const auto tile_path = std::filesystem::path(SOURCE_DIR) / path_from_config;

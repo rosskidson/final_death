@@ -51,16 +51,17 @@ endif()
 add_library(olc src/olc/olcPixelGameEngine.cc)
 target_link_libraries(olc ${OLC_LIBS})
 
-add_executable(platformer 
-  src/main.cc 
-  src/platformer.cc 
+add_executable(platformer
+  src/camera.cc
+  src/main.cc
+  src/platformer.cc
   src/tileset.cc
   src/load_game_configuration.cc
 )
 
 target_include_directories(platformer PRIVATE ${CMAKE_BINARY_DIR})
 
-target_link_libraries(platformer 
+target_link_libraries(platformer
   olc
   nlohmann_json::nlohmann_json
 )

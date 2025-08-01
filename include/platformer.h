@@ -1,7 +1,9 @@
 #pragma once
 
+#include "camera.h"
 #include "game_configuration.h"
 #include "olcPixelGameEngine.h"
+#include "tileset.h"
 
 namespace platformer {
 
@@ -13,7 +15,11 @@ class Platformer : public olc::PixelGameEngine {
 
  private:
   void Render(const double x, const double y);
+  Level& GetCurrentLevel() { return config_.levels.at(level_); };
+
   GameConfiguration config_;
+  int level_;
+  std::unique_ptr<Camera> camera_;
 };
 
 }  // namespace platformer
