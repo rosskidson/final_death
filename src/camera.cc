@@ -11,12 +11,12 @@ namespace platformer {
 
 Camera::Camera(olc::PixelGameEngine* engine_ptr, Level level)
     : engine_ptr_{engine_ptr}, level_{std::move(level)} {
-  const int tile_size = level_.level_tileset->GetTileSize();
   const int grid_width = level_.tile_grid.GetWidth();
   const int grid_height = level_.tile_grid.GetHeight();
 
-  viewport_width_ = kScreenWidthPx / static_cast<double>(tile_size);
-  viewport_height_ = kScreenHeightPx / static_cast<double>(tile_size);
+  tile_size_ = level_.level_tileset->GetTileSize();
+  viewport_width_ = kScreenWidthPx / static_cast<double>(tile_size_);
+  viewport_height_ = kScreenHeightPx / static_cast<double>(tile_size_);
 
   constexpr double kScreenEdgeBuffer = 0.1;
   const double max_x = grid_width - (viewport_width_ / 2) - kScreenEdgeBuffer;
@@ -42,9 +42,6 @@ void Camera::MoveCamera(const Vector2d& relative_vec) {
 Vector2d Camera::GetCameraPosition() const { return position_; }
 
 void Camera::Render() {
-  std::cout << "bounds " << camera_bounds_.min_x << " " << camera_bounds_.max_x << " "
-            << camera_bounds_.min_y << " " << camera_bounds_.max_y << std::endl;
-  std::cout << "cam pos " << position_.x << " " << position_.y << std::endl;
   KeepCameraInBounds();
   RenderTiles();
 }
@@ -70,12 +67,12 @@ void Camera::RenderTiles() {
 
       const int x_px = std::round((x_itr - x_fraction) * tile_size_);
       const int y_px = std::round(kScreenHeightPx - (y_itr + 1 - y_fraction) * tile_size_);
-      std::cout << " itrs " << x_itr << " " << y_itr << " "                        //
-                << " global " << lookup_x << " " << lookup_y << " "                //
-                << " global floor " << lookup_x_int << " " << lookup_y_int << " "  //
-                << " faction " << x_fraction << " " << y_fraction << " "           //
-                << " pixel " << x_px << " " << y_px << " "                         //
-                << " tile " << tile_idx << std::endl;                              //
+      //   std::cout << " itrs " << x_itr << " " << y_itr << " "                        //
+      //             << " global " << lookup_x << " " << lookup_y << " "                //
+      //             << " global floor " << lookup_x_int << " " << lookup_y_int << " "  //
+      //             << " faction " << x_fraction << " " << y_fraction << " "           //
+      //             << " pixel " << x_px << " " << y_px << " "                         //
+      //             << " tile " << tile_idx << std::endl;                              //
 
       engine_ptr_->DrawSprite(x_px, y_px, tile);
     }

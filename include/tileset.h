@@ -29,6 +29,7 @@ class TileSet {
   olc::Sprite* GetTile(const int tile_id) const;
 
   int GetTileSize() const { return tile_size_; }
+  std::string GetTileSetName() const { return name_; }
 
  private:
   std::string name_;

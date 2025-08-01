@@ -19,6 +19,7 @@ std::shared_ptr<TileSet> LoadTileSet(const json& tileset_json) {
   const int height = tileset_json["__cHei"];
   const int tile_size = tileset_json["tileGridSize"];
   const std::string identifier = tileset_json["identifier"];
+  std::cout << "loading tileset " << identifier << std::endl;
   const int uid = tileset_json["uid"];
   auto tileset_ptr = std::make_shared<TileSet>(identifier, uid, width, height, tile_size);
 

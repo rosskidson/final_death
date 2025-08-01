@@ -15,6 +15,7 @@ class Platformer : public olc::PixelGameEngine {
 
  private:
   void Render(const double x, const double y);
+  void ManuallyMoveCamera();
   Level& GetCurrentLevel() { return config_.levels.at(level_); };
 
   GameConfiguration config_;

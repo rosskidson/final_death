@@ -33,8 +33,14 @@ bool Platformer::OnUserCreate() {
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
-  // this->DrawSprite(-10, 10, config_.levels.front().level_tileset->GetTile(691));
   std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  camera_->Render();
+  this->ManuallyMoveCamera();
+
+  return true;
+}
+
+void Platformer::ManuallyMoveCamera() {
   Vector2d pos{};
   const auto tile_size = GetCurrentLevel().level_tileset->GetTileSize();
   if (this->GetKey(olc::Key::A).bHeld) {
@@ -55,11 +61,6 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   }
 
   camera_->MoveCamera(pos);
-
-  const auto cam_pos = camera_->GetCameraPosition();
-  camera_->Render();
-
-  return true;
 }
 
 }  // namespace platformer
