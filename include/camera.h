@@ -33,7 +33,7 @@ class Camera {
   // Stored in pixel coordinates, but with y up positive.
   // The decision for the camera position to be in pixel coordinates is very deliberate:
   // If the camera can move subpixel amounts, sprites not aligned to the pixel grid will
-  // jiggle a pixel forwards and backwards as the camera moves.
+  // jiggle about as the camera moves.
   int cam_position_px_x_;
   int cam_position_px_y_;
   int max_cam_postion_px_x_;
@@ -44,9 +44,6 @@ class Camera {
   int tile_size_;
   double viewport_width_;   // The width in tile units.
   double viewport_height_;  // The height in tile units.
-                            //   Bounds camera_bounds_;
-
-  olc::Sprite player_sprite_;
 };
 
 }  // namespace platformer

@@ -3,7 +3,6 @@
 #include <algorithm>
 
 #include "basic_types.h"
-#include "config.h"  //             TODO REMOVE
 #include "game_configuration.h"
 #include "global_defs.h"
 #include "tileset.h"
@@ -24,11 +23,6 @@ Camera::Camera(olc::PixelGameEngine* engine_ptr, Level level)
 
   cam_position_px_x_ = 0;
   cam_position_px_y_ = 0;
-
-  const auto sprite_path = std::filesystem::path(SOURCE_DIR) / "assets" / "white_box_32.png";
-  if (player_sprite_.LoadFromFile(sprite_path.string()) != olc::rcode::OK) {
-    exit(1);
-  }
 }
 
 void Camera::UpdatePosition(const Vector2d& absolute_vec) {
@@ -103,7 +97,7 @@ void Camera::RenderPlayer(const Player& player) {
   }
   int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
   int position_px_y = kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
-  engine_ptr_->DrawSprite(position_px_x, position_px_y, &player_sprite_);
+  engine_ptr_->DrawSprite(position_px_x, position_px_y, player.sprite);
 }
 
 void Camera::KeepCameraInBounds() {

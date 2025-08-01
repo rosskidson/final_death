@@ -1,5 +1,8 @@
 #pragma once
 
+#include <map>
+#include <string>
+
 #include "basic_types.h"
 #include "camera.h"
 #include "game_configuration.h"
@@ -23,6 +26,9 @@ class Platformer : public olc::PixelGameEngine {
   std::unique_ptr<Camera> camera_;
 
   Player player_{};
+
+  // TODO:: You will need to rethink this one.
+  std::map<std::string, olc::Sprite> sprite_storage_;
 };
 
 }  // namespace platformer

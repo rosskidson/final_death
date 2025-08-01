@@ -11,10 +11,30 @@
 #include "global_defs.h"
 #include "load_game_configuration.h"
 #include "utils/logging.h"
+using Clock = std::chrono::high_resolution_clock;
 
 constexpr int kPixelSize = 2;
 
 namespace platformer {
+
+void Physics(Player& player) {
+  constexpr double kMaxVel = 2.5;
+  auto now = Clock::now();
+  const double delta_t = (now - player.last_update).count() / 1e9;
+
+  player.velocity.x += player.acceleration.x * delta_t;
+  player.velocity.y += player.acceleration.y * delta_t;
+
+  player.velocity.x = std::min(player.velocity.x, kMaxVel);
+  player.velocity.x = std::max(player.velocity.x, -kMaxVel);
+  player.velocity.y = std::min(player.velocity.y, kMaxVel);
+  player.velocity.y = std::max(player.velocity.y, -kMaxVel);
+
+  player.position.x += player.velocity.x * delta_t;
+  player.position.y += player.velocity.y * delta_t;
+
+  player.last_update = now;
+}
 
 Platformer::Platformer() {
   this->Construct(kScreenWidthPx, kScreenHeightPx, kPixelSize, kPixelSize);
@@ -37,23 +57,25 @@ bool Platformer::OnUserCreate() {
 
   player_.position = {10, 10};
   player_.velocity = {0, 0};
-  // const auto sprite_path = std::filesystem::path(SOURCE_DIR) / "white_box_32.png";
-  // player_.sprite = olc::Sprite(sprite_path.string());
-  player_.sprite_width_px = 32;
-  player_.sprite_height_px = 32;
+
+  const auto sprite_path = std::filesystem::path(SOURCE_DIR) / "assets" / "white_box_32.png";
+  sprite_storage_["white_box"] = olc::Sprite();
+  if (sprite_storage_["white_box"].LoadFromFile(sprite_path.string()) != olc::rcode::OK) {
+    std::cout << " Failed loading sprite `" << sprite_path << "`." << std::endl;
+  }
+  player_.sprite = &sprite_storage_["white_box"];
 
   return true;
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
-  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  this->Keyboard();
+  Physics(player_);
   camera_->RenderBackground();
   camera_->RenderTiles();
   camera_->RenderPlayer(player_);
-  this->Keyboard();
 
-  // std::cout << player_.position.x << " " << player_.position.y << std::endl;
-
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
   return true;
 }
 
@@ -77,16 +99,16 @@ void Platformer::Keyboard() {
   camera_->MoveCamera(pos);
 
   if (this->GetKey(olc::Key::LEFT).bHeld) {
-    player_.position.x -= kMoveOffset;
+    player_.acceleration.x = -3.0;
   }
   if (this->GetKey(olc::Key::RIGHT).bHeld) {
-    player_.position.x += kMoveOffset;
+    player_.acceleration.x = +3.0;
   }
   if (this->GetKey(olc::Key::UP).bHeld) {
-    player_.position.y += kMoveOffset;
+    player_.acceleration.y = +3.0;
   }
   if (this->GetKey(olc::Key::DOWN).bHeld) {
-    player_.position.y -= kMoveOffset;
+    player_.acceleration.y = -3.0;
   }
 
   if (this->GetKey(olc::Key::Q).bReleased) {
