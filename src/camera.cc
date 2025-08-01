@@ -19,14 +19,11 @@ Camera::Camera(olc::PixelGameEngine* engine_ptr, Level level)
   viewport_width_ = kScreenWidthPx / static_cast<double>(tile_size_);
   viewport_height_ = kScreenHeightPx / static_cast<double>(tile_size_);
 
-  constexpr double kScreenEdgeBuffer = 0.1;
-  const double max_x = grid_width - (viewport_width_ / 2) - kScreenEdgeBuffer;
-  const double min_x = (viewport_width_ / 2) + 0.1;
-  const double max_y = grid_height - (viewport_height_ / 2) - kScreenEdgeBuffer;
-  const double min_y = (viewport_height_ / 2) + 0.1;
-  camera_bounds_ = {max_x, min_x, max_y, min_y};
+  max_cam_postion_px_x_ = (grid_width * tile_size_) - kScreenWidthPx;
+  max_cam_postion_px_y_ = (grid_height * tile_size_) - kScreenHeightPx;
 
-  position_ = {10., 10.};
+  cam_position_px_x_ = 0;
+  cam_position_px_y_ = 0;
 
   const auto sprite_path = std::filesystem::path(SOURCE_DIR) / "assets" / "white_box_32.png";
   if (player_sprite_.LoadFromFile(sprite_path.string()) != olc::rcode::OK) {
@@ -35,17 +32,21 @@ Camera::Camera(olc::PixelGameEngine* engine_ptr, Level level)
 }
 
 void Camera::UpdatePosition(const Vector2d& absolute_vec) {
-  position_ = absolute_vec;
+  cam_position_px_x_ = absolute_vec.x * tile_size_;
+  cam_position_px_y_ = absolute_vec.y * tile_size_;
   KeepCameraInBounds();
 }
 
 void Camera::MoveCamera(const Vector2d& relative_vec) {
-  position_.x += relative_vec.x;
-  position_.y += relative_vec.y;
+  cam_position_px_x_ += relative_vec.x * tile_size_;
+  cam_position_px_y_ += relative_vec.y * tile_size_;
   KeepCameraInBounds();
 }
 
-Vector2d Camera::GetCameraPosition() const { return position_; }
+Vector2d Camera::GetCameraPosition() const {
+  return Vector2d{static_cast<double>(cam_position_px_x_) / tile_size_,
+                  static_cast<double>(cam_position_px_y_) / tile_size_};
+}
 
 void Camera::RenderBackground() {
   for (int y = 0; y < kScreenHeightPx; ++y) {
@@ -58,18 +59,13 @@ void Camera::RenderBackground() {
 void Camera::RenderTiles() {
   KeepCameraInBounds();
 
-  // Discretize the camera position.
-  // This
-  position_.x = static_cast<int>(position_.x * tile_size_) / static_cast<double>(tile_size_);
-  position_.y = static_cast<int>(position_.y * tile_size_) / static_cast<double>(tile_size_);
-  std::cout << position_.x << " " << position_.y << std::endl;
-
+  const auto position = GetCameraPosition();
   const auto& tilemap = level_.tile_grid;
   const auto& tileset = *level_.level_tileset;
   for (int y_itr = 0; y_itr <= viewport_height_ + 1; ++y_itr) {
     for (int x_itr = 0; x_itr <= viewport_width_ + 1; ++x_itr) {
-      const double lookup_x = position_.x + (x_itr - (viewport_width_ / 2.));
-      const double lookup_y = position_.y + (y_itr - (viewport_height_ / 2.));
+      const double lookup_x = position.x + x_itr;
+      const double lookup_y = position.y + y_itr;
       const int lookup_x_int = static_cast<int>(std::floor(lookup_x));
       const int lookup_y_int = static_cast<int>(std::floor(lookup_y));
       int tile_idx{};
@@ -100,24 +96,21 @@ void Camera::RenderTiles() {
 }
 
 void Camera::RenderPlayer(const Player& player) {
-  const auto screen_bottom_right = position_ - Vector2d{viewport_width_ / 2, viewport_height_ / 2};
-  const auto position_in_screen = player.position - screen_bottom_right;
+  const auto position_in_screen = player.position - GetCameraPosition();
   if (position_in_screen.x < 0 || position_in_screen.y < 0 ||
       position_in_screen.x > viewport_width_ || position_in_screen.y > viewport_height_) {
     return;
   }
-  //   std::cout << "posinscr " << position_in_screen.x << " " << position_in_screen.y << std::endl;
   int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
   int position_px_y = kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
-  //   std::cout << position_px_x << " " << position_px_y << std::endl;
   engine_ptr_->DrawSprite(position_px_x, position_px_y, &player_sprite_);
 }
 
 void Camera::KeepCameraInBounds() {
-  position_.x = std::max(position_.x, camera_bounds_.min_x);
-  position_.x = std::min(position_.x, camera_bounds_.max_x);
-  position_.y = std::max(position_.y, camera_bounds_.min_y);
-  position_.y = std::min(position_.y, camera_bounds_.max_y);
+  cam_position_px_x_ = std::max(cam_position_px_x_, 0);
+  cam_position_px_x_ = std::min(cam_position_px_x_, max_cam_postion_px_x_);
+  cam_position_px_y_ = std::max(cam_position_px_y_, 0);
+  cam_position_px_y_ = std::min(cam_position_px_y_, max_cam_postion_px_y_);
 }
 
 }  // namespace platformer

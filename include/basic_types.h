@@ -18,13 +18,6 @@ inline constexpr auto operator+(const Vector2d& lhs, const Vector2d& rhs) {
   return Vector2d{lhs.x + rhs.x, lhs.y + rhs.y};
 }
 
-struct Bounds {
-  double max_x{};
-  double min_x{};
-  double max_y{};
-  double min_y{};
-};
-
 struct Player {
   Vector2d position{};
   Vector2d velocity{};

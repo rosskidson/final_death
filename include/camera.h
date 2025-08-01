@@ -17,6 +17,7 @@ class Camera {
 
   void MoveCamera(const Vector2d& relative_vec);
 
+  // Returns the camera position in tile coordinates.
   Vector2d GetCameraPosition() const;
 
   void RenderBackground();
@@ -27,14 +28,23 @@ class Camera {
   void KeepCameraInBounds();
 
   olc::PixelGameEngine* engine_ptr_;
-  // Position is the middle of the screen.
-  Vector2d position_;
+
+  // Camera position is the bottom right corner of the screen.
+  // Stored in pixel coordinates, but with y up positive.
+  // The decision for the camera position to be in pixel coordinates is very deliberate:
+  // If the camera can move subpixel amounts, sprites not aligned to the pixel grid will
+  // jiggle a pixel forwards and backwards as the camera moves.
+  int cam_position_px_x_;
+  int cam_position_px_y_;
+  int max_cam_postion_px_x_;
+  int max_cam_postion_px_y_;
+
   Level level_;
 
   int tile_size_;
   double viewport_width_;   // The width in tile units.
   double viewport_height_;  // The height in tile units.
-  Bounds camera_bounds_;
+                            //   Bounds camera_bounds_;
 
   olc::Sprite player_sprite_;
 };

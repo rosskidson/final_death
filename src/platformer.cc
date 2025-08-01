@@ -12,7 +12,7 @@
 #include "load_game_configuration.h"
 #include "utils/logging.h"
 
-constexpr int kPixelSize = 8;
+constexpr int kPixelSize = 2;
 
 namespace platformer {
 
@@ -60,7 +60,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 void Platformer::Keyboard() {
   Vector2d pos{};
   const auto tile_size = GetCurrentLevel().level_tileset->GetTileSize();
-  constexpr double kMoveOffset = 0.004;
+  constexpr double kMoveOffset = 0.03;
   const double kCamMoveOffset = 1. / tile_size;
   if (this->GetKey(olc::Key::A).bHeld) {
     pos.x -= kCamMoveOffset;
