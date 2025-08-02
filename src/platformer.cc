@@ -82,8 +82,8 @@ bool Platformer::OnUserCreate() {
   LoadSprite("white_box_32_top.png", "white_box_top", sprite_storage_);
   LoadSprite("white_box_32_bottom.png", "white_box_bottom", sprite_storage_);
 
-  LoadSprite("player/idle_32.png", "bot_idle", sprite_storage_);
-  LoadSprite("player/jump_32.png", "bot_jump", sprite_storage_);
+  LoadSprite("player/idle.png", "bot_idle", sprite_storage_);
+  LoadSprite("player/jump.png", "bot_jump", sprite_storage_);
   player_.sprite = &sprite_storage_["bot_idle"];
 
   return true;
@@ -173,7 +173,7 @@ void Platformer::CollisionCheckPlayer(Player& player) {
     // player.sprite = &sprite_storage_["white_box_left"];
   } else if (most_colliding_side == Side::RIGHT) {
     player.velocity.x = 0;
-    player.position.x = std::floor(player.position.x);
+    player.position.x = std::floor(player.position.x + collision_width) - collision_width;
     // player.sprite = &sprite_storage_["white_box_right"];
   } else if (most_colliding_side == Side::TOP) {
     player.velocity.y = 0;
@@ -181,7 +181,7 @@ void Platformer::CollisionCheckPlayer(Player& player) {
     // player.sprite = &sprite_storage_["white_box_top"];
   } else if (most_colliding_side == Side::BOTTOM) {
     player.velocity.y = 0;
-    player.position.y = std::floor(player.position.y) + 1;
+    player.position.y = std::floor(player.position.y - collision_height) + 1 + collision_height;
     // player.sprite = &sprite_storage_["white_box_bottom"];
   }
 }
