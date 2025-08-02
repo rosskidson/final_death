@@ -9,6 +9,9 @@
 #include "olcPixelGameEngine.h"
 
 namespace platformer {
+
+enum class Side { LEFT, RIGHT, TOP, BOTTOM };
+
 class Platformer : public olc::PixelGameEngine {
  public:
   Platformer();
