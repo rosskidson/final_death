@@ -24,7 +24,8 @@ struct Player {
   Vector2d velocity{};
   Vector2d acceleration{};
 
-  std::chrono::time_point<std::chrono::system_clock> last_update{};
+  std::chrono::time_point<std::chrono::system_clock> last_update{
+      std::chrono::high_resolution_clock::now()};
 
   // TODO:: THIS IT NOT HOW I WANT IT TO END UP.
   olc::Sprite* sprite;

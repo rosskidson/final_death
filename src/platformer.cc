@@ -16,8 +16,9 @@ using Clock = std::chrono::high_resolution_clock;
 
 constexpr int kPixelSize = 2;
 
-constexpr double kMaxVel = 2.5;
-constexpr double kAcceleration = 5.0;
+constexpr double kMaxVelX = 10;
+constexpr double kMaxVelY = 25;
+constexpr double kAcceleration = 50.0;
 
 namespace platformer {
 
@@ -25,13 +26,15 @@ void Physics(Player& player) {
   auto now = Clock::now();
   const double delta_t = (now - player.last_update).count() / 1e9;
 
+  player.acceleration.y = -10;
+
   player.velocity.x += player.acceleration.x * delta_t;
   player.velocity.y += player.acceleration.y * delta_t;
 
-  player.velocity.x = std::min(player.velocity.x, kMaxVel);
-  player.velocity.x = std::max(player.velocity.x, -kMaxVel);
-  player.velocity.y = std::min(player.velocity.y, kMaxVel);
-  player.velocity.y = std::max(player.velocity.y, -kMaxVel);
+  player.velocity.x = std::min(player.velocity.x, kMaxVelX);
+  player.velocity.x = std::max(player.velocity.x, -kMaxVelX);
+  player.velocity.y = std::min(player.velocity.y, kMaxVelY);
+  player.velocity.y = std::max(player.velocity.y, -kMaxVelY);
 
   player.position.x += player.velocity.x * delta_t;
   player.position.y += player.velocity.y * delta_t;
@@ -94,6 +97,13 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   return true;
 }
 
+bool IsCollision(const Grid<int>& collision_grid, int x, int y) {
+  if (x < 0 || y < 0 || x >= collision_grid.GetWidth() || y >= collision_grid.GetHeight()) {
+    return false;
+  }
+  return collision_grid.GetTile(x, y) == 1;
+}
+
 void Platformer::CollisionCheckPlayer(Player& player) {
   const auto& collision_grid = GetCurrentLevel().property_grid;
   const int tile_size = GetCurrentLevel().level_tileset->GetTileSize();
@@ -109,28 +119,28 @@ void Platformer::CollisionCheckPlayer(Player& player) {
   // Left
   for (double y = player.position.y - kEps; y > player.position.y - collision_height + kEps;
        y -= kSampleDistance) {
-    if (collision_grid.GetTile(player.position.x, y) == 1) {
+    if (IsCollision(collision_grid, player.position.x, y)) {
       collision_counter[Side::LEFT]++;
     }
   }
   // Right
   for (double y = player.position.y - kEps; y > player.position.y - collision_height + kEps;
        y -= kSampleDistance) {
-    if (collision_grid.GetTile(player.position.x + collision_width - kEps, y) == 1) {
+    if (IsCollision(collision_grid, player.position.x + collision_width - kEps, y)) {
       collision_counter[Side::RIGHT]++;
     }
   }
   // Top
   for (double x = player.position.x + kEps; x < player.position.x + collision_width - kEps;
        x += kSampleDistance) {
-    if (collision_grid.GetTile(x, player.position.y - kEps) == 1) {
+    if (IsCollision(collision_grid, x, player.position.y - kEps)) {
       collision_counter[Side::TOP]++;
     }
   }
   // Bottom
   for (double x = player.position.x + kEps; x < player.position.x + collision_width - kEps;
        x += kSampleDistance) {
-    if (collision_grid.GetTile(x, player.position.y - collision_height) == 1) {
+    if (IsCollision(collision_grid, x, player.position.y - collision_height)) {
       collision_counter[Side::BOTTOM]++;
     }
   }
@@ -217,14 +227,18 @@ void Platformer::Keyboard() {
   } else if (this->GetKey(olc::Key::RIGHT).bHeld) {
     player_.acceleration.x = +kAcceleration;
   } else {
-    player_.acceleration.x = 0.0;
+    player_.acceleration.x = -10 * player_.velocity.x;
+    // player_.velocity.x = 0.0;
   }
-  if (this->GetKey(olc::Key::UP).bHeld) {
-    player_.acceleration.y = +kAcceleration;
-  } else if (this->GetKey(olc::Key::DOWN).bHeld) {
-    player_.acceleration.y = -kAcceleration;
-  } else {
-    player_.acceleration.y = 0.0;
+  // if (this->GetKey(olc::Key::UP).bHeld) {
+  //   player_.acceleration.y = +kAcceleration;
+  // } else if (this->GetKey(olc::Key::DOWN).bHeld) {
+  //   player_.acceleration.y = -kAcceleration;
+  // } else {
+  //   player_.acceleration.y = 0.0;
+  // }
+  if (this->GetKey(olc::Key::SPACE).bPressed) {
+    player_.velocity.y = 10;
   }
 
   if (this->GetKey(olc::Key::Q).bReleased) {
