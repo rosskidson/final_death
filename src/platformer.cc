@@ -19,6 +19,8 @@ constexpr int kPixelSize = 2;
 constexpr double kMaxVelX = 10;
 constexpr double kMaxVelY = 25;
 constexpr double kAcceleration = 50.0;
+constexpr double kGravity = 30.0;
+constexpr double kJumpVel = 17.0;
 
 namespace platformer {
 
@@ -26,7 +28,7 @@ void Physics(Player& player) {
   auto now = Clock::now();
   const double delta_t = (now - player.last_update).count() / 1e9;
 
-  player.acceleration.y = -10;
+  player.acceleration.y = -kGravity;
 
   player.velocity.x += player.acceleration.x * delta_t;
   player.velocity.y += player.acceleration.y * delta_t;
@@ -184,28 +186,6 @@ void Platformer::CollisionCheckPlayer(Player& player) {
   }
 }
 
-// Check top
-// if (collision_grid.GetTile(player.position.x, player.position.y) == 1 ||
-//     collision_grid.GetTile(player.position.x + collision_width, player.position.y) == 1) {
-//   player_.velocity.y = 0;
-//   player_.position.y = static_cast<int>(player.position.y) - 0.01;
-// }
-// // Check bottom side.
-// if (collision_grid.GetTile(player.position.x, player.position.y - collision_height) == 1 ||
-//     collision_grid.GetTile(player.position.x + collision_width,
-//                            player.position.y - collision_height) == 1) {
-//   player_.velocity.y = 0;
-//   player_.position.y = static_cast<int>(player.position.y) + 1;
-// }
-
-// Check bottom side.
-// if (collision_grid.GetTile(player.position.x, player.position.y - collision_height) == 1 ||
-//     collision_grid.GetTile(player.position.x + collision_width,
-//                            player.position.y - collision_height) == 1) {
-//   player_.velocity.y = 0;
-//   player_.position.y = static_cast<int>(player.position.y) + 1;
-// }
-
 void Platformer::Keyboard() {
   Vector2d pos{};
   const auto tile_size = GetCurrentLevel().level_tileset->GetTileSize();
@@ -241,7 +221,7 @@ void Platformer::Keyboard() {
   //   player_.acceleration.y = 0.0;
   // }
   if (this->GetKey(olc::Key::SPACE).bPressed) {
-    player_.velocity.y = 10;
+    player_.velocity.y = kJumpVel;
   }
 
   if (this->GetKey(olc::Key::SPACE).bHeld) {
