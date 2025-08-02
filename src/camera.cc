@@ -110,7 +110,8 @@ void Camera::RenderPlayer(const Player& player) {
   }
   int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
   int position_px_y = kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
-  engine_ptr_->DrawSprite(position_px_x, position_px_y, player.sprite);
+  const auto flip = player.velocity.x < 0 ? olc::Sprite::Flip::HORIZ : olc::Sprite::Flip::NONE;
+  engine_ptr_->DrawSprite(position_px_x, position_px_y, player.sprite, 1, flip);
 }
 
 void Camera::KeepCameraInBounds() {
