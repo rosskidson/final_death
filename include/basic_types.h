@@ -29,6 +29,10 @@ struct Player {
 
   // TODO:: THIS IT NOT HOW I WANT IT TO END UP.
   olc::Sprite* sprite;
+
+  int animation_frame = 0;
+  std::chrono::time_point<std::chrono::system_clock> animation_update{
+      std::chrono::high_resolution_clock::now()};
 };
 
 }  // namespace platformer

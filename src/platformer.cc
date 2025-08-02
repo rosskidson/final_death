@@ -14,7 +14,7 @@
 #include "utils/logging.h"
 using Clock = std::chrono::high_resolution_clock;
 
-constexpr int kPixelSize = 2;
+constexpr int kPixelSize = 3;
 
 constexpr double kMaxVelX = 10;
 constexpr double kMaxVelY = 25;
@@ -84,6 +84,10 @@ bool Platformer::OnUserCreate() {
 
   LoadSprite("player/idle.png", "bot_idle", sprite_storage_);
   LoadSprite("player/jump.png", "bot_jump", sprite_storage_);
+  LoadSprite("player/run1.png", "bot_run0", sprite_storage_);
+  LoadSprite("player/run2.png", "bot_run1", sprite_storage_);
+  LoadSprite("player/run3.png", "bot_run2", sprite_storage_);
+  LoadSprite("player/run4.png", "bot_run3", sprite_storage_);
   player_.sprite = &sprite_storage_["bot_idle"];
 
   return true;
@@ -205,11 +209,40 @@ void Platformer::Keyboard() {
   }
   camera_->MoveCamera(pos);
 
+  if (this->GetKey(olc::Key::SPACE).bHeld) {
+    player_.sprite = &sprite_storage_["bot_jump"];
+  }
+
+  auto now = Clock::now();
+  if (this->GetKey(olc::Key::LEFT).bPressed) {
+    player_.sprite = &sprite_storage_["bot_run1"];
+    player_.animation_update = now;
+  }
+  if (this->GetKey(olc::Key::RIGHT).bPressed) {
+    player_.sprite = &sprite_storage_["bot_run1"];
+    player_.animation_update = now;
+  }
+
   if (this->GetKey(olc::Key::LEFT).bHeld) {
     player_.acceleration.x = -kAcceleration;
+    if (((now - player_.animation_update).count() / 1e9) > 0.1) {
+      player_.animation_frame++;
+      const std::string next_frame = "bot_run" + std::to_string(player_.animation_frame % 4);
+      std::cout << next_frame << std::endl;
+      player_.sprite = &sprite_storage_[next_frame];
+      player_.animation_update = now;
+    }
   } else if (this->GetKey(olc::Key::RIGHT).bHeld) {
     player_.acceleration.x = +kAcceleration;
+    if (((now - player_.animation_update).count() / 1e9) > 0.1) {
+      player_.animation_frame++;
+      const std::string next_frame = "bot_run" + std::to_string(player_.animation_frame % 4);
+      std::cout << next_frame << std::endl;
+      player_.sprite = &sprite_storage_[next_frame];
+      player_.animation_update = now;
+    }
   } else {
+    player_.sprite = &sprite_storage_["bot_idle"];
     player_.acceleration.x = -10 * player_.velocity.x;
     // player_.velocity.x = 0.0;
   }
@@ -222,12 +255,6 @@ void Platformer::Keyboard() {
   // }
   if (this->GetKey(olc::Key::SPACE).bPressed) {
     player_.velocity.y = kJumpVel;
-  }
-
-  if (this->GetKey(olc::Key::SPACE).bHeld) {
-    player_.sprite = &sprite_storage_["bot_jump"];
-  } else {
-    player_.sprite = &sprite_storage_["bot_idle"];
   }
 
   if (this->GetKey(olc::Key::Q).bReleased) {
