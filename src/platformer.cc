@@ -131,6 +131,8 @@ void Platformer::Physics(Player& player) {
 }
 
 void Platformer::CheckPlayerCollision(Player& player, const Axis& axis) {
+  // TODO - refactor into two functions
+  // Check collision and resolve collision
   const int tile_size = GetCurrentLevel().level_tileset->GetTileSize();
   const auto player_box = GetPlayerCollisionBox(player, tile_size);
 
@@ -139,26 +141,26 @@ void Platformer::CheckPlayerCollision(Player& player, const Axis& axis) {
   if (axis == Axis::X) {
     const auto box_height = player_box.top - player_box.bottom;
     lower_collision_points = {
-        {player_box.left, player_box.bottom + box_height * 0.25},
+        {player_box.left, player_box.bottom + box_height * 0.2},
         {player_box.left, player_box.bottom + box_height * 0.5},
-        {player_box.left, player_box.bottom + box_height * 0.75},
+        {player_box.left, player_box.bottom + box_height * 0.8},
     };
     upper_collision_points = {
-        {player_box.right, player_box.bottom + box_height * 0.25},
+        {player_box.right, player_box.bottom + box_height * 0.2},
         {player_box.right, player_box.bottom + box_height * 0.5},
-        {player_box.right, player_box.bottom + box_height * 0.75},
+        {player_box.right, player_box.bottom + box_height * 0.8},
     };
   } else {
     const auto box_width = player_box.right - player_box.left;
     lower_collision_points = {
-        {player_box.left + box_width * 0.25, player_box.bottom},
+        {player_box.left + box_width * 0.2, player_box.bottom},
         {player_box.left + box_width * 0.5, player_box.bottom},
-        {player_box.left + box_width * 0.75, player_box.bottom},
+        {player_box.left + box_width * 0.8, player_box.bottom},
     };
     upper_collision_points = {
-        {player_box.left + box_width * 0.25, player_box.top},
+        {player_box.left + box_width * 0.2, player_box.top},
         {player_box.left + box_width * 0.5, player_box.top},
-        {player_box.left + box_width * 0.75, player_box.top},
+        {player_box.left + box_width * 0.8, player_box.top},
     };
   }
 
