@@ -108,8 +108,11 @@ void Camera::RenderPlayer(const Player& player) {
       position_in_screen.x > viewport_width_ || position_in_screen.y > viewport_height_) {
     return;
   }
+  // The player position is bottom left, but the rendering engine requires top left.
+  // This conversion is done here.
   int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
-  int position_px_y = kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
+  int position_px_y =
+      kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - player.sprite->height;
   const auto flip = player.facing_left;
   engine_ptr_->DrawSprite(position_px_x, position_px_y, player.sprite, 1, flip);
 

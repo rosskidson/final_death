@@ -24,28 +24,20 @@ constexpr double kJumpVel = 17.0;
 
 namespace platformer {
 
-void Physics(Player& player) {
-  auto now = Clock::now();
-  const double delta_t = (now - player.last_update).count() / 1e9;
+BoundingBox GetPlayerCollisionBox(const Player& player, int tile_size) {
+  const double x_offset = static_cast<double>(player.x_offset_px) / tile_size;
+  const double y_offset = static_cast<double>(player.y_offset_px) / tile_size;
+  const double collision_width = static_cast<double>(player.collision_width_px) / tile_size;
+  const double collision_height = static_cast<double>(player.collision_height_px) / tile_size;
+  return {player.position.x + x_offset, player.position.x + x_offset + collision_width,
+          player.position.y + y_offset, player.position.y + y_offset + collision_height};
+}
 
-  player.acceleration.y = -kGravity;
-
-  player.velocity.x += player.acceleration.x * delta_t;
-  player.velocity.y += player.acceleration.y * delta_t;
-
-  player.velocity.x = std::min(player.velocity.x, kMaxVelX);
-  player.velocity.x = std::max(player.velocity.x, -kMaxVelX);
-  player.velocity.y = std::min(player.velocity.y, kMaxVelY);
-  player.velocity.y = std::max(player.velocity.y, -kMaxVelY);
-
-  player.position.x += player.velocity.x * delta_t;
-  player.position.y += player.velocity.y * delta_t;
-
-  if (player.velocity.x != 0.) {
-    player.facing_left = player.velocity.x < 0;
+bool IsCollision(const Grid<int>& collision_grid, int x, int y) {
+  if (x < 0 || y < 0 || x >= collision_grid.GetWidth() || y >= collision_grid.GetHeight()) {
+    return false;
   }
-
-  player.last_update = now;
+  return collision_grid.GetTile(x, y) == 1;
 }
 
 Platformer::Platformer() {
@@ -87,6 +79,10 @@ bool Platformer::OnUserCreate() {
   LoadSprite("player/run3.png", "bot_run2", sprite_storage_);
   LoadSprite("player/run4.png", "bot_run3", sprite_storage_);
   player_.sprite = &sprite_storage_["bot_idle"];
+  player_.x_offset_px = 7;
+  player_.y_offset_px = 0;
+  player_.collision_width_px = 12;
+  player_.collision_height_px = 22;
 
   return true;
 }
@@ -94,7 +90,7 @@ bool Platformer::OnUserCreate() {
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   this->Keyboard();
   Physics(player_);
-  CollisionCheckPlayer(player_);
+  // CollisionCheckPlayer(player_);
   camera_->KeepPlayerInFrame(player_, 0.3);
   camera_->RenderBackground();
   camera_->RenderTiles();
@@ -104,113 +100,122 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   return true;
 }
 
-bool IsCollision(const Grid<int>& collision_grid, int x, int y) {
-  if (x < 0 || y < 0 || x >= collision_grid.GetWidth() || y >= collision_grid.GetHeight()) {
-    return false;
-  }
-  return collision_grid.GetTile(x, y) == 1;
-}
+void Platformer::Physics(Player& player) {
+  auto now = Clock::now();
+  const double delta_t = (now - player.last_update).count() / 1e9;
 
-bool Platformer::PlayerCollidesWithMap(Player& player) {
-  const auto& collision_grid = GetCurrentLevel().property_grid;
-  const int tile_size = GetCurrentLevel().level_tileset->GetTileSize();
-  constexpr double kSampleDistance = 0.2;
-  // Add/Subtract an epsilon when looking up collision tiles.
-  // If the location is on the border with a tile, it does not collide with it.
-  const double x_offset = 6. / tile_size;
-  const double y_offset = 5. / tile_size;
-  const double collision_width = 15. / tile_size;
-  const double collision_height = 23. / tile_size;
-
-  const double player_x = player.position.x + x_offset;
-  const double player_y = player.position.y - y_offset;
-  std::map<Side, int> collision_counter;
-  for (double y = player_y - kSampleDistance / 2; y > player_y - collision_height;
-       y -= kSampleDistance) {
-    // Left
-    if (IsCollision(collision_grid, player_x, y)) {
-      collision_counter[Side::LEFT]++;
-    }
-    // Right
-    if (IsCollision(collision_grid, player_x + collision_width, y)) {
-      collision_counter[Side::RIGHT]++;
-    }
-  }
-  for (double x = player_x + kSampleDistance / 2; x < player_x + collision_width;
-       x += kSampleDistance) {
-    // Top
-    if (IsCollision(collision_grid, x, player_y)) {
-      collision_counter[Side::TOP]++;
-    }
-    // Bottom
-    if (IsCollision(collision_grid, x, player_y - collision_height)) {
-      collision_counter[Side::BOTTOM]++;
-    }
-  }
-
-  // Get 'most colliding' side
-  int max_count = 0;
-  Side most_colliding_side{};
-  for (const auto& [side, count] : collision_counter) {
-    if (count > max_count) {
-      max_count = count;
-      most_colliding_side = side;
-    }
-  }
-  if (max_count == 0) {
-    return false;
-  }
-
-  constexpr double kEps = 1e-3;
-  if (most_colliding_side == Side::LEFT) {
-    player.collides_left = true;
-    if (player.velocity.x < 0) {
-      player.velocity.x = 0;
-    }
-    player.position.x = std::floor(player.position.x) + 1 - x_offset;
-    return true;
-  }
-  if (most_colliding_side == Side::RIGHT) {
-    player.collides_right = true;
-    if (player.velocity.x > 0) {
-      player.velocity.x = 0;
-    }
-    player.position.x = std::floor(player_x + collision_width) - x_offset - collision_width - kEps;
-    return true;
-  }
-  if (most_colliding_side == Side::TOP) {
-    player.collides_top = true;
-    if (player.velocity.y > 0) {
-      player.velocity.y = 0;
-    }
-    player.position.y = std::floor(player_y) + y_offset - kEps;
-    return true;
-  }
-  if (most_colliding_side == Side::BOTTOM) {
-    player.collides_bottom = true;
-    if (player.velocity.y < 0) {
-      player.velocity.y = 0;
-    }
-    player.position.y = std::floor(player_y - collision_height) + 1 + collision_height + y_offset;
-    return true;
-  }
-  return false;
-}
-
-void Platformer::CollisionCheckPlayer(Player& player) {
   player.collides_bottom = false;
   player.collides_top = false;
   player.collides_left = false;
   player.collides_right = false;
-  // There should be maximum of two adjustments needed: x and y.
-  for (int i = 0; i < 2; ++i) {
-    if (!PlayerCollidesWithMap(player)) {
-      return;
-    }
+
+  player.acceleration.y = -kGravity;
+
+  player.velocity.x += player.acceleration.x * delta_t;
+  player.velocity.x = std::min(player.velocity.x, kMaxVelX);
+  player.velocity.x = std::max(player.velocity.x, -kMaxVelX);
+  player.position.x += player.velocity.x * delta_t;
+  this->CheckPlayerCollision(player, Axis::X);
+
+  player.velocity.y += player.acceleration.y * delta_t;
+  player.velocity.y = std::min(player.velocity.y, kMaxVelY);
+  player.velocity.y = std::max(player.velocity.y, -kMaxVelY);
+  player.position.y += player.velocity.y * delta_t;
+  this->CheckPlayerCollision(player, Axis::Y);
+
+  if (player.velocity.x != 0.) {
+    player.facing_left = player.velocity.x < 0;
   }
-  // If there is still a collision, this probably means the player is being squished.
-  if (PlayerCollidesWithMap(player)) {
-    std::cout << "Squish!" << std::endl;
+
+  player.last_update = now;
+}
+
+void Platformer::CheckPlayerCollision(Player& player, const Axis& axis) {
+  const int tile_size = GetCurrentLevel().level_tileset->GetTileSize();
+  const auto player_box = GetPlayerCollisionBox(player, tile_size);
+
+  std::vector<Vector2d> lower_collision_points;
+  std::vector<Vector2d> upper_collision_points;
+  if (axis == Axis::X) {
+    const auto box_height = player_box.top - player_box.bottom;
+    lower_collision_points = {
+        {player_box.left, player_box.bottom + box_height * 0.25},
+        {player_box.left, player_box.bottom + box_height * 0.5},
+        {player_box.left, player_box.bottom + box_height * 0.75},
+    };
+    upper_collision_points = {
+        {player_box.right, player_box.bottom + box_height * 0.25},
+        {player_box.right, player_box.bottom + box_height * 0.5},
+        {player_box.right, player_box.bottom + box_height * 0.75},
+    };
+  } else {
+    const auto box_width = player_box.right - player_box.left;
+    lower_collision_points = {
+        {player_box.left + box_width * 0.25, player_box.bottom},
+        {player_box.left + box_width * 0.5, player_box.bottom},
+        {player_box.left + box_width * 0.75, player_box.bottom},
+    };
+    upper_collision_points = {
+        {player_box.left + box_width * 0.25, player_box.top},
+        {player_box.left + box_width * 0.5, player_box.top},
+        {player_box.left + box_width * 0.75, player_box.top},
+    };
+  }
+
+  bool lower_collision{};
+  bool upper_collision{};
+  const auto& collision_grid = GetCurrentLevel().property_grid;
+  for (const auto& pt : lower_collision_points) {
+    lower_collision |= IsCollision(collision_grid, pt.x, pt.y);
+  }
+  for (const auto& pt : upper_collision_points) {
+    upper_collision |= IsCollision(collision_grid, pt.x, pt.y);
+  }
+  if (lower_collision && upper_collision) {
+    const std::string axis_str = axis == Axis::X ? "Horizontal" : "Vertical";
+    std::cout << axis_str << " Squish!" << std::endl;
+  }
+
+  if (!lower_collision && !upper_collision) {
+    return;
+  }
+  constexpr double kEps = 1e-6;
+  if (axis == Axis::X) {
+    const auto x_offset = static_cast<double>(player.x_offset_px) / tile_size;
+    const auto collision_width = static_cast<double>(player.collision_width_px) / tile_size;
+    if (lower_collision) {
+      // Only zero out velocity if the character is moving towards to collision
+      // This prevents sticking to a platforms e.g. if it hits it on the corner when going up.
+      if (player.velocity.x < 0) {
+        player.velocity.x = 0;
+      }
+      player.collides_left = true;
+      player.position.x = std::floor(player_box.left) + 1 - x_offset;
+    }
+    if (upper_collision) {
+      if (player.velocity.x > 0) {
+        player.velocity.x = 0;
+      }
+      player.collides_right = true;
+      player.position.x = std::floor(player_box.right) - x_offset - collision_width - kEps;
+    }
+  } else {
+    const auto y_offset = static_cast<double>(player.y_offset_px) / tile_size;
+    const auto collision_height = static_cast<double>(player.collision_height_px) / tile_size;
+    if (lower_collision) {
+      if (player.velocity.y < 0) {
+        player.velocity.y = 0;
+      }
+      player.collides_bottom = true;
+      player.position.y = std::floor(player_box.bottom) + 1 - y_offset;
+    }
+    if (upper_collision) {
+      if (player.velocity.y > 0) {
+        player.velocity.y = 0;
+      }
+      player.collides_top = true;
+      player.position.y = std::floor(player_box.top) - y_offset - collision_height - kEps;
+    }
   }
 }
 
@@ -264,8 +269,15 @@ void Platformer::Keyboard() {
   } else {
     player_.sprite = &sprite_storage_["bot_idle"];
     player_.acceleration.x = -10 * player_.velocity.x;
-    // player_.velocity.x = 0.0;
   }
+
+  // if (this->GetKey(olc::Key::UP).bHeld) {
+  //   player_.acceleration.y = kAcceleration;
+  // } else if (this->GetKey(olc::Key::DOWN).bHeld) {
+  //   player_.acceleration.y = -kAcceleration;
+  // } else {
+  //   player_.acceleration.y = 0;
+  // }
 
   if (this->GetKey(olc::Key::SPACE).bPressed) {
     player_.velocity.y = kJumpVel;

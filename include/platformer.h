@@ -11,6 +11,7 @@
 namespace platformer {
 
 enum class Side { LEFT, RIGHT, TOP, BOTTOM };
+enum class Axis { X, Y };
 
 class Platformer : public olc::PixelGameEngine {
  public:
@@ -19,6 +20,8 @@ class Platformer : public olc::PixelGameEngine {
   bool OnUserUpdate(float fElapsedTime) override;
 
  private:
+  void Physics(Player& player);
+  void CheckPlayerCollision(Player& player, const Axis& axis);
   void CollisionCheckPlayer(Player& player);
   bool PlayerCollidesWithMap(Player& player);
   void Keyboard();

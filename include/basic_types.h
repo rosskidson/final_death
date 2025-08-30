@@ -11,6 +11,13 @@ struct Vector2d {
   double y{};
 };
 
+struct BoundingBox {
+  double left{};
+  double right{};
+  double bottom{};
+  double top{};
+};
+
 inline constexpr auto operator-(const Vector2d& lhs, const Vector2d& rhs) {
   return Vector2d{lhs.x - rhs.x, lhs.y - rhs.y};
 }
@@ -26,6 +33,11 @@ struct Player {
 
   std::chrono::time_point<std::chrono::system_clock> last_update{
       std::chrono::high_resolution_clock::now()};
+
+  int x_offset_px{};
+  int y_offset_px{};
+  int collision_width_px{};
+  int collision_height_px{};
 
   // TODO:: THIS IT NOT HOW I WANT IT TO END UP.
   olc::Sprite* sprite;
