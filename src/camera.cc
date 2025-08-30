@@ -110,8 +110,27 @@ void Camera::RenderPlayer(const Player& player) {
   }
   int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
   int position_px_y = kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
-  const auto flip = player.velocity.x < 0 ? olc::Sprite::Flip::HORIZ : olc::Sprite::Flip::NONE;
+  const auto flip = player.facing_left;
   engine_ptr_->DrawSprite(position_px_x, position_px_y, player.sprite, 1, flip);
+
+  const auto& width = player.sprite->width;
+  const auto& height = player.sprite->height;
+  if (player.collides_bottom) {
+    engine_ptr_->DrawLine(position_px_x, position_px_y + height, position_px_x + width,
+                          position_px_y + height);
+  }
+  if (player.collides_top) {
+    engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x + width, position_px_y);
+  }
+  if (player.collides_left) {
+    engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x, position_px_y + height);
+  }
+  if (player.collides_right) {
+    engine_ptr_->DrawLine(position_px_x + width, position_px_y, position_px_x + width,
+                          position_px_y + height);
+  }
+
+  // player.sprite->height;
 }
 
 void Camera::KeepCameraInBounds() {

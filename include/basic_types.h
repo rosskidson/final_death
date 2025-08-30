@@ -29,6 +29,12 @@ struct Player {
 
   // TODO:: THIS IT NOT HOW I WANT IT TO END UP.
   olc::Sprite* sprite;
+  bool collides_left{};
+  bool collides_right{};
+  bool collides_top{};
+  bool collides_bottom{};
+
+  bool facing_left{};
 
   int animation_frame = 0;
   std::chrono::time_point<std::chrono::system_clock> animation_update{

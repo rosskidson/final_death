@@ -20,6 +20,7 @@ class Platformer : public olc::PixelGameEngine {
 
  private:
   void CollisionCheckPlayer(Player& player);
+  bool PlayerCollidesWithMap(Player& player);
   void Keyboard();
   Level& GetCurrentLevel() { return config_.levels.at(level_idx_); };
 
