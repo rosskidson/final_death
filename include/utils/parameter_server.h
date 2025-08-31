@@ -7,6 +7,7 @@
 #include <string>
 #include <type_traits>
 #include <typeinfo>
+#include <vector>
 
 class ParameterServer {
  public:
@@ -68,6 +69,17 @@ class ParameterServer {
     oss << "Key: " << key << ", Type: " << it->second.value.type().name()
         << ", Description: " << it->second.description;
     return oss.str();
+  }
+
+  bool ParameterExists(const std::string& key) { return parameters_.count(key) != 0; }
+
+  [[nodiscard]] std::vector<std::string> ListParameterKeys() const {
+    std::vector<std::string> keys;
+    keys.reserve(parameters_.size());
+    for (const auto& [key, _] : parameters_) {
+      keys.push_back(key);
+    }
+    return keys;
   }
 
  private:

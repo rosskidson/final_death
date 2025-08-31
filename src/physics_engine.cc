@@ -125,9 +125,9 @@ PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer
       collisions_grid_{level.property_grid},
       parameter_server_{std::move(parameter_server)} {
   parameter_server_->AddParameter("physics/gravity", kGravity, "Gravity, unit is tile/s^2");
-  parameter_server_->AddParameter("physics/max_x_vel", kMaxVelX,
+  parameter_server_->AddParameter("physics/max.x.vel", kMaxVelX,
                                   "Maximum horizontal velocity of the player");
-  parameter_server_->AddParameter("physics/max_y_vel", kMaxVelY,
+  parameter_server_->AddParameter("physics/max.y.vel", kMaxVelY,
                                   "Maximum vertical velocity of the player");
 }
 
@@ -139,11 +139,14 @@ void PhysicsEngine::PhysicsStep(Player& player) {
 
   player.acceleration.y = -1 * parameter_server_->GetParameter<double>("physics/gravity");
 
-  const auto max_x_vel = parameter_server_->GetParameter<double>("physics/max_x_vel");
-  const auto max_y_vel = parameter_server_->GetParameter<double>("physics/max_y_vel");
+  const auto max_x_vel = parameter_server_->GetParameter<double>("physics/max.x.vel");
+  const auto max_y_vel = parameter_server_->GetParameter<double>("physics/max.y.vel");
   player.velocity.x += player.acceleration.x * delta_t;
   player.velocity.x = std::min(player.velocity.x, max_x_vel);
   player.velocity.x = std::max(player.velocity.x, -max_x_vel);
+  if (std::abs(player.velocity.x) < 1e-3) {
+    player.velocity.x = 0;
+  }
   player.position.x += player.velocity.x * delta_t;
   this->CheckPlayerCollision(player, Axis::X);
 

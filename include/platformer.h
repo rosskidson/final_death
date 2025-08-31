@@ -17,9 +17,11 @@ class Platformer : public olc::PixelGameEngine {
   Platformer();
   bool OnUserCreate() override;
   bool OnUserUpdate(float fElapsedTime) override;
+  bool OnUserDestroy() override;
+  bool OnConsoleCommand(const std::string& sCommand) override;
 
  private:
-  void Keyboard();
+  bool Keyboard();
   Level& GetCurrentLevel() { return config_.levels.at(level_idx_); };
 
   GameConfiguration config_;

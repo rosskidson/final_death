@@ -114,7 +114,8 @@ void RenderingEngine::RenderPlayer(const Player& player) {
   int position_px_y =
       kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - player.sprite->height;
   const auto flip = player.facing_left;
-  engine_ptr_->DrawSprite(position_px_x, position_px_y, player.sprite, 1, flip);
+  engine_ptr_->DrawSprite(position_px_x, position_px_y, player.sprite, 1,
+                          static_cast<uint8_t>(flip));
 
   const auto& width = player.sprite->width;
   const auto& height = player.sprite->height;
