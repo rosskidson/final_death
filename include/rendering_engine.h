@@ -2,21 +2,18 @@
 
 #include "basic_types.h"
 #include "game_configuration.h"
-#include "tileset.h"
 
 namespace platformer {
 
-// The Camera class is responsible for all the rendering.
-// (probably should be called Renderer or similar)
-// It should abstract away all pixel math with regards to sprites, drawing, etc.
-class Camera {
+// This abstracts away all pixel math with regards to sprites, drawing, etc.
+class RenderingEngine {
  public:
   // The level is copied in, as opposed to a ref or pointer.
   // This class has invariants based on the level grids, so a reference could
   // result in having the rug pulled from its feet.
-  Camera(olc::PixelGameEngine* engine_ptr, Level level);
+  RenderingEngine(olc::PixelGameEngine* engine_ptr, Level level);
 
-  Vector2d GetCameraPosition() const;
+  [[nodiscard]] Vector2d GetCameraPosition() const;
   void SetCameraPosition(const Vector2d& absolute_vec);
   void MoveCamera(const Vector2d& relative_vec);
 

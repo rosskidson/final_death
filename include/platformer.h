@@ -4,14 +4,12 @@
 #include <string>
 
 #include "basic_types.h"
-#include "camera.h"
 #include "game_configuration.h"
 #include "olcPixelGameEngine.h"
+#include "physics_engine.h"
+#include "rendering_engine.h"
 
 namespace platformer {
-
-enum class Side { LEFT, RIGHT, TOP, BOTTOM };
-enum class Axis { X, Y };
 
 class Platformer : public olc::PixelGameEngine {
  public:
@@ -20,16 +18,13 @@ class Platformer : public olc::PixelGameEngine {
   bool OnUserUpdate(float fElapsedTime) override;
 
  private:
-  void Physics(Player& player);
-  void CheckPlayerCollision(Player& player, const Axis& axis);
-  void CollisionCheckPlayer(Player& player);
-  bool PlayerCollidesWithMap(Player& player);
   void Keyboard();
   Level& GetCurrentLevel() { return config_.levels.at(level_idx_); };
 
   GameConfiguration config_;
   int level_idx_;
-  std::unique_ptr<Camera> camera_;
+  std::unique_ptr<RenderingEngine> rendering_engine_;
+  std::unique_ptr<PhysicsEngine> physics_engine_;
 
   Player player_{};
 

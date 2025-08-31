@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "rendering_engine.h"
 
 #include <algorithm>
 
@@ -9,7 +9,7 @@
 
 namespace platformer {
 
-Camera::Camera(olc::PixelGameEngine* engine_ptr, Level level)
+RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr, Level level)
     : engine_ptr_{engine_ptr}, level_{std::move(level)} {
   const int grid_width = level_.tile_grid.GetWidth();
   const int grid_height = level_.tile_grid.GetHeight();
@@ -25,24 +25,24 @@ Camera::Camera(olc::PixelGameEngine* engine_ptr, Level level)
   cam_position_px_y_ = 0;
 }
 
-void Camera::SetCameraPosition(const Vector2d& absolute_vec) {
+void RenderingEngine::SetCameraPosition(const Vector2d& absolute_vec) {
   cam_position_px_x_ = absolute_vec.x * tile_size_;
   cam_position_px_y_ = absolute_vec.y * tile_size_;
   KeepCameraInBounds();
 }
 
-void Camera::MoveCamera(const Vector2d& relative_vec) {
+void RenderingEngine::MoveCamera(const Vector2d& relative_vec) {
   cam_position_px_x_ += relative_vec.x * tile_size_;
   cam_position_px_y_ += relative_vec.y * tile_size_;
   KeepCameraInBounds();
 }
 
-Vector2d Camera::GetCameraPosition() const {
+Vector2d RenderingEngine::GetCameraPosition() const {
   return Vector2d{static_cast<double>(cam_position_px_x_) / tile_size_,
                   static_cast<double>(cam_position_px_y_) / tile_size_};
 }
 
-void Camera::KeepPlayerInFrame(const Player& player, double screen_ratio) {
+void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_ratio) {
   const auto position = GetCameraPosition();
   const auto convert_to_px = [&](double val) -> int { return val * tile_size_; };
   const int x_max_px = convert_to_px(player.position.x - viewport_width_ * screen_ratio);
@@ -55,7 +55,7 @@ void Camera::KeepPlayerInFrame(const Player& player, double screen_ratio) {
   cam_position_px_y_ = std::min(cam_position_px_y_, y_max_px);
 }
 
-void Camera::RenderBackground() {
+void RenderingEngine::RenderBackground() {
   for (int y = 0; y < kScreenHeightPx; ++y) {
     for (int x = 0; x < kScreenWidthPx; ++x) {
       engine_ptr_->Draw(x, y, olc::BLACK);
@@ -63,7 +63,7 @@ void Camera::RenderBackground() {
   }
 }
 
-void Camera::RenderTiles() {
+void RenderingEngine::RenderTiles() {
   KeepCameraInBounds();
 
   const auto position = GetCameraPosition();
@@ -102,7 +102,7 @@ void Camera::RenderTiles() {
   }
 }
 
-void Camera::RenderPlayer(const Player& player) {
+void RenderingEngine::RenderPlayer(const Player& player) {
   const auto position_in_screen = player.position - GetCameraPosition();
   if (position_in_screen.x < 0 || position_in_screen.y < 0 ||
       position_in_screen.x > viewport_width_ || position_in_screen.y > viewport_height_) {
@@ -136,7 +136,7 @@ void Camera::RenderPlayer(const Player& player) {
   // player.sprite->height;
 }
 
-void Camera::KeepCameraInBounds() {
+void RenderingEngine::KeepCameraInBounds() {
   cam_position_px_x_ = std::max(cam_position_px_x_, 0);
   cam_position_px_x_ = std::min(cam_position_px_x_, max_cam_postion_px_x_);
   cam_position_px_y_ = std::max(cam_position_px_y_, 0);

@@ -1,4 +1,19 @@
-Checks: '-*,readability-braces-around-statements'
+Checks: >
+  modernize-*,
+  performance-*,
+  bugprone-*,
+  readability-*,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length,
+  -bugprone-easily-swappable-parameters,
+  -performance-avoid-endl,
+  -readability-math-missing-parentheses
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*'
+FormatStyle: none
+# Checks: '-*,readability-braces-around-statements'
 CheckOptions:
   - key: readability-braces-around-statements.ShortStatementLines
     value: '0'
+  - key: readability-magic-numbers.IgnoredNumericLiterals
+    value: '1e-9;1e-6;1e-3;0.1;0;1;2;3;5;10;100;1000;60;100;255;1e3;1e6;1e9'

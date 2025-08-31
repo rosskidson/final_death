@@ -52,11 +52,12 @@ add_library(olc src/olc/olcPixelGameEngine.cc)
 target_link_libraries(olc ${OLC_LIBS})
 
 add_executable(platformer
-  src/camera.cc
-  src/main.cc
-  src/platformer.cc
-  src/tileset.cc
   src/load_game_configuration.cc
+  src/main.cc
+  src/physics_engine.cc
+  src/platformer.cc
+  src/rendering_engine.cc
+  src/tileset.cc
 )
 
 target_include_directories(platformer PRIVATE ${CMAKE_BINARY_DIR})
