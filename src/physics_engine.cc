@@ -96,12 +96,12 @@ void ResolveCollisions(Player& player,
       // Only zero out velocity if the character is moving towards to collision
       // This prevents sticking to a platforms e.g. if it hits it on the corner when going up.
       player.velocity.x = std::max<double>(player.velocity.x, 0);
-      player.collides_left = true;
+      player.collisions.left = true;
       player.position.x = std::floor(player_box.left) + 1 - x_offset;
     }
     if (upper_collision) {
       player.velocity.x = std::min<double>(player.velocity.x, 0);
-      player.collides_right = true;
+      player.collisions.right = true;
       player.position.x = std::floor(player_box.right) - x_offset - collision_width - kEps;
     }
   } else {
@@ -109,40 +109,47 @@ void ResolveCollisions(Player& player,
     const auto collision_height = static_cast<double>(player.collision_height_px) / tile_size;
     if (lower_collision) {
       player.velocity.y = std::max<double>(player.velocity.y, 0);
-      player.collides_bottom = true;
+      player.collisions.bottom = true;
       player.position.y = std::floor(player_box.bottom) + 1 - y_offset;
     }
     if (upper_collision) {
       player.velocity.y = std::min<double>(player.velocity.y, 0);
-      player.collides_top = true;
+      player.collisions.top = true;
       player.position.y = std::floor(player_box.top) - y_offset - collision_height - kEps;
     }
   }
 }
 
-PhysicsEngine::PhysicsEngine(const Level& level)
-    : tile_size_{level.level_tileset->GetTileSize()}, collisions_grid_{level.property_grid} {}
+PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer> parameter_server)
+    : tile_size_{level.level_tileset->GetTileSize()},
+      collisions_grid_{level.property_grid},
+      parameter_server_{std::move(parameter_server)} {
+  parameter_server_->AddParameter("physics/gravity", kGravity, "Gravity, unit is tile/s^2");
+  parameter_server_->AddParameter("physics/max_x_vel", kMaxVelX,
+                                  "Maximum horizontal velocity of the player");
+  parameter_server_->AddParameter("physics/max_y_vel", kMaxVelY,
+                                  "Maximum vertical velocity of the player");
+}
 
 void PhysicsEngine::PhysicsStep(Player& player) {
-  auto now = Clock::now();
+  const auto now = Clock::now();
   const double delta_t = (now - player.last_update).count() / 1e9;
 
-  player.collides_bottom = false;
-  player.collides_top = false;
-  player.collides_left = false;
-  player.collides_right = false;
+  player.collisions = {};
 
-  player.acceleration.y = -kGravity;
+  player.acceleration.y = -1 * parameter_server_->GetParameter<double>("physics/gravity");
 
+  const auto max_x_vel = parameter_server_->GetParameter<double>("physics/max_x_vel");
+  const auto max_y_vel = parameter_server_->GetParameter<double>("physics/max_y_vel");
   player.velocity.x += player.acceleration.x * delta_t;
-  player.velocity.x = std::min(player.velocity.x, kMaxVelX);
-  player.velocity.x = std::max(player.velocity.x, -kMaxVelX);
+  player.velocity.x = std::min(player.velocity.x, max_x_vel);
+  player.velocity.x = std::max(player.velocity.x, -max_x_vel);
   player.position.x += player.velocity.x * delta_t;
   this->CheckPlayerCollision(player, Axis::X);
 
   player.velocity.y += player.acceleration.y * delta_t;
-  player.velocity.y = std::min(player.velocity.y, kMaxVelY);
-  player.velocity.y = std::max(player.velocity.y, -kMaxVelY);
+  player.velocity.y = std::min(player.velocity.y, max_y_vel);
+  player.velocity.y = std::max(player.velocity.y, -max_y_vel);
   player.position.y += player.velocity.y * delta_t;
   this->CheckPlayerCollision(player, Axis::Y);
 

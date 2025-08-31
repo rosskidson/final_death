@@ -8,6 +8,7 @@
 #include "olcPixelGameEngine.h"
 #include "physics_engine.h"
 #include "rendering_engine.h"
+#include "utils/parameter_server.h"
 
 namespace platformer {
 
@@ -25,6 +26,7 @@ class Platformer : public olc::PixelGameEngine {
   int level_idx_;
   std::unique_ptr<RenderingEngine> rendering_engine_;
   std::unique_ptr<PhysicsEngine> physics_engine_;
+  std::shared_ptr<ParameterServer> parameter_server_;
 
   Player player_{};
 

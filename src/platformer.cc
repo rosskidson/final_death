@@ -18,6 +18,7 @@ constexpr int kPixelSize = 3;
 
 constexpr double kAcceleration = 50.0;
 constexpr double kJumpVel = 17.0;
+constexpr double kFollowPlayerScreenRatio = 0.3;
 
 namespace platformer {
 
@@ -48,8 +49,20 @@ bool Platformer::OnUserCreate() {
   config_ = std::move(*config);
   level_idx_ = 0;
   const auto& tile_grid = GetCurrentLevel().tile_grid;
+  parameter_server_ = std::make_shared<ParameterServer>();
+  parameter_server_->AddParameter("physics/player_acceleration", kAcceleration,
+                                  "Horizontal acceleration of the player, unit: tile/s²");
+  parameter_server_->AddParameter(
+      "physics/jump_velocity", kJumpVel,
+      "The instantaneous vertical velocity when you jump, unit: tile/s");
+  parameter_server_->AddParameter(
+      "rendering/follow_player_screen_ratio", kFollowPlayerScreenRatio,
+      "How far the player can walk towards the side of the screen before the camera follows, as a "
+      "percentage of the screen size. The larger the ratio, the more centered the player will be "
+      "on the screen.");
+
   rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel());
-  physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel());
+  physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
 
   player_.position = {10, 10};
   player_.velocity = {0, 0};
@@ -61,6 +74,8 @@ bool Platformer::OnUserCreate() {
   LoadSprite("player/run3.png", "bot_run2", sprite_storage_);
   LoadSprite("player/run4.png", "bot_run3", sprite_storage_);
   player_.sprite = &sprite_storage_["bot_idle"];
+
+  // TODO:: Configure this a bit better.
   player_.x_offset_px = 7;
   player_.y_offset_px = 0;
   player_.collision_width_px = 12;
@@ -73,7 +88,9 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   this->Keyboard();
   physics_engine_->PhysicsStep(player_);
 
-  rendering_engine_->KeepPlayerInFrame(player_, 0.3);
+  const auto follow_ratio =
+      parameter_server_->GetParameter<double>("rendering/follow_player_screen_ratio");
+  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio);
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
@@ -85,7 +102,9 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 void Platformer::Keyboard() {
   Vector2d pos{};
   const auto tile_size = GetCurrentLevel().level_tileset->GetTileSize();
-  constexpr double kMoveOffset = 0.03;
+  const auto acceleration = parameter_server_->GetParameter<double>("physics/player_acceleration");
+  const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump_velocity");
+
   const double kCamMoveOffset = 1. / tile_size;
   if (this->GetKey(olc::Key::A).bHeld) {
     pos.x -= kCamMoveOffset;
@@ -112,7 +131,7 @@ void Platformer::Keyboard() {
   }
 
   if (this->GetKey(olc::Key::LEFT).bHeld) {
-    player_.acceleration.x = -kAcceleration;
+    player_.acceleration.x = -acceleration;
     if (((now - player_.animation_update).count() / 1e9) > 0.1) {
       player_.animation_frame++;
       const std::string next_frame = "bot_run" + std::to_string(player_.animation_frame % 4);
@@ -121,7 +140,7 @@ void Platformer::Keyboard() {
       player_.animation_update = now;
     }
   } else if (this->GetKey(olc::Key::RIGHT).bHeld) {
-    player_.acceleration.x = +kAcceleration;
+    player_.acceleration.x = +acceleration;
     if (((now - player_.animation_update).count() / 1e9) > 0.1) {
       player_.animation_frame++;
       const std::string next_frame = "bot_run" + std::to_string(player_.animation_frame % 4);
@@ -135,15 +154,15 @@ void Platformer::Keyboard() {
   }
 
   // if (this->GetKey(olc::Key::UP).bHeld) {
-  //   player_.acceleration.y = kAcceleration;
+  //   player_.acceleration.y = acceleration;
   // } else if (this->GetKey(olc::Key::DOWN).bHeld) {
-  //   player_.acceleration.y = -kAcceleration;
+  //   player_.acceleration.y = acceleration;
   // } else {
   //   player_.acceleration.y = 0;
   // }
 
   if (this->GetKey(olc::Key::SPACE).bPressed) {
-    player_.velocity.y = kJumpVel;
+    player_.velocity.y = jump_velocity;
   }
 
   if (this->GetKey(olc::Key::Q).bReleased) {

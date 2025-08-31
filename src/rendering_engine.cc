@@ -118,22 +118,21 @@ void RenderingEngine::RenderPlayer(const Player& player) {
 
   const auto& width = player.sprite->width;
   const auto& height = player.sprite->height;
-  if (player.collides_bottom) {
+  // TODO:: Add a parameter to turn this on/off.
+  if (player.collisions.bottom) {
     engine_ptr_->DrawLine(position_px_x, position_px_y + height, position_px_x + width,
                           position_px_y + height);
   }
-  if (player.collides_top) {
+  if (player.collisions.top) {
     engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x + width, position_px_y);
   }
-  if (player.collides_left) {
+  if (player.collisions.left) {
     engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x, position_px_y + height);
   }
-  if (player.collides_right) {
+  if (player.collisions.right) {
     engine_ptr_->DrawLine(position_px_x + width, position_px_y, position_px_x + width,
                           position_px_y + height);
   }
-
-  // player.sprite->height;
 }
 
 void RenderingEngine::KeepCameraInBounds() {

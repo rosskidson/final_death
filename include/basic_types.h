@@ -26,6 +26,10 @@ inline constexpr auto operator+(const Vector2d& lhs, const Vector2d& rhs) {
   return Vector2d{lhs.x + rhs.x, lhs.y + rhs.y};
 }
 
+struct Collisions {
+  bool left, right, top, bottom;
+};
+
 struct Player {
   Vector2d position{};
   Vector2d velocity{};
@@ -41,10 +45,9 @@ struct Player {
 
   // TODO:: THIS IT NOT HOW I WANT IT TO END UP.
   olc::Sprite* sprite;
-  bool collides_left{};
-  bool collides_right{};
-  bool collides_top{};
-  bool collides_bottom{};
+
+  // This is just for debug/visualizations.
+  Collisions collisions{};
 
   bool facing_left{};
 
