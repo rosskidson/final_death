@@ -140,7 +140,8 @@ bool Platformer::OnConsoleCommand(const std::string& sCommand) {
       std::cout << "Sub commands:" << std::endl << std::endl;
       std::cout << "  list" << std::endl;
       std::cout << "  set" << std::endl;
-      std::cout << "  get" << std::endl << std::endl;
+      std::cout << "  get" << std::endl;
+      std::cout << "  info" << std::endl << std::endl;
       return true;
     }
     if (split_string[1] == "list") {
@@ -182,6 +183,21 @@ bool Platformer::OnConsoleCommand(const std::string& sCommand) {
       }
       std::cout << parameter_server_->GetParameter<double>(param) << std::endl << std::endl;
       return true;
+    }
+    if (split_string[1] == "info") {
+      if (split_string.size() < 3) {
+        std::cout << "Usage: " << std::endl;
+        std::cout << "param info <parameter>" << std::endl;
+        std::cout << "e.g. > param info physics/gravity" << std::endl << std::endl;
+        return true;
+      }
+      const auto& param = split_string[2];
+      if (!parameter_server_->ParameterExists(param)) {
+        std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
+        return true;
+      }
+      std::cout << parameter_server_->GetParameterInfo(param) << std::endl << std::endl;
+      return true;    
     }
   }
   // std::cout << "on console command " << sCommand << std::endl;
