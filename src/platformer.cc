@@ -12,7 +12,7 @@
 #include "load_game_configuration.h"
 #include "rendering_engine.h"
 
-using Clock = std::chrono::high_resolution_clock;
+using Clock = std::chrono::steady_clock;
 
 constexpr int kPixelSize = 3;
 

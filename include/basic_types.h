@@ -35,8 +35,8 @@ struct Player {
   Vector2d velocity{};
   Vector2d acceleration{};
 
-  std::chrono::time_point<std::chrono::system_clock> last_update{
-      std::chrono::high_resolution_clock::now()};
+  std::chrono::time_point<std::chrono::steady_clock> last_update{
+      std::chrono::steady_clock::now()};
 
   int x_offset_px{};
   int y_offset_px{};
@@ -52,8 +52,8 @@ struct Player {
   bool facing_left{};
 
   int animation_frame = 0;
-  std::chrono::time_point<std::chrono::system_clock> animation_update{
-      std::chrono::high_resolution_clock::now()};
+  std::chrono::time_point<std::chrono::steady_clock> animation_update{
+      std::chrono::steady_clock::now()};
 };
 
 }  // namespace platformer

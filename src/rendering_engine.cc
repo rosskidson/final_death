@@ -26,14 +26,14 @@ RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr, Level level)
 }
 
 void RenderingEngine::SetCameraPosition(const Vector2d& absolute_vec) {
-  cam_position_px_x_ = absolute_vec.x * tile_size_;
-  cam_position_px_y_ = absolute_vec.y * tile_size_;
+  cam_position_px_x_ = static_cast<int>(absolute_vec.x * tile_size_);
+  cam_position_px_y_ = static_cast<int>(absolute_vec.y * tile_size_);
   KeepCameraInBounds();
 }
 
 void RenderingEngine::MoveCamera(const Vector2d& relative_vec) {
-  cam_position_px_x_ += relative_vec.x * tile_size_;
-  cam_position_px_y_ += relative_vec.y * tile_size_;
+  cam_position_px_x_ += static_cast<int>(relative_vec.x * tile_size_);
+  cam_position_px_y_ += static_cast<int>(relative_vec.y * tile_size_);
   KeepCameraInBounds();
 }
 
@@ -44,7 +44,7 @@ Vector2d RenderingEngine::GetCameraPosition() const {
 
 void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_ratio) {
   const auto position = GetCameraPosition();
-  const auto convert_to_px = [&](double val) -> int { return val * tile_size_; };
+  const auto convert_to_px = [&](double val) -> int { return static_cast<int>(val * tile_size_);};
   const int x_max_px = convert_to_px(player.position.x - viewport_width_ * screen_ratio);
   const int x_min_px = convert_to_px(player.position.x - viewport_width_ * (1 - screen_ratio));
   const int y_max_px = convert_to_px(player.position.y - viewport_height_ * screen_ratio);
@@ -88,8 +88,8 @@ void RenderingEngine::RenderTiles() {
       const double x_fraction = lookup_x - lookup_x_int;
       const double y_fraction = lookup_y - lookup_y_int;
 
-      const int x_px = std::round((x_itr - x_fraction) * tile_size_);
-      const int y_px = std::round(kScreenHeightPx - (y_itr + 1 - y_fraction) * tile_size_);
+      const int x_px = static_cast<int>(std::round((x_itr - x_fraction) * tile_size_));
+      const int y_px = static_cast<int>(std::round(kScreenHeightPx - (y_itr + 1 - y_fraction) * tile_size_));
       //   std::cout << " itrs " << x_itr << " " << y_itr << " "                        //
       //             << " global " << lookup_x << " " << lookup_y << " "                //
       //             << " global floor " << lookup_x_int << " " << lookup_y_int << " "  //
