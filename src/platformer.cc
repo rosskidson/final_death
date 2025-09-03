@@ -145,8 +145,17 @@ bool Platformer::OnConsoleCommand(const std::string& sCommand) {
       return true;
     }
     if (split_string[1] == "list") {
-      for (const auto& param : parameter_server_->ListParameterKeys()) {
-        std::cout << param << std::endl;
+      int max_param_key_length = 0;
+      for (const auto& key : parameter_server_->ListParameterKeys()) {
+        max_param_key_length = std::max(max_param_key_length, static_cast<int>(key.size()));
+      }
+      for (const auto& key : parameter_server_->ListParameterKeys()) {
+        std::cout << key;
+        for (int i = 0; i < max_param_key_length + 3 - key.length(); ++i) {
+          std::cout << " ";
+        }
+        // TODO:: type erasure.
+        std::cout << parameter_server_->GetParameter<double>(key) << std::endl;
       }
       std::cout << std::endl;
     }
@@ -197,7 +206,7 @@ bool Platformer::OnConsoleCommand(const std::string& sCommand) {
         return true;
       }
       std::cout << parameter_server_->GetParameterInfo(param) << std::endl << std::endl;
-      return true;    
+      return true;
     }
   }
   // std::cout << "on console command " << sCommand << std::endl;

@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <chrono>
 
-using Clock = std::chrono::high_resolution_clock;
+using Clock = std::chrono::steady_clock;
 
 constexpr double kMaxVelX = 10;
 constexpr double kMaxVelY = 25;
