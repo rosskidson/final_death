@@ -52,6 +52,7 @@ add_library(olc src/olc/olcPixelGameEngine.cc)
 target_link_libraries(olc ${OLC_LIBS})
 
 add_executable(platformer
+  src/animated_sprite.cc
   src/load_game_configuration.cc
   src/main.cc
   src/physics_engine.cc

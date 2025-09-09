@@ -1,7 +1,6 @@
 #pragma once
 
-#include <chrono>
-
+#include "clock.h"
 #include "olcPixelGameEngine.h"
 namespace platformer {
 
@@ -35,8 +34,7 @@ struct Player {
   Vector2d velocity{};
   Vector2d acceleration{};
 
-  std::chrono::time_point<std::chrono::steady_clock> last_update{
-      std::chrono::steady_clock::now()};
+  std::chrono::time_point<Clock> last_update{Clock::now()};
 
   int x_offset_px{};
   int y_offset_px{};
@@ -52,8 +50,7 @@ struct Player {
   bool facing_left{};
 
   int animation_frame = 0;
-  std::chrono::time_point<std::chrono::steady_clock> animation_update{
-      std::chrono::steady_clock::now()};
+  TimePoint animation_update{Clock::now()};
 };
 
 }  // namespace platformer
