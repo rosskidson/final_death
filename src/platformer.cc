@@ -96,7 +96,7 @@ bool Platformer::OnUserCreate() {
   aa.push_back(ActionSpriteSheet{
       Action::Idle, AnimatedSprite{(player_path / "zomdude-idle.png").string(), 48, true, 200}});
   aa.push_back(ActionSpriteSheet{
-      Action::Walk, AnimatedSprite{(player_path / "zomdude-walk.png").string(), 48, true, 200}});
+      Action::Walk, AnimatedSprite{(player_path / "zomdude-walk.png").string(), 48, true, 150}});
   aa.push_back(ActionSpriteSheet{
       Action::Shoot,
       AnimatedSprite{(player_path / "zomdude-fire-shotgun.png").string(), 48, false, 100}});
