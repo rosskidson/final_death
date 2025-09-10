@@ -1,5 +1,6 @@
 #pragma once
 
+#include "animation_manager.h"
 #include "olcPixelGameEngine.h"
 #include "utils/game_clock.h"
 namespace platformer {
@@ -41,16 +42,18 @@ struct Player {
   int collision_width_px{};
   int collision_height_px{};
 
+  AnimationManager animation_manager;
+
   // TODO:: THIS IT NOT HOW I WANT IT TO END UP.
-  olc::Sprite* sprite;
+  // olc::Sprite* sprite;
 
   // This is just for debug/visualizations.
   Collisions collisions{};
 
   bool facing_left{};
 
-  int animation_frame = 0;
-  TimePoint animation_update{GameClock::NowGlobal()};
+  // int animation_frame = 0;
+  // TimePoint animation_update{GameClock::NowGlobal()};
 };
 
 }  // namespace platformer

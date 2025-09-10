@@ -24,7 +24,9 @@ class RenderingEngine {
 
   void RenderBackground();
   void RenderTiles();
-  void RenderPlayer(const Player& player);
+
+  // TODO:: add const if you can fix the non const olc::Sprite* nonsense!!!
+  void RenderPlayer(Player& player);
 
  private:
   void KeepCameraInBounds();

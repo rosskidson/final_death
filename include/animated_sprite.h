@@ -1,26 +1,37 @@
 #pragma once
 
+#include <olcPixelGameEngine.h>
+
+#include <memory>
+#include <string>
 #include <vector>
 
-#include "basic_types.h"
 #include "utils/game_clock.h"
 
 namespace platformer {
 
 class AnimatedSprite {
  public:
-  AnimatedSprite(const std::string& sprite_sheet_path, int sprite_width, bool loops);
+  // TODO:: remove this.
+  AnimatedSprite() = default;
+
+  AnimatedSprite(const std::string& sprite_sheet_path,
+                 int sprite_width,
+                 bool loops,
+                 int frame_delay_ms);
 
   void StartAnimation();
 
   // Returns true if it is a non looping sprite and there are no frames left.
-  bool Expired();
+  bool Expired() const;
 
-  [[nodiscard]] const olc::Sprite* GetFrame() const;
+  // I wish this was const but olc needs non const sprites (vom).
+  [[nodiscard]] olc::Sprite* GetFrame();
 
  private:
   bool loops_;
-  std::vector<olc::Sprite> frames_;
+  int frame_delay_ms_;
+  std::vector<std::unique_ptr<olc::Sprite>> frames_;
   int frame_count_;
   TimePoint start_time_;
 };

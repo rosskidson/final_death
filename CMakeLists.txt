@@ -53,6 +53,7 @@ target_link_libraries(olc ${OLC_LIBS})
 
 add_executable(platformer
   src/animated_sprite.cc
+  src/animation_manager.cc
   src/developer_console.cc
   src/load_game_configuration.cc
   src/main.cc

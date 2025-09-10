@@ -4,6 +4,8 @@
 #include <memory>
 #include <thread>
 
+#include "animated_sprite.h"
+#include "animation_manager.h"
 #include "basic_types.h"
 #include "config.h"
 #include "game_configuration.h"
@@ -86,19 +88,33 @@ bool Platformer::OnUserCreate() {
   player_.position = {10, 10};
   player_.velocity = {0, 0};
 
-  LoadSprite("player/idle.png", "bot_idle", sprite_storage_);
-  LoadSprite("player/jump.png", "bot_jump", sprite_storage_);
-  LoadSprite("player/run1.png", "bot_run0", sprite_storage_);
-  LoadSprite("player/run2.png", "bot_run1", sprite_storage_);
-  LoadSprite("player/run3.png", "bot_run2", sprite_storage_);
-  LoadSprite("player/run4.png", "bot_run3", sprite_storage_);
-  player_.sprite = &sprite_storage_["bot_idle"];
+  std::vector<ActionSpriteSheet> aa;
+  const auto player_path = std::filesystem::path(SOURCE_DIR) / "assets" / "player";
+  // TODO:: emplace back never fucking works // clean up this shit somehow
+  // Probably best to do the AnimatedSprite initialization in the constructor of animation manager
+  // how I originally planned.
+  aa.push_back(ActionSpriteSheet{
+      Action::Idle, AnimatedSprite{(player_path / "zomdude-idle.png").string(), 48, true, 200}});
+  aa.push_back(ActionSpriteSheet{
+      Action::Walk, AnimatedSprite{(player_path / "zomdude-walk.png").string(), 48, true, 200}});
+  aa.push_back(ActionSpriteSheet{
+      Action::Shoot,
+      AnimatedSprite{(player_path / "zomdude-fire-shotgun.png").string(), 48, false, 100}});
+
+  player_.animation_manager = AnimationManager(std::move(aa));
 
   // TODO:: Configure this a bit better.
-  player_.x_offset_px = 7;
+  // zomdude params
+  player_.x_offset_px = 10;
   player_.y_offset_px = 0;
-  player_.collision_width_px = 12;
-  player_.collision_height_px = 22;
+  player_.collision_width_px = 19;
+  player_.collision_height_px = 48;
+
+  // Megaman params
+  // player_.x_offset_px = 7;
+  // player_.y_offset_px = 0;
+  // player_.collision_width_px = 12;
+  // player_.collision_height_px = 22;
 
   return true;
 }
@@ -159,34 +175,18 @@ bool Platformer::Keyboard() {
 
   auto now = GameClock::NowGlobal();
   if (this->GetKey(olc::Key::LEFT).bPressed) {
-    player_.sprite = &sprite_storage_["bot_run1"];
-    player_.animation_update = now;
+    player_.animation_manager.StartAction(Action::Walk);
   }
   if (this->GetKey(olc::Key::RIGHT).bPressed) {
-    player_.sprite = &sprite_storage_["bot_run1"];
-    player_.animation_update = now;
+    player_.animation_manager.StartAction(Action::Walk);
   }
 
   if (this->GetKey(olc::Key::LEFT).bHeld) {
     player_.acceleration.x = -acceleration;
-    if (((now - player_.animation_update).count() / 1e9) > 0.1) {
-      player_.animation_frame++;
-      const std::string next_frame = "bot_run" + std::to_string(player_.animation_frame % 4);
-      // std::cout << next_frame << std::endl;
-      player_.sprite = &sprite_storage_[next_frame];
-      player_.animation_update = now;
-    }
   } else if (this->GetKey(olc::Key::RIGHT).bHeld) {
     player_.acceleration.x = +acceleration;
-    if (((now - player_.animation_update).count() / 1e9) > 0.1) {
-      player_.animation_frame++;
-      const std::string next_frame = "bot_run" + std::to_string(player_.animation_frame % 4);
-      // std::cout << next_frame << std::endl;
-      player_.sprite = &sprite_storage_[next_frame];
-      player_.animation_update = now;
-    }
   } else {
-    player_.sprite = &sprite_storage_["bot_idle"];
+    player_.animation_manager.EndAction(Action::Walk);
     DecelerateAndStopPlayer(player_, deceleration);
   }
 
@@ -200,6 +200,9 @@ bool Platformer::Keyboard() {
 
   if (this->GetKey(olc::Key::SPACE).bPressed) {
     player_.velocity.y = jump_velocity;
+  }
+  if (this->GetKey(olc::Key::CTRL).bPressed) {
+    player_.animation_manager.StartAction(Action::Shoot);
   }
 
   if (this->GetKey(olc::Key::Q).bReleased) {

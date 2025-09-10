@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "animated_sprite.h"
 #include "basic_types.h"
 #include "game_configuration.h"
 #include "global_defs.h"
@@ -44,7 +45,7 @@ Vector2d RenderingEngine::GetCameraPosition() const {
 
 void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_ratio) {
   const auto position = GetCameraPosition();
-  const auto convert_to_px = [&](double val) -> int { return static_cast<int>(val * tile_size_);};
+  const auto convert_to_px = [&](double val) -> int { return static_cast<int>(val * tile_size_); };
   const int x_max_px = convert_to_px(player.position.x - viewport_width_ * screen_ratio);
   const int x_min_px = convert_to_px(player.position.x - viewport_width_ * (1 - screen_ratio));
   const int y_max_px = convert_to_px(player.position.y - viewport_height_ * screen_ratio);
@@ -58,7 +59,7 @@ void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_rati
 void RenderingEngine::RenderBackground() {
   for (int y = 0; y < kScreenHeightPx; ++y) {
     for (int x = 0; x < kScreenWidthPx; ++x) {
-      engine_ptr_->Draw(x, y, olc::BLACK);
+      engine_ptr_->Draw(x, y, olc::Pixel{40, 40, 40, 255});
     }
   }
 }
@@ -89,7 +90,8 @@ void RenderingEngine::RenderTiles() {
       const double y_fraction = lookup_y - lookup_y_int;
 
       const int x_px = static_cast<int>(std::round((x_itr - x_fraction) * tile_size_));
-      const int y_px = static_cast<int>(std::round(kScreenHeightPx - (y_itr + 1 - y_fraction) * tile_size_));
+      const int y_px =
+          static_cast<int>(std::round(kScreenHeightPx - (y_itr + 1 - y_fraction) * tile_size_));
       //   std::cout << " itrs " << x_itr << " " << y_itr << " "                        //
       //             << " global " << lookup_x << " " << lookup_y << " "                //
       //             << " global floor " << lookup_x_int << " " << lookup_y_int << " "  //
@@ -102,7 +104,7 @@ void RenderingEngine::RenderTiles() {
   }
 }
 
-void RenderingEngine::RenderPlayer(const Player& player) {
+void RenderingEngine::RenderPlayer(Player& player) {
   const auto position_in_screen = player.position - GetCameraPosition();
   if (position_in_screen.x < 0 || position_in_screen.y < 0 ||
       position_in_screen.x > viewport_width_ || position_in_screen.y > viewport_height_) {
@@ -110,30 +112,30 @@ void RenderingEngine::RenderPlayer(const Player& player) {
   }
   // The player position is bottom left, but the rendering engine requires top left.
   // This conversion is done here.
+  olc::Sprite* sprite = player.animation_manager.GetSprite();
   int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
   int position_px_y =
-      kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - player.sprite->height;
+      kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;
   const auto flip = player.facing_left;
-  engine_ptr_->DrawSprite(position_px_x, position_px_y, player.sprite, 1,
-                          static_cast<uint8_t>(flip));
+  engine_ptr_->DrawSprite(position_px_x, position_px_y, sprite, 1, static_cast<uint8_t>(flip));
 
-  const auto& width = player.sprite->width;
-  const auto& height = player.sprite->height;
+  const auto& width = sprite->width;
+  const auto& height = sprite->height;
   // TODO:: Add a parameter to turn this on/off.
-  if (player.collisions.bottom) {
-    engine_ptr_->DrawLine(position_px_x, position_px_y + height, position_px_x + width,
-                          position_px_y + height);
-  }
-  if (player.collisions.top) {
-    engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x + width, position_px_y);
-  }
-  if (player.collisions.left) {
-    engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x, position_px_y + height);
-  }
-  if (player.collisions.right) {
-    engine_ptr_->DrawLine(position_px_x + width, position_px_y, position_px_x + width,
-                          position_px_y + height);
-  }
+  // if (player.collisions.bottom) {
+  //   engine_ptr_->DrawLine(position_px_x, position_px_y + height, position_px_x + width,
+  //                         position_px_y + height);
+  // }
+  // if (player.collisions.top) {
+  //   engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x + width, position_px_y);
+  // }
+  // if (player.collisions.left) {
+  //   engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x, position_px_y + height);
+  // }
+  // if (player.collisions.right) {
+  //   engine_ptr_->DrawLine(position_px_x + width, position_px_y, position_px_x + width,
+  //                         position_px_y + height);
+  // }
 }
 
 void RenderingEngine::KeepCameraInBounds() {

@@ -4,21 +4,20 @@
 #include <set>
 
 #include "animated_sprite.h"
-#include "basic_types.h"
 
 namespace platformer {
 
-enum class Action { Walk, Shoot, Jump };
+enum class Action { Idle, Walk, Shoot, Jump };
 
-struct ActionSpriteSheetPath {
+struct ActionSpriteSheet {
   Action action;
-  std::string path;
-  bool looping;
+  AnimatedSprite sprite;
 };
 
 class AnimationManager {
  public:
-  AnimationManager(std::vector<ActionSpriteSheetPath>& spritesheet_paths);
+  AnimationManager() = default;  // REMOVE
+  AnimationManager(std::vector<ActionSpriteSheet> actions);
 
   void StartAction(Action action);
 
@@ -27,6 +26,8 @@ class AnimationManager {
   olc::Sprite* GetSprite();
 
  private:
+  void RemoveExpiredActions();
+
   std::map<Action, AnimatedSprite> animated_sprites_;
   std::set<Action> active_actions_;
 };
