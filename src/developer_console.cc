@@ -92,6 +92,7 @@ void DeveloperConsole(const std::string& sCommand,
         std::cout << "Usage: " << std::endl;
         std::cout << "param info <parameter>" << std::endl;
         std::cout << "e.g. > param info physics/gravity" << std::endl << std::endl;
+        return;
       }
       const auto& param = split_string[2];
       if (!parameter_server->ParameterExists(param)) {
