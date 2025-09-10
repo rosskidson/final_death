@@ -1,6 +1,5 @@
 #include "platformer.h"
 
-#include <chrono>
 #include <map>
 #include <memory>
 #include <thread>
@@ -11,8 +10,7 @@
 #include "global_defs.h"
 #include "load_game_configuration.h"
 #include "rendering_engine.h"
-
-using Clock = std::chrono::steady_clock;
+#include "utils/game_clock.h"
 
 constexpr int kPixelSize = 3;
 
@@ -115,6 +113,11 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   if (!this->Keyboard()) {
     return false;
   }
+
+  if (!IsConsoleShowing()) {
+    GameClock::ResumeGlobal();
+  }
+
   physics_engine_->PhysicsStep(player_);
 
   rendering_engine_->KeepPlayerInFrame(player_, follow_ratio);
@@ -238,7 +241,7 @@ bool Platformer::Keyboard() {
   }
   rendering_engine_->MoveCamera(pos);
 
-  auto now = Clock::now();
+  auto now = GameClock::NowGlobal();
   if (this->GetKey(olc::Key::LEFT).bPressed) {
     player_.sprite = &sprite_storage_["bot_run1"];
     player_.animation_update = now;
@@ -288,12 +291,12 @@ bool Platformer::Keyboard() {
   }
 
   if (this->GetKey(olc::Key::TAB).bPressed) {
+    GameClock::PauseGlobal();
     this->ConsoleShow(olc::Key::TAB, false);
     this->ConsoleCaptureStdOut(true);
     std::cout << "#######################################" << std::endl;
     std::cout << "   D E V E L O P E R    C O N S O L E   " << std::endl;
     std::cout << "#######################################" << std::endl << std::endl;
-    std::cout << " G'day Grazbags! " << std::endl << std::endl;
     std::cout << " Available commands: " << std::endl;
     std::cout << " param " << std::endl << std::endl;
   }

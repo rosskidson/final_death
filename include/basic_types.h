@@ -1,7 +1,7 @@
 #pragma once
 
-#include "clock.h"
 #include "olcPixelGameEngine.h"
+#include "utils/game_clock.h"
 namespace platformer {
 
 // TODO:: Probably replace with Eigen
@@ -34,7 +34,7 @@ struct Player {
   Vector2d velocity{};
   Vector2d acceleration{};
 
-  std::chrono::time_point<Clock> last_update{Clock::now()};
+  TimePoint last_update{GameClock::NowGlobal()};
 
   int x_offset_px{};
   int y_offset_px{};
@@ -50,7 +50,7 @@ struct Player {
   bool facing_left{};
 
   int animation_frame = 0;
-  TimePoint animation_update{Clock::now()};
+  TimePoint animation_update{GameClock::NowGlobal()};
 };
 
 }  // namespace platformer

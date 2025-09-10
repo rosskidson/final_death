@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "basic_types.h"
-#include "clock.h"
+#include "utils/game_clock.h"
 
 namespace platformer {
 

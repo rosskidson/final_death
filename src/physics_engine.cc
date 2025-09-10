@@ -1,9 +1,8 @@
 #include "physics_engine.h"
 
 #include <algorithm>
-#include <chrono>
 
-using Clock = std::chrono::steady_clock;
+#include "utils/game_clock.h"
 
 constexpr double kMaxVelX = 10;
 constexpr double kMaxVelY = 25;
@@ -132,7 +131,7 @@ PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer
 }
 
 void PhysicsEngine::PhysicsStep(Player& player) {
-  const auto now = Clock::now();
+  const auto now = GameClock::NowGlobal();
   const double delta_t = (now - player.last_update).count() / 1e9;
 
   player.collisions = {};
