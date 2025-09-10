@@ -10,7 +10,9 @@
 #include "global_defs.h"
 #include "load_game_configuration.h"
 #include "rendering_engine.h"
+#include "utils/developer_console.h"
 #include "utils/game_clock.h"
+#include "utils/parameter_server.h"
 
 constexpr int kPixelSize = 3;
 
@@ -21,14 +23,21 @@ constexpr double kFollowPlayerScreenRatio = 0.3;
 
 namespace platformer {
 
-std::vector<std::string> split(const std::string& input) {
-  std::istringstream iss(input);
-  std::vector<std::string> result;
-  std::string word;
-  while (iss >> word) {  // extracts words separated by whitespace
-    result.push_back(word);
-  }
-  return result;
+std::shared_ptr<ParameterServer> CreateParameterServer() {
+  auto parameter_server = std::make_shared<ParameterServer>();
+  parameter_server->AddParameter("physics/player.acceleration", kAcceleration,
+                                 "Horizontal acceleration of the player, unit: tile/s²");
+  parameter_server->AddParameter("physics/player.deceleration", kDeceleration,
+                                 "Horizontal deceleration factor for the player. No unit.");
+  parameter_server->AddParameter("physics/jump.velocity", kJumpVel,
+                                 "The instantaneous vertical velocity when you jump, unit: tile/s");
+  parameter_server->AddParameter(
+      "rendering/follow.player.screen.ratio", kFollowPlayerScreenRatio,
+      "How far the player can walk towards the side of the screen before the camera follows, as a "
+      "percentage of the screen size. The larger the ratio, the more centered the player will be "
+      "on the screen.");
+
+  return parameter_server;
 }
 
 void DecelerateAndStopPlayer(Player& player, const double deceleration) {
@@ -69,20 +78,8 @@ bool Platformer::OnUserCreate() {
   config_ = std::move(*config);
   level_idx_ = 0;
   const auto& tile_grid = GetCurrentLevel().tile_grid;
-  parameter_server_ = std::make_shared<ParameterServer>();
-  parameter_server_->AddParameter("physics/player.acceleration", kAcceleration,
-                                  "Horizontal acceleration of the player, unit: tile/s²");
-  parameter_server_->AddParameter("physics/player.deceleration", kDeceleration,
-                                  "Horizontal deceleration factor for the player. No unit.");
-  parameter_server_->AddParameter(
-      "physics/jump.velocity", kJumpVel,
-      "The instantaneous vertical velocity when you jump, unit: tile/s");
-  parameter_server_->AddParameter(
-      "rendering/follow.player.screen.ratio", kFollowPlayerScreenRatio,
-      "How far the player can walk towards the side of the screen before the camera follows, as a "
-      "percentage of the screen size. The larger the ratio, the more centered the player will be "
-      "on the screen.");
 
+  parameter_server_ = CreateParameterServer();
   rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel());
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
 
@@ -131,88 +128,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 }
 
 bool Platformer::OnConsoleCommand(const std::string& sCommand) {
-  // TODO:: clean up this mess!!! Put it in a seperate class and lots of small functions etc.
-  std::cout << std::endl;
-  const auto split_string = split(sCommand);
-  if (split_string.empty()) {
-    std::cout << "No command entered." << std::endl;
-    return true;
-  }
-  if (split_string[0] == "param") {
-    if (split_string.size() == 1) {
-      std::cout << "Sub commands:" << std::endl << std::endl;
-      std::cout << "  list" << std::endl;
-      std::cout << "  set" << std::endl;
-      std::cout << "  get" << std::endl;
-      std::cout << "  info" << std::endl << std::endl;
-      return true;
-    }
-    if (split_string[1] == "list") {
-      int max_param_key_length = 0;
-      for (const auto& key : parameter_server_->ListParameterKeys()) {
-        max_param_key_length = std::max(max_param_key_length, static_cast<int>(key.size()));
-      }
-      for (const auto& key : parameter_server_->ListParameterKeys()) {
-        std::cout << key;
-        for (int i = 0; i < max_param_key_length + 3 - key.length(); ++i) {
-          std::cout << " ";
-        }
-        // TODO:: type erasure.
-        std::cout << parameter_server_->GetParameter<double>(key) << std::endl;
-      }
-      std::cout << std::endl;
-    }
-    if (split_string[1] == "set") {
-      if (split_string.size() < 4) {
-        std::cout << "Usage: " << std::endl << std::endl;
-        std::cout << "param set <parameter> <value>" << std::endl;
-        std::cout << "e.g. > param set physics/gravity 10" << std::endl << std::endl;
-        return true;
-      }
-      const auto& param = split_string[2];
-      const auto val = std::stod(split_string[3]);
-      if (!parameter_server_->ParameterExists(param)) {
-        std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-        return true;
-      }
-      // TODO:: We either need a type erased version of set parameter,
-      // Or we need to detect the type and call it correctly.
-      parameter_server_->SetParameter(param, val);
-      std::cout << "Parameter set to " << val << "." << std::endl << std::endl;
-      return true;
-    }
-    if (split_string[1] == "get") {
-      if (split_string.size() < 3) {
-        std::cout << "Usage: " << std::endl;
-        std::cout << "param get <parameter>" << std::endl;
-        std::cout << "e.g. > param get physics/gravity" << std::endl << std::endl;
-        return true;
-      }
-      const auto& param = split_string[2];
-      if (!parameter_server_->ParameterExists(param)) {
-        std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-        return true;
-      }
-      std::cout << parameter_server_->GetParameter<double>(param) << std::endl << std::endl;
-      return true;
-    }
-    if (split_string[1] == "info") {
-      if (split_string.size() < 3) {
-        std::cout << "Usage: " << std::endl;
-        std::cout << "param info <parameter>" << std::endl;
-        std::cout << "e.g. > param info physics/gravity" << std::endl << std::endl;
-        return true;
-      }
-      const auto& param = split_string[2];
-      if (!parameter_server_->ParameterExists(param)) {
-        std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-        return true;
-      }
-      std::cout << parameter_server_->GetParameterInfo(param) << std::endl << std::endl;
-      return true;
-    }
-  }
-  // std::cout << "on console command " << sCommand << std::endl;
+  DeveloperConsole(sCommand, parameter_server_);
   return true;
 }
 
@@ -294,11 +210,7 @@ bool Platformer::Keyboard() {
     GameClock::PauseGlobal();
     this->ConsoleShow(olc::Key::TAB, false);
     this->ConsoleCaptureStdOut(true);
-    std::cout << "#######################################" << std::endl;
-    std::cout << "   D E V E L O P E R    C O N S O L E   " << std::endl;
-    std::cout << "#######################################" << std::endl << std::endl;
-    std::cout << " Available commands: " << std::endl;
-    std::cout << " param " << std::endl << std::endl;
+    PrintConsoleWelcome();
   }
 
   return true;

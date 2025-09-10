@@ -16,6 +16,8 @@ class AnimatedSprite {
   // Returns true if it is a non looping sprite and there are no frames left.
   bool Expired();
 
+  [[nodiscard]] const olc::Sprite* GetFrame() const;
+
  private:
   bool loops_;
   std::vector<olc::Sprite> frames_;
