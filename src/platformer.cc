@@ -16,7 +16,7 @@
 #include "utils/game_clock.h"
 #include "utils/parameter_server.h"
 
-constexpr int kPixelSize = 3;
+constexpr int kPixelSize = 4;
 
 constexpr double kAcceleration = 50.0;
 constexpr double kDeceleration = 10.0;

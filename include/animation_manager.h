@@ -23,7 +23,7 @@ class AnimationManager {
 
   void EndAction(Action action);
 
-  olc::Sprite* GetSprite();
+  const olc::Sprite* GetSprite();
 
  private:
   void RemoveExpiredActions();

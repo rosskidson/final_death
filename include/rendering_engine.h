@@ -1,5 +1,6 @@
 #pragma once
 
+#include "animated_sprite.h"
 #include "basic_types.h"
 #include "game_configuration.h"
 
@@ -32,6 +33,8 @@ class RenderingEngine {
   void KeepCameraInBounds();
 
   olc::PixelGameEngine* engine_ptr_;
+
+  std::unique_ptr<olc::Sprite> background_;
 
   // Camera position is the bottom right corner of the screen.
   // Stored in pixel coordinates, but with y up positive.

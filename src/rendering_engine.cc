@@ -1,9 +1,11 @@
 #include "rendering_engine.h"
 
 #include <algorithm>
+#include <memory>
 
 #include "animated_sprite.h"
 #include "basic_types.h"
+#include "config.h"
 #include "game_configuration.h"
 #include "global_defs.h"
 #include "tileset.h"
@@ -24,6 +26,13 @@ RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr, Level level)
 
   cam_position_px_x_ = 0;
   cam_position_px_y_ = 0;
+
+  const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
+  background_ = std::make_unique<olc::Sprite>();
+  if (background_->LoadFromFile((background_path / "cave_02.png").string()) != olc::rcode::OK) {
+    std::cout << "failed loading bg" << std::endl;
+    exit(1);
+  }
 }
 
 void RenderingEngine::SetCameraPosition(const Vector2d& absolute_vec) {
@@ -50,18 +59,39 @@ void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_rati
   const int x_min_px = convert_to_px(player.position.x - viewport_width_ * (1 - screen_ratio));
   const int y_max_px = convert_to_px(player.position.y - viewport_height_ * screen_ratio);
   const int y_min_px = convert_to_px(player.position.y - viewport_height_ * (1 - screen_ratio));
+
   cam_position_px_x_ = std::max(cam_position_px_x_, x_min_px);
   cam_position_px_x_ = std::min(cam_position_px_x_, x_max_px);
   cam_position_px_y_ = std::max(cam_position_px_y_, y_min_px);
   cam_position_px_y_ = std::min(cam_position_px_y_, y_max_px);
+  KeepCameraInBounds();
 }
 
 void RenderingEngine::RenderBackground() {
-  for (int y = 0; y < kScreenHeightPx; ++y) {
-    for (int x = 0; x < kScreenWidthPx; ++x) {
-      engine_ptr_->Draw(x, y, olc::Pixel{40, 40, 40, 255});
-    }
-  }
+  // for (int y = 0; y < kScreenHeightPx; ++y) {
+  //   for (int x = 0; x < kScreenWidthPx; ++x) {
+  //     engine_ptr_->Draw(x, y, olc::Pixel{40, 40, 40, 255});
+  //   }
+  // }
+  // std::cout << "cam pos           " << cam_position_px_x_ << " " << cam_position_px_y_ <<
+  // std::endl;
+
+  // TODO:: Doesn't wrap around (see code below)
+  // TODO:: also scroll y.
+
+  auto x_pos = -(cam_position_px_x_ / 2 % background_->width);
+  auto y_pos = kScreenHeightPx - background_->height;
+  engine_ptr_->DrawSprite(x_pos, y_pos, background_.get());
+  // if (cam_position_px_x_ > (background_->width - kScreenWidthPx)) {
+  //   auto x_pos = kScreenWidthPx - (cam_position_px_x_ - (background_->width - kScreenWidthPx));
+  //   std::cout << "bg - screen       " << background_->width - kScreenWidthPx << std::endl;
+  //   std::cout << "cam - (bg-screen) " << cam_position_px_x_ - (background_->width -
+  //   kScreenWidthPx)
+  //             << std::endl;
+  //   std::cout << "x pos             " << x_pos << std::endl;
+
+  //   engine_ptr_->DrawSprite(x_pos, 0, background_.get());
+  // }
 }
 
 void RenderingEngine::RenderTiles() {
@@ -112,12 +142,13 @@ void RenderingEngine::RenderPlayer(Player& player) {
   }
   // The player position is bottom left, but the rendering engine requires top left.
   // This conversion is done here.
-  olc::Sprite* sprite = player.animation_manager.GetSprite();
+  const olc::Sprite* sprite = player.animation_manager.GetSprite();
   int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
   int position_px_y =
       kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;
   const auto flip = player.facing_left;
-  engine_ptr_->DrawSprite(position_px_x, position_px_y, sprite, 1, static_cast<uint8_t>(flip));
+  engine_ptr_->DrawSprite(position_px_x, position_px_y, const_cast<olc::Sprite*>(sprite), 1,
+                          static_cast<uint8_t>(flip));
 
   const auto& width = sprite->width;
   const auto& height = sprite->height;

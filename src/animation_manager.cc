@@ -16,7 +16,7 @@ void AnimationManager::StartAction(const Action action) {
 
 void AnimationManager::EndAction(const Action action) { active_actions_.erase(action); }
 
-olc::Sprite* AnimationManager::GetSprite() {
+const olc::Sprite* AnimationManager::GetSprite() {
   RemoveExpiredActions();
   if (active_actions_.count(Action::Shoot) != 0) {
     return animated_sprites_[Action::Shoot].GetFrame();
