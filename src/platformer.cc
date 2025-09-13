@@ -16,11 +16,11 @@
 #include "utils/game_clock.h"
 #include "utils/parameter_server.h"
 
-constexpr int kPixelSize = 4;
+constexpr int kPixelSize = 3;
 
 constexpr double kAcceleration = 50.0;
 constexpr double kDeceleration = 10.0;
-constexpr double kJumpVel = 17.0;
+constexpr double kJumpVel = 21.0;
 constexpr double kFollowPlayerScreenRatio = 0.3;
 
 namespace platformer {
@@ -199,7 +199,9 @@ bool Platformer::Keyboard() {
   // }
 
   if (this->GetKey(olc::Key::SPACE).bPressed) {
-    player_.velocity.y = jump_velocity;
+    if (player_.collisions.bottom) {
+      player_.velocity.y = jump_velocity;
+    }
   }
   if (this->GetKey(olc::Key::CTRL).bPressed) {
     player_.animation_manager.StartAction(Action::Shoot);

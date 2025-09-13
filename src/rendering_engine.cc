@@ -29,7 +29,8 @@ RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr, Level level)
 
   const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
   background_ = std::make_unique<olc::Sprite>();
-  if (background_->LoadFromFile((background_path / "cave_02.png").string()) != olc::rcode::OK) {
+  // if (background_->LoadFromFile((background_path / "cave_02.png").string()) != olc::rcode::OK) {
+  if (background_->LoadFromFile((background_path / "background.png").string()) != olc::rcode::OK) {
     std::cout << "failed loading bg" << std::endl;
     exit(1);
   }
@@ -68,30 +69,45 @@ void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_rati
 }
 
 void RenderingEngine::RenderBackground() {
+  constexpr int kBackgroundScrollFactor = 4;
   // for (int y = 0; y < kScreenHeightPx; ++y) {
   //   for (int x = 0; x < kScreenWidthPx; ++x) {
   //     engine_ptr_->Draw(x, y, olc::Pixel{40, 40, 40, 255});
   //   }
   // }
-  // std::cout << "cam pos           " << cam_position_px_x_ << " " << cam_position_px_y_ <<
-  // std::endl;
 
-  // TODO:: Doesn't wrap around (see code below)
-  // TODO:: also scroll y.
+  const auto total_height_pixels =
+      level_.tile_grid.GetHeight() * level_.level_tileset->GetTileSize();
 
-  auto x_pos = -(cam_position_px_x_ / 2 % background_->width);
-  auto y_pos = kScreenHeightPx - background_->height;
-  engine_ptr_->DrawSprite(x_pos, y_pos, background_.get());
-  // if (cam_position_px_x_ > (background_->width - kScreenWidthPx)) {
-  //   auto x_pos = kScreenWidthPx - (cam_position_px_x_ - (background_->width - kScreenWidthPx));
-  //   std::cout << "bg - screen       " << background_->width - kScreenWidthPx << std::endl;
-  //   std::cout << "cam - (bg-screen) " << cam_position_px_x_ - (background_->width -
-  //   kScreenWidthPx)
-  //             << std::endl;
-  //   std::cout << "x pos             " << x_pos << std::endl;
+  // If the background is taller than the screensize, linearly move the camera such that you see the
+  // top of the background at the top of the level, and the bottom at the bottom.
+  if (background_->height > kScreenHeightPx) {
+    // C++ 20
+    // auto y_pos = std::lerp(-background_->height + kScreenHeightPx, 0.0,
+    //  cam_position_px_y_ / (total_height_pixels - kScreenHeightPx));
 
-  //   engine_ptr_->DrawSprite(x_pos, 0, background_.get());
-  // }
+    const double y_multiplier = static_cast<double>(background_->height - kScreenHeightPx) /
+                                static_cast<double>(total_height_pixels - kScreenHeightPx);
+    auto y_pos =
+        static_cast<int>(y_multiplier * cam_position_px_y_ - background_->height + kScreenHeightPx);
+    auto x_pos = -((cam_position_px_x_ / kBackgroundScrollFactor) % background_->width);
+    while (x_pos < kScreenWidthPx) {
+      engine_ptr_->DrawSprite(x_pos, y_pos, background_.get());
+      x_pos += background_->width;
+    }
+  } else {
+    // If y is smaller than the screen size, tile both the same way.
+    auto y_pos =
+        (((cam_position_px_y_ / kBackgroundScrollFactor) - kScreenHeightPx) % background_->height);
+    while (y_pos < kScreenHeightPx) {
+      auto x_pos = -((cam_position_px_x_ / kBackgroundScrollFactor) % background_->width);
+      while (x_pos < kScreenWidthPx) {
+        engine_ptr_->DrawSprite(x_pos, y_pos, background_.get());
+        x_pos += background_->width;
+      }
+      y_pos += background_->height;
+    }
+  }
 }
 
 void RenderingEngine::RenderTiles() {

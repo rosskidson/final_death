@@ -4,9 +4,9 @@
 
 #include "utils/game_clock.h"
 
-constexpr double kMaxVelX = 10;
+constexpr double kMaxVelX = 8;
 constexpr double kMaxVelY = 25;
-constexpr double kGravity = 30.0;
+constexpr double kGravity = 50.0;
 
 namespace platformer {
 

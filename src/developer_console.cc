@@ -69,6 +69,7 @@ void DeveloperConsole(const std::string& sCommand,
       const auto val = std::stod(split_string[3]);
       if (!parameter_server->ParameterExists(param)) {
         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
+        return;
       }
       // TODO:: We either need a type erased version of set parameter,
       // Or we need to detect the type and call it correctly.
@@ -84,6 +85,7 @@ void DeveloperConsole(const std::string& sCommand,
       const auto& param = split_string[2];
       if (!parameter_server->ParameterExists(param)) {
         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
+        return;
       }
       std::cout << parameter_server->GetParameter<double>(param) << std::endl << std::endl;
     }
@@ -97,6 +99,7 @@ void DeveloperConsole(const std::string& sCommand,
       const auto& param = split_string[2];
       if (!parameter_server->ParameterExists(param)) {
         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
+        return;
       }
       std::cout << parameter_server->GetParameterInfo(param) << std::endl << std::endl;
     }

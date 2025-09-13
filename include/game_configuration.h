@@ -11,9 +11,9 @@ struct Tile {
 };
 
 struct Level {
-  Grid<int> property_grid;
-  Grid<Tile> tile_grid;
-  std::shared_ptr<TileSet> level_tileset;
+  Grid<int> property_grid;                 // Solid, water, lava etc.
+  Grid<Tile> tile_grid;                    // Which tiles to draw.
+  std::shared_ptr<TileSet> level_tileset;  // Tileset for this level.
 };
 
 struct GameConfiguration {
