@@ -82,7 +82,20 @@ bool Platformer::OnUserCreate() {
   const auto& tile_grid = GetCurrentLevel().tile_grid;
 
   parameter_server_ = CreateParameterServer();
+
   rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel());
+  // rendering_engine_->AddFoundationBackgroundLayer(12, 24, 56);
+  const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
+  if (!rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4)) {
+    return false;
+  }
+  // Forest parallax.
+  // if (!rendering_engine_->AddBackgroundLayer(background_path / "forest" / "back.png", 4) ||
+  //     !rendering_engine_->AddBackgroundLayer(background_path / "forest" / "middle.png", 2) ||
+  //     !rendering_engine_->AddForegroundLayer(background_path / "forest" / "front.png", 0.5)) {
+  //   return false;
+  // }
+
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
 
   player_.position = {10, 10};
@@ -137,6 +150,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
+  rendering_engine_->RenderForeground();
 
   // TODO:: Fixed frame rate.
   std::this_thread::sleep_for(std::chrono::milliseconds(8));

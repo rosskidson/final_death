@@ -26,14 +26,6 @@ RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr, Level level)
 
   cam_position_px_x_ = 0;
   cam_position_px_y_ = 0;
-
-  const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
-  background_ = std::make_unique<olc::Sprite>();
-  // if (background_->LoadFromFile((background_path / "cave_02.png").string()) != olc::rcode::OK) {
-  if (background_->LoadFromFile((background_path / "background.png").string()) != olc::rcode::OK) {
-    std::cout << "failed loading bg" << std::endl;
-    exit(1);
-  }
 }
 
 void RenderingEngine::SetCameraPosition(const Vector2d& absolute_vec) {
@@ -68,44 +60,90 @@ void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_rati
   KeepCameraInBounds();
 }
 
+bool RenderingEngine::AddBackgroundLayer(const std::filesystem::path& background_png,
+                                         double scroll_slowdown_factor) {
+  BackgroundLayer layer;
+  layer.scroll_slowdown_factor = scroll_slowdown_factor;
+  layer.background_img = std::make_unique<olc::Sprite>();
+  if (layer.background_img->LoadFromFile(background_png.string()) != olc::rcode::OK) {
+    std::cout << "Failed loading background image '" << background_png << "'" << std::endl;
+    return false;
+  }
+  background_layers_.emplace_back(std::move(layer));
+  return true;
+}
+
+bool RenderingEngine::AddForegroundLayer(const std::filesystem::path& background_png,
+                                         double scroll_slowdown_factor) {
+  BackgroundLayer layer;
+  layer.scroll_slowdown_factor = scroll_slowdown_factor;
+  layer.background_img = std::make_unique<olc::Sprite>();
+  if (layer.background_img->LoadFromFile(background_png.string()) != olc::rcode::OK) {
+    std::cout << "Failed loading background image '" << background_png << "'" << std::endl;
+    return false;
+  }
+  foreground_layers_.emplace_back(std::move(layer));
+  return true;
+}
+
+void RenderingEngine::AddFoundationBackgroundLayer(uint8_t r, uint8_t g, uint8_t b) {
+  foundation_background_color_ = olc::Pixel{r, g, b, 255};
+}
+
 void RenderingEngine::RenderBackground() {
-  constexpr int kBackgroundScrollFactor = 4;
-  // for (int y = 0; y < kScreenHeightPx; ++y) {
-  //   for (int x = 0; x < kScreenWidthPx; ++x) {
-  //     engine_ptr_->Draw(x, y, olc::Pixel{40, 40, 40, 255});
-  //   }
-  // }
+  if (foundation_background_color_.has_value()) {
+    for (int y = 0; y < kScreenHeightPx; ++y) {
+      for (int x = 0; x < kScreenWidthPx; ++x) {
+        engine_ptr_->Draw(x, y, *foundation_background_color_);
+      }
+    }
+  }
+
+  for (const auto& background_layer : background_layers_) {
+    RenderBackgroundLayer(background_layer);
+  }
+}
+
+void RenderingEngine::RenderForeground() {
+  for (const auto& background_layer : foreground_layers_) {
+    RenderBackgroundLayer(background_layer);
+  }
+}
+
+void RenderingEngine::RenderBackgroundLayer(const BackgroundLayer& background_layer) {
+  const double scroll_factor = background_layer.scroll_slowdown_factor;
+  const auto& background = background_layer.background_img;
 
   const auto total_height_pixels =
       level_.tile_grid.GetHeight() * level_.level_tileset->GetTileSize();
 
   // If the background is taller than the screensize, linearly move the camera such that you see the
   // top of the background at the top of the level, and the bottom at the bottom.
-  if (background_->height > kScreenHeightPx) {
+  if (background->height > kScreenHeightPx) {
     // C++ 20
-    // auto y_pos = std::lerp(-background_->height + kScreenHeightPx, 0.0,
+    // auto y_pos = std::lerp(-background->height + kScreenHeightPx, 0.0,
     //  cam_position_px_y_ / (total_height_pixels - kScreenHeightPx));
 
-    const double y_multiplier = static_cast<double>(background_->height - kScreenHeightPx) /
+    const double y_multiplier = static_cast<double>(background->height - kScreenHeightPx) /
                                 static_cast<double>(total_height_pixels - kScreenHeightPx);
     auto y_pos =
-        static_cast<int>(y_multiplier * cam_position_px_y_ - background_->height + kScreenHeightPx);
-    auto x_pos = -((cam_position_px_x_ / kBackgroundScrollFactor) % background_->width);
+        static_cast<int>(y_multiplier * cam_position_px_y_ - background->height + kScreenHeightPx);
+    auto x_pos = -(static_cast<int>(cam_position_px_x_ / scroll_factor) % background->width);
     while (x_pos < kScreenWidthPx) {
-      engine_ptr_->DrawSprite(x_pos, y_pos, background_.get());
-      x_pos += background_->width;
+      engine_ptr_->DrawSprite(x_pos, y_pos, background.get());
+      x_pos += background->width;
     }
   } else {
     // If y is smaller than the screen size, tile both the same way.
-    auto y_pos =
-        (((cam_position_px_y_ / kBackgroundScrollFactor) - kScreenHeightPx) % background_->height);
+    auto y_pos = (static_cast<int>((cam_position_px_y_ / scroll_factor) - kScreenHeightPx) %
+                  background->height);
     while (y_pos < kScreenHeightPx) {
-      auto x_pos = -((cam_position_px_x_ / kBackgroundScrollFactor) % background_->width);
+      auto x_pos = -(static_cast<int>(cam_position_px_x_ / scroll_factor) % background->width);
       while (x_pos < kScreenWidthPx) {
-        engine_ptr_->DrawSprite(x_pos, y_pos, background_.get());
-        x_pos += background_->width;
+        engine_ptr_->DrawSprite(x_pos, y_pos, background.get());
+        x_pos += background->width;
       }
-      y_pos += background_->height;
+      y_pos += background->height;
     }
   }
 }

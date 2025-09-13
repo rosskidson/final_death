@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "animated_sprite.h"
 #include "basic_types.h"
 #include "game_configuration.h"
@@ -24,17 +26,42 @@ class RenderingEngine {
   void KeepPlayerInFrame(const Player& player, double screen_ratio);
 
   void RenderBackground();
+  void RenderForeground();
   void RenderTiles();
-
-  // TODO:: add const if you can fix the non const olc::Sprite* nonsense!!!
   void RenderPlayer(Player& player);
 
+  // Add a background layer to render.
+  // Backgrounds will be rendered in the order that they are added.
+  // A scroll slowdown factor of 2 moves the image at half the speed of the camera.
+  // This could be made a floating value if need be.
+  [[nodiscard]] bool AddBackgroundLayer(const std::filesystem::path& background_png,
+                                        double scroll_slowdown_factor);
+
+  // Add a foreground layer to render.
+  // Same as background but it is rendered after the tiles.
+  [[nodiscard]] bool AddForegroundLayer(const std::filesystem::path& background_png,
+                                        double scroll_slowdown_factor);
+
+  // Add a solid color to draw before any background layers.
+  // Use this either if 1) you don't have a background or
+  //                    2) All your background layers have transparency.
+  void AddFoundationBackgroundLayer(uint8_t r, uint8_t g, uint8_t b);
+
  private:
+  struct BackgroundLayer {
+    std::unique_ptr<olc::Sprite> background_img;
+    double scroll_slowdown_factor;
+  };
+
   void KeepCameraInBounds();
+  void RenderBackgroundLayer(const BackgroundLayer& background_layer);
 
   olc::PixelGameEngine* engine_ptr_;
 
-  std::unique_ptr<olc::Sprite> background_;
+  // std::unique_ptr<olc::Sprite> background_;
+  std::vector<BackgroundLayer> background_layers_;
+  std::vector<BackgroundLayer> foreground_layers_;
+  std::optional<olc::Pixel> foundation_background_color_;
 
   // Camera position is the bottom right corner of the screen.
   // Stored in pixel coordinates, but with y up positive.
