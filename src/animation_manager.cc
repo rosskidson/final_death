@@ -24,8 +24,14 @@ const olc::Sprite* AnimationManager::GetSprite() {
   if (active_actions_.count(Action::Jump) != 0) {
     return animated_sprites_[Action::Jump].GetFrame();
   }
+  if (active_actions_.count(Action::Roll) != 0) {
+    return animated_sprites_[Action::Roll].GetFrame();
+  }
   if (active_actions_.count(Action::Walk) != 0) {
     return animated_sprites_[Action::Walk].GetFrame();
+  }
+  if (active_actions_.count(Action::Crouch) != 0) {
+    return animated_sprites_[Action::Crouch].GetFrame();
   }
   return animated_sprites_[Action::Idle].GetFrame();
 }

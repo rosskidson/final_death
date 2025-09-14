@@ -7,7 +7,7 @@
 
 namespace platformer {
 
-enum class Action { Idle, Walk, Shoot, Jump };
+enum class Action { Idle, Walk, Shoot, Jump, Crouch, Roll };
 
 struct ActionSpriteSheet {
   Action action;

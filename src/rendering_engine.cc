@@ -190,22 +190,23 @@ void RenderingEngine::RenderTiles() {
 
 void RenderingEngine::RenderPlayer(Player& player) {
   const auto position_in_screen = player.position - GetCameraPosition();
-  if (position_in_screen.x < 0 || position_in_screen.y < 0 ||
-      position_in_screen.x > viewport_width_ || position_in_screen.y > viewport_height_) {
-    return;
-  }
+  // if (position_in_screen.x < 0 || position_in_screen.y < 0 ||
+  //     position_in_screen.x > viewport_width_ || position_in_screen.y > viewport_height_) {
+  //   return;
+  // }
+
   // The player position is bottom left, but the rendering engine requires top left.
   // This conversion is done here.
   const olc::Sprite* sprite = player.animation_manager.GetSprite();
-  int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
-  int position_px_y =
+  const int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
+  const int position_px_y =
       kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;
   const auto flip = player.facing_left;
   engine_ptr_->DrawSprite(position_px_x, position_px_y, const_cast<olc::Sprite*>(sprite), 1,
                           static_cast<uint8_t>(flip));
 
-  const auto& width = sprite->width;
-  const auto& height = sprite->height;
+  // const auto& width = sprite->width;
+  // const auto& height = sprite->height;
   // TODO:: Add a parameter to turn this on/off.
   // if (player.collisions.bottom) {
   //   engine_ptr_->DrawLine(position_px_x, position_px_y + height, position_px_x + width,

@@ -107,20 +107,28 @@ bool Platformer::OnUserCreate() {
   // Probably best to do the AnimatedSprite initialization in the constructor of animation manager
   // how I originally planned.
   aa.push_back(ActionSpriteSheet{
-      Action::Idle, AnimatedSprite{(player_path / "zomdude-idle.png").string(), 48, true, 200}});
+      Action::Idle,
+      AnimatedSprite{(player_path / "player_idle.png").string(), 80, true, false, 200}});
   aa.push_back(ActionSpriteSheet{
-      Action::Walk, AnimatedSprite{(player_path / "zomdude-walk.png").string(), 48, true, 150}});
+      Action::Walk,
+      AnimatedSprite{(player_path / "player_walk.png").string(), 80, true, true, 200}});
   aa.push_back(ActionSpriteSheet{
       Action::Shoot,
-      AnimatedSprite{(player_path / "zomdude-fire-shotgun.png").string(), 48, false, 100}});
+      AnimatedSprite{(player_path / "player_fire_forwards.png").string(), 80, false, false, 100}});
+  aa.push_back(ActionSpriteSheet{
+      Action::Crouch,
+      AnimatedSprite{(player_path / "player_crouch.png").string(), 80, true, false, 200}});
+  aa.push_back(ActionSpriteSheet{
+      Action::Roll,
+      AnimatedSprite{(player_path / "player_roll.png").string(), 80, false, false, 50}});
 
   player_.animation_manager = AnimationManager(std::move(aa));
 
   // TODO:: Configure this a bit better.
   // zomdude params
-  player_.x_offset_px = 10;
+  player_.x_offset_px = 30;
   player_.y_offset_px = 0;
-  player_.collision_width_px = 19;
+  player_.collision_width_px = 18;
   player_.collision_height_px = 48;
 
   // Megaman params
@@ -153,7 +161,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_engine_->RenderForeground();
 
   // TODO:: Fixed frame rate.
-  std::this_thread::sleep_for(std::chrono::milliseconds(8));
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
   return true;
 }
 
@@ -202,6 +210,17 @@ bool Platformer::Keyboard() {
   } else {
     player_.animation_manager.EndAction(Action::Walk);
     DecelerateAndStopPlayer(player_, deceleration);
+  }
+
+  if (this->GetKey(olc::Key::DOWN).bPressed) {
+    player_.animation_manager.StartAction(Action::Crouch);
+  }
+  if (this->GetKey(olc::Key::DOWN).bReleased) {
+    player_.animation_manager.EndAction(Action::Crouch);
+  }
+
+  if (this->GetKey(olc::Key::SHIFT).bPressed) {
+    player_.animation_manager.StartAction(Action::Roll);
   }
 
   // if (this->GetKey(olc::Key::UP).bHeld) {

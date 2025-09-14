@@ -11,8 +11,9 @@ namespace platformer {
 AnimatedSprite::AnimatedSprite(const std::string& sprite_sheet_path,
                                int sprite_width,
                                bool loops,
+                               bool forwards_backwards,
                                int frame_delay_ms)
-    : loops_(loops), frame_delay_ms_(frame_delay_ms) {
+    : loops_(loops), forwards_backwards_(forwards_backwards), frame_delay_ms_(frame_delay_ms) {
   assert(frame_delay_ms_ > 0);
   olc::Sprite spritesheet_img{};
   if (spritesheet_img.LoadFromFile(sprite_sheet_path) != olc::rcode::OK) {
@@ -54,8 +55,15 @@ olc::Sprite* AnimatedSprite::GetFrame() {
     return nullptr;
   }
   const int time_elapsed = static_cast<int>((GameClock::NowGlobal() - start_time_).count() / 1e6);
-  const int frame_idx = (time_elapsed / frame_delay_ms_) % frame_count_;
-  return frames_.at(frame_idx).get();
+  if (!forwards_backwards_) {
+    const int frame_idx = (time_elapsed / frame_delay_ms_) % frame_count_;
+    return frames_.at(frame_idx).get();
+  }
+  const int frame_idx = (time_elapsed / frame_delay_ms_) % (2 * frame_count_ - 2);
+  if (frame_idx < frame_count_) {
+    return frames_.at(frame_idx).get();
+  }
+  return frames_.at(2 * frame_count_ - frame_idx - 2).get();
 }
 
 }  // namespace platformer

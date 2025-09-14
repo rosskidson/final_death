@@ -18,6 +18,7 @@ class AnimatedSprite {
   AnimatedSprite(const std::string& sprite_sheet_path,
                  int sprite_width,
                  bool loops,
+                 bool forwards_backwards,
                  int frame_delay_ms);
 
   void StartAnimation();
@@ -30,6 +31,7 @@ class AnimatedSprite {
 
  private:
   bool loops_;
+  bool forwards_backwards_;
   int frame_delay_ms_;
   std::vector<std::unique_ptr<olc::Sprite>> frames_;
   int frame_count_;
