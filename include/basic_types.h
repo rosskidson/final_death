@@ -51,6 +51,7 @@ struct Player {
   Collisions collisions{};
 
   bool facing_left{};
+  TimePoint started_shooting;
 
   // int animation_frame = 0;
   // TimePoint animation_update{GameClock::NowGlobal()};

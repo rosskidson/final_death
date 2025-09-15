@@ -30,7 +30,7 @@ class ParameterServer {
 
   // Throws an exception if the key is not available
   template <typename T>
-  T GetParameter(const std::string& key) {
+  T GetParameter(const std::string& key) const {
     auto it = parameters_.find(key);
     if (it == parameters_.end()) {
       throw std::runtime_error("Parameter key not found: " + key);
@@ -59,7 +59,7 @@ class ParameterServer {
   }
 
   // Throws an exception if the key is not available
-  std::string GetParameterInfo(const std::string& key) {
+  std::string GetParameterInfo(const std::string& key) const {
     auto it = parameters_.find(key);
     if (it == parameters_.end()) {
       throw std::runtime_error("Parameter key not found: " + key);
@@ -71,7 +71,7 @@ class ParameterServer {
     return oss.str();
   }
 
-  bool ParameterExists(const std::string& key) { return parameters_.count(key) != 0; }
+  bool ParameterExists(const std::string& key) const { return parameters_.count(key) != 0; }
 
   [[nodiscard]] std::vector<std::string> ListParameterKeys() const {
     std::vector<std::string> keys;

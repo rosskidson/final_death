@@ -23,6 +23,9 @@ constexpr double kDeceleration = 10.0;
 constexpr double kJumpVel = 21.0;
 constexpr double kFollowPlayerScreenRatio = 0.3;
 
+// TODO:: Int parameters
+constexpr double kShootDelayMs = 500;
+
 namespace platformer {
 
 std::shared_ptr<ParameterServer> CreateParameterServer() {
@@ -38,6 +41,9 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
       "How far the player can walk towards the side of the screen before the camera follows, as a "
       "percentage of the screen size. The larger the ratio, the more centered the player will be "
       "on the screen.");
+
+  parameter_server->AddParameter("timing/shoot.delay", kShootDelayMs,
+                                 "How long it takes to shoot and reload");
 
   return parameter_server;
 }
@@ -106,15 +112,17 @@ bool Platformer::OnUserCreate() {
   // TODO:: emplace back never fucking works // clean up this shit somehow
   // Probably best to do the AnimatedSprite initialization in the constructor of animation manager
   // how I originally planned.
+  const auto shoot_delay = parameter_server_->GetParameter<double>("timing/shoot.delay");
   aa.push_back(ActionSpriteSheet{
       Action::Idle,
       AnimatedSprite{(player_path / "player_idle.png").string(), 80, true, false, 200}});
   aa.push_back(ActionSpriteSheet{
       Action::Walk,
       AnimatedSprite{(player_path / "player_walk.png").string(), 80, true, true, 200}});
+  // TODO:: Find a way to pass the 'total animation time' in.
   aa.push_back(ActionSpriteSheet{
-      Action::Shoot,
-      AnimatedSprite{(player_path / "player_fire_forwards.png").string(), 80, false, false, 100}});
+      Action::Shoot, AnimatedSprite{(player_path / "player_fire_forwards.png").string(), 80, false,
+                                    false, static_cast<int>(std::round(shoot_delay / 7))}});
   aa.push_back(ActionSpriteSheet{
       Action::Crouch,
       AnimatedSprite{(player_path / "player_crouch.png").string(), 80, true, false, 200}});
@@ -170,6 +178,11 @@ bool Platformer::OnConsoleCommand(const std::string& sCommand) {
   return true;
 }
 
+bool IsPlayerShooting(const Player& player, const ParameterServer& parameter_server) {
+  const auto shoot_delay = parameter_server.GetParameter<double>("timing/shoot.delay");
+  return (GameClock::NowGlobal() - player.started_shooting).count() / 1e6 < shoot_delay;
+}
+
 bool Platformer::Keyboard() {
   if (this->IsConsoleShowing()) {
     return true;
@@ -203,12 +216,15 @@ bool Platformer::Keyboard() {
     player_.animation_manager.StartAction(Action::Walk);
   }
 
-  if (this->GetKey(olc::Key::LEFT).bHeld) {
+  if (this->GetKey(olc::Key::LEFT).bHeld && !IsPlayerShooting(player_, *parameter_server_)) {
     player_.acceleration.x = -acceleration;
-  } else if (this->GetKey(olc::Key::RIGHT).bHeld) {
+  } else if (this->GetKey(olc::Key::RIGHT).bHeld &&
+             !IsPlayerShooting(player_, *parameter_server_)) {
     player_.acceleration.x = +acceleration;
   } else {
-    player_.animation_manager.EndAction(Action::Walk);
+    if (!IsPlayerShooting(player_, *parameter_server_)) {
+      player_.animation_manager.EndAction(Action::Walk);
+    }
     DecelerateAndStopPlayer(player_, deceleration);
   }
 
@@ -237,7 +253,11 @@ bool Platformer::Keyboard() {
     }
   }
   if (this->GetKey(olc::Key::CTRL).bPressed) {
-    player_.animation_manager.StartAction(Action::Shoot);
+    if (!IsPlayerShooting(player_, *parameter_server_)) {
+      player_.velocity.x = 0;
+      player_.started_shooting = GameClock::NowGlobal();
+      player_.animation_manager.StartAction(Action::Shoot);
+    }
   }
 
   if (this->GetKey(olc::Key::Q).bReleased) {
