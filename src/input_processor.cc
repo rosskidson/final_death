@@ -9,15 +9,6 @@
 
 namespace platformer {
 
-void DecelerateAndStopPlayer(Player& player, const double deceleration) {
-  if (player.velocity.x == 0) {
-    return;
-  }
-  player.decelerating = true;
-  const int sign = player.velocity.x > 0 ? -1 : 1;
-  player.acceleration.x = sign * deceleration;
-}
-
 InputProcessor::InputProcessor(std::shared_ptr<const ParameterServer> parameter_server,
                                olc::PixelGameEngine* engine_ptr)
     : input_{engine_ptr}, parameter_server_{std::move(parameter_server)}, engine_ptr_{engine_ptr} {}
@@ -30,7 +21,6 @@ bool InputProcessor::ProcessInputs(Player& player) {
   input_.Capture();
 
   const auto acceleration = parameter_server_->GetParameter<double>("physics/player.acceleration");
-  const auto deceleration = parameter_server_->GetParameter<double>("physics/player.deceleration");
   const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
 
   if (input_.GetKey(InputAction::Left).pressed || input_.GetKey(InputAction::Right).pressed) {
@@ -45,7 +35,7 @@ bool InputProcessor::ProcessInputs(Player& player) {
     if (!IsPlayerShooting(player)) {
       player.animation_manager.EndAction(Action::Walk);
     }
-    DecelerateAndStopPlayer(player, deceleration);
+    player.acceleration.x = 0;
   }
 
   if (input_.GetKey(InputAction::Crouch).pressed) {

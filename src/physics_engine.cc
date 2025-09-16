@@ -7,6 +7,7 @@
 constexpr double kMaxVelX = 8;
 constexpr double kMaxVelY = 25;
 constexpr double kGravity = 50.0;
+constexpr double kGroundFriction = 50.0;
 
 namespace platformer {
 
@@ -128,30 +129,31 @@ PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer
                                   "Maximum horizontal velocity of the player");
   parameter_server_->AddParameter("physics/max.y.vel", kMaxVelY,
                                   "Maximum vertical velocity of the player");
+  parameter_server_->AddParameter("physics/friction", kGroundFriction,
+                                  "Controls deceleration on the ground.");
 }
 
 void PhysicsEngine::PhysicsStep(Player& player) {
   const auto now = GameClock::NowGlobal();
   const double delta_t = (now - player.last_update).count() / 1e9;
 
-  player.collisions = {};
-
   player.acceleration.y = -1 * parameter_server_->GetParameter<double>("physics/gravity");
 
   const auto max_x_vel = parameter_server_->GetParameter<double>("physics/max.x.vel");
   const auto max_y_vel = parameter_server_->GetParameter<double>("physics/max.y.vel");
+  const auto friction = parameter_server_->GetParameter<double>("physics/friction");
 
-  // If the player is decelerating check if the step moves the velocity past zero and instead stop.
-  double delta_v_x = player.acceleration.x * delta_t;
-  if (player.decelerating && ((player.velocity.x > 0 && (player.velocity.x + delta_v_x) < 0) ||
-                              (player.velocity.x < 0 && (player.velocity.x + delta_v_x) > 0))) {
-    player.acceleration.x = 0;
-    player.velocity.x = 0;
-    player.decelerating = false;
-    delta_v_x = 0;
+  if (player.collisions.bottom && player.acceleration.x == 0) {
+    if (std::abs(player.velocity.x) < friction * delta_t) {
+      player.velocity.x = 0;
+    } else {
+      player.velocity.x -= friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
+    }
   }
 
-  player.velocity.x += delta_v_x;
+  player.collisions = {};
+
+  player.velocity.x += player.acceleration.x * delta_t;
   player.velocity.x = std::min(player.velocity.x, max_x_vel);
   player.velocity.x = std::max(player.velocity.x, -max_x_vel);
   player.position.x += player.velocity.x * delta_t;

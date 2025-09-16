@@ -20,7 +20,6 @@
 constexpr int kPixelSize = 3;
 
 constexpr double kAcceleration = 50.0;
-constexpr double kDeceleration = 80.0;
 constexpr double kJumpVel = 21.0;
 constexpr double kFollowPlayerScreenRatio = 0.3;
 
@@ -42,8 +41,6 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
   auto parameter_server = std::make_shared<ParameterServer>();
   parameter_server->AddParameter("physics/player.acceleration", kAcceleration,
                                  "Horizontal acceleration of the player, unit: tile/s²");
-  parameter_server->AddParameter("physics/player.deceleration", kDeceleration,
-                                 "Horizontal deceleration factor for the player. No unit.");
   parameter_server->AddParameter("physics/jump.velocity", kJumpVel,
                                  "The instantaneous vertical velocity when you jump, unit: tile/s");
   parameter_server->AddParameter(
