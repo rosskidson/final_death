@@ -5,6 +5,7 @@
 
 #include "basic_types.h"
 #include "game_configuration.h"
+#include "input_processor.h"
 #include "olcPixelGameEngine.h"
 #include "physics_engine.h"
 #include "rendering_engine.h"
@@ -29,6 +30,7 @@ class Platformer : public olc::PixelGameEngine {
   std::unique_ptr<RenderingEngine> rendering_engine_;
   std::unique_ptr<PhysicsEngine> physics_engine_;
   std::shared_ptr<ParameterServer> parameter_server_;
+  std::unique_ptr<InputProcessor> input_processor_;
 
   Player player_{};
 

@@ -55,6 +55,8 @@ add_executable(platformer
   src/animated_sprite.cc
   src/animation_manager.cc
   src/developer_console.cc
+  src/input_capture.cc
+  src/input_processor.cc
   src/load_game_configuration.cc
   src/main.cc
   src/physics_engine.cc

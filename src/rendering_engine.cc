@@ -45,6 +45,7 @@ Vector2d RenderingEngine::GetCameraPosition() const {
                   static_cast<double>(cam_position_px_y_) / tile_size_};
 }
 
+// TODO split ratio to x and y
 void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_ratio) {
   const auto position = GetCameraPosition();
   const auto convert_to_px = [&](double val) -> int { return static_cast<int>(val * tile_size_); };

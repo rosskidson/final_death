@@ -1,7 +1,6 @@
 #include "platformer.h"
 
 #include <filesystem>
-#include <map>
 #include <memory>
 #include <thread>
 
@@ -11,6 +10,7 @@
 #include "config.h"
 #include "game_configuration.h"
 #include "global_defs.h"
+#include "input_processor.h"
 #include "load_game_configuration.h"
 #include "rendering_engine.h"
 #include "utils/developer_console.h"
@@ -85,15 +85,6 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
   return true;
 }
 
-void DecelerateAndStopPlayer(Player& player, const double deceleration) {
-  if (std::abs(player.velocity.x) < 0.1) {
-    player.acceleration.x = 0;
-    player.velocity.x = 0;
-    return;
-  }
-  player.acceleration.x = -player.velocity.x * deceleration;
-}
-
 Platformer::Platformer() {
   this->Construct(kScreenWidthPx, kScreenHeightPx, kPixelSize, kPixelSize);
 }
@@ -114,21 +105,15 @@ bool Platformer::OnUserCreate() {
   level_idx_ = 0;
   const auto& tile_grid = GetCurrentLevel().tile_grid;
 
-  parameter_server_ = CreateParameterServer();
-
   rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel());
   const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
   if (!rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4)) {
     return false;
   }
-  // Forest parallax.
-  // if (!rendering_engine_->AddBackgroundLayer(background_path / "forest" / "back.png", 4) ||
-  //     !rendering_engine_->AddBackgroundLayer(background_path / "forest" / "middle.png", 2) ||
-  //     !rendering_engine_->AddForegroundLayer(background_path / "forest" / "front.png", 0.5)) {
-  //   return false;
-  // }
 
+  parameter_server_ = CreateParameterServer();
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
+  input_processor_ = std::make_unique<InputProcessor>(parameter_server_, this);
 
   if (!InitializePlayerAnimationManager(*parameter_server_, player_)) {
     return false;
@@ -156,7 +141,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   const auto follow_ratio =
       parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio");
 
-  if (!this->Keyboard()) {
+  if (!input_processor_->ProcessInputs(player_)) {
     return false;
   }
 
@@ -166,7 +151,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
   physics_engine_->PhysicsStep(player_);
 
-  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio);
+  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio);  // Split ratio to x/y
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
@@ -179,102 +164,6 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
 bool Platformer::OnConsoleCommand(const std::string& sCommand) {
   DeveloperConsole(sCommand, parameter_server_);
-  return true;
-}
-
-bool IsPlayerShooting(const Player& player, const ParameterServer& parameter_server) {
-  const auto shoot_delay = parameter_server.GetParameter<double>("timing/shoot.delay");
-  return (GameClock::NowGlobal() - player.started_shooting).count() / 1e6 < shoot_delay;
-}
-
-bool Platformer::Keyboard() {
-  if (this->IsConsoleShowing()) {
-    return true;
-  }
-  Vector2d pos{};
-  const auto tile_size = GetCurrentLevel().level_tileset->GetTileSize();
-  const auto acceleration = parameter_server_->GetParameter<double>("physics/player.acceleration");
-  const auto deceleration = parameter_server_->GetParameter<double>("physics/player.deceleration");
-  const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
-
-  const double kCamMoveOffset = 1. / tile_size;
-  if (this->GetKey(olc::Key::A).bHeld) {
-    pos.x -= kCamMoveOffset;
-  }
-  if (this->GetKey(olc::Key::D).bHeld) {
-    pos.x += kCamMoveOffset;
-  }
-  if (this->GetKey(olc::Key::W).bHeld) {
-    pos.y += kCamMoveOffset;
-  }
-  if (this->GetKey(olc::Key::S).bHeld) {
-    pos.y -= kCamMoveOffset;
-  }
-  rendering_engine_->MoveCamera(pos);
-
-  auto now = GameClock::NowGlobal();
-  if (this->GetKey(olc::Key::LEFT).bPressed) {
-    player_.animation_manager.StartAction(Action::Walk);
-  }
-  if (this->GetKey(olc::Key::RIGHT).bPressed) {
-    player_.animation_manager.StartAction(Action::Walk);
-  }
-
-  if (this->GetKey(olc::Key::LEFT).bHeld && !IsPlayerShooting(player_, *parameter_server_)) {
-    player_.acceleration.x = -acceleration;
-  } else if (this->GetKey(olc::Key::RIGHT).bHeld &&
-             !IsPlayerShooting(player_, *parameter_server_)) {
-    player_.acceleration.x = +acceleration;
-  } else {
-    if (!IsPlayerShooting(player_, *parameter_server_)) {
-      player_.animation_manager.EndAction(Action::Walk);
-    }
-    DecelerateAndStopPlayer(player_, deceleration);
-  }
-
-  if (this->GetKey(olc::Key::DOWN).bPressed) {
-    player_.animation_manager.StartAction(Action::Crouch);
-  }
-  if (this->GetKey(olc::Key::DOWN).bReleased) {
-    player_.animation_manager.EndAction(Action::Crouch);
-  }
-
-  if (this->GetKey(olc::Key::SHIFT).bPressed) {
-    player_.animation_manager.StartAction(Action::Roll);
-  }
-
-  // if (this->GetKey(olc::Key::UP).bHeld) {
-  //   player_.acceleration.y = acceleration;
-  // } else if (this->GetKey(olc::Key::DOWN).bHeld) {
-  //   player_.acceleration.y = acceleration;
-  // } else {
-  //   player_.acceleration.y = 0;
-  // }
-
-  if (this->GetKey(olc::Key::SPACE).bPressed) {
-    if (player_.collisions.bottom) {
-      player_.velocity.y = jump_velocity;
-    }
-  }
-  if (this->GetKey(olc::Key::CTRL).bPressed) {
-    if (!IsPlayerShooting(player_, *parameter_server_)) {
-      player_.velocity.x = 0;
-      player_.started_shooting = GameClock::NowGlobal();
-      player_.animation_manager.StartAction(Action::Shoot);
-    }
-  }
-
-  if (this->GetKey(olc::Key::Q).bReleased) {
-    return false;
-  }
-
-  if (this->GetKey(olc::Key::TAB).bPressed) {
-    GameClock::PauseGlobal();
-    this->ConsoleShow(olc::Key::TAB, false);
-    this->ConsoleCaptureStdOut(true);
-    PrintConsoleWelcome();
-  }
-
   return true;
 }
 
