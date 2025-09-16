@@ -8,6 +8,7 @@ constexpr double kMaxVelX = 8;
 constexpr double kMaxVelY = 25;
 constexpr double kGravity = 50.0;
 constexpr double kGroundFriction = 50.0;
+constexpr double kAirFriction = 1.0;
 
 namespace platformer {
 
@@ -129,8 +130,10 @@ PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer
                                   "Maximum horizontal velocity of the player");
   parameter_server_->AddParameter("physics/max.y.vel", kMaxVelY,
                                   "Maximum vertical velocity of the player");
-  parameter_server_->AddParameter("physics/friction", kGroundFriction,
+  parameter_server_->AddParameter("physics/ground.friction", kGroundFriction,
                                   "Controls deceleration on the ground.");
+  parameter_server_->AddParameter("physics/air.friction", kAirFriction,
+                                  "Controls deceleration in the air.");
 }
 
 void PhysicsEngine::PhysicsStep(Player& player) {
@@ -141,13 +144,19 @@ void PhysicsEngine::PhysicsStep(Player& player) {
 
   const auto max_x_vel = parameter_server_->GetParameter<double>("physics/max.x.vel");
   const auto max_y_vel = parameter_server_->GetParameter<double>("physics/max.y.vel");
-  const auto friction = parameter_server_->GetParameter<double>("physics/friction");
+  const auto ground_friction = parameter_server_->GetParameter<double>("physics/ground.friction");
+  const auto air_friction = parameter_server_->GetParameter<double>("physics/air.friction");
 
-  if (player.collisions.bottom && player.acceleration.x == 0) {
-    if (std::abs(player.velocity.x) < friction * delta_t) {
-      player.velocity.x = 0;
+  // TODO:: function.
+  if (player.acceleration.x == 0) {
+    if (player.collisions.bottom) {
+      if (std::abs(player.velocity.x) < ground_friction * delta_t) {
+        player.velocity.x = 0;
+      } else {
+        player.velocity.x -= ground_friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
+      }
     } else {
-      player.velocity.x -= friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
+      player.velocity.x -= player.velocity.x * air_friction * delta_t;
     }
   }
 

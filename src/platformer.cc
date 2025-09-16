@@ -14,7 +14,6 @@
 #include "load_game_configuration.h"
 #include "rendering_engine.h"
 #include "utils/developer_console.h"
-#include "utils/game_clock.h"
 #include "utils/parameter_server.h"
 
 constexpr int kPixelSize = 3;
