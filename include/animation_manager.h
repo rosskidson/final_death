@@ -9,15 +9,10 @@ namespace platformer {
 
 enum class Action { Idle, Walk, Shoot, Jump, Crouch, Roll };
 
-struct ActionSpriteSheet {
-  Action action;
-  AnimatedSprite sprite;
-};
-
 class AnimationManager {
  public:
   AnimationManager() = default;  // REMOVE
-  AnimationManager(std::vector<ActionSpriteSheet> actions);
+  void AddAnimation(AnimatedSprite sprite, Action action);
 
   void StartAction(Action action);
 

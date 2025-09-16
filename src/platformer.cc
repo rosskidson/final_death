@@ -1,5 +1,6 @@
 #include "platformer.h"
 
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <thread>
@@ -28,6 +29,15 @@ constexpr double kShootDelayMs = 500;
 
 namespace platformer {
 
+struct AnimationInfo {
+  const std::filesystem::path sprite_path;
+  int sprite_width;
+  bool loops;
+  bool forwards_backwards;
+  int animation_duration_ms;
+  Action action;
+};
+
 std::shared_ptr<ParameterServer> CreateParameterServer() {
   auto parameter_server = std::make_shared<ParameterServer>();
   parameter_server->AddParameter("physics/player.acceleration", kAcceleration,
@@ -48,6 +58,33 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
   return parameter_server;
 }
 
+bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, Player& player) {
+  const auto player_path = std::filesystem::path(SOURCE_DIR) / "assets" / "player";
+  const int shoot_delay =
+      static_cast<int>(parameter_server.GetParameter<double>("timing/shoot.delay"));
+
+  constexpr int kWidth = 80;
+  std::vector<AnimationInfo> animations = {
+      // path, sprite width, loops, forwards/backwards, animation_duration_ms, action
+      {player_path / "player_idle.png", kWidth, true, false, 1400, Action::Idle},
+      {player_path / "player_walk.png", kWidth, true, true, 800, Action::Walk},
+      {player_path / "player_fire_forwards.png", kWidth, false, false, shoot_delay, Action::Shoot},
+      {player_path / "player_crouch.png", kWidth, false, false, 1400, Action::Crouch},
+      {player_path / "player_roll.png", kWidth, false, false, 500, Action::Roll},
+  };
+
+  for (const auto& animation : animations) {
+    auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
+        animation.sprite_path, animation.sprite_width, animation.loops,
+        animation.forwards_backwards, animation.animation_duration_ms);
+    if (!animated_sprite.has_value()) {
+      return false;
+    }
+    player.animation_manager.AddAnimation(std::move(*animated_sprite), animation.action);
+  }
+  return true;
+}
+
 void DecelerateAndStopPlayer(Player& player, const double deceleration) {
   if (std::abs(player.velocity.x) < 0.1) {
     player.acceleration.x = 0;
@@ -59,16 +96,6 @@ void DecelerateAndStopPlayer(Player& player, const double deceleration) {
 
 Platformer::Platformer() {
   this->Construct(kScreenWidthPx, kScreenHeightPx, kPixelSize, kPixelSize);
-}
-
-void LoadSprite(const std::string& filename,
-                const std::string& name,
-                std::map<std::string, olc::Sprite>& sprite_storage) {
-  const auto sprite_path = std::filesystem::path(SOURCE_DIR) / "assets" / filename;
-  sprite_storage[name] = olc::Sprite();
-  if (sprite_storage[name].LoadFromFile(sprite_path.string()) != olc::rcode::OK) {
-    std::cout << " Failed loading sprite `" << sprite_path << "`." << std::endl;
-  }
 }
 
 bool Platformer::OnUserDestroy() { return true; }
@@ -90,7 +117,6 @@ bool Platformer::OnUserCreate() {
   parameter_server_ = CreateParameterServer();
 
   rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel());
-  // rendering_engine_->AddFoundationBackgroundLayer(12, 24, 56);
   const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
   if (!rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4)) {
     return false;
@@ -104,33 +130,11 @@ bool Platformer::OnUserCreate() {
 
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
 
+  if (!InitializePlayerAnimationManager(*parameter_server_, player_)) {
+    return false;
+  }
   player_.position = {10, 10};
   player_.velocity = {0, 0};
-
-  std::vector<ActionSpriteSheet> aa;
-  const auto player_path = std::filesystem::path(SOURCE_DIR) / "assets" / "player";
-  // TODO:: emplace back never fucking works // clean up this shit somehow
-  // Probably best to do the AnimatedSprite initialization in the constructor of animation manager
-  // how I originally planned.
-  const auto shoot_delay = parameter_server_->GetParameter<double>("timing/shoot.delay");
-  aa.push_back(ActionSpriteSheet{
-      Action::Idle,
-      AnimatedSprite{(player_path / "player_idle.png").string(), 80, true, false, 200}});
-  aa.push_back(ActionSpriteSheet{
-      Action::Walk,
-      AnimatedSprite{(player_path / "player_walk.png").string(), 80, true, true, 200}});
-  // TODO:: Find a way to pass the 'total animation time' in.
-  aa.push_back(ActionSpriteSheet{
-      Action::Shoot, AnimatedSprite{(player_path / "player_fire_forwards.png").string(), 80, false,
-                                    false, static_cast<int>(std::round(shoot_delay / 7))}});
-  aa.push_back(ActionSpriteSheet{
-      Action::Crouch,
-      AnimatedSprite{(player_path / "player_crouch.png").string(), 80, true, false, 200}});
-  aa.push_back(ActionSpriteSheet{
-      Action::Roll,
-      AnimatedSprite{(player_path / "player_roll.png").string(), 80, false, false, 50}});
-
-  player_.animation_manager = AnimationManager(std::move(aa));
 
   // TODO:: Configure this a bit better.
   // zomdude params

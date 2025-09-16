@@ -2,8 +2,9 @@
 
 #include <olcPixelGameEngine.h>
 
+#include <filesystem>
 #include <memory>
-#include <string>
+#include <optional>
 #include <vector>
 
 #include "utils/game_clock.h"
@@ -12,24 +13,23 @@ namespace platformer {
 
 class AnimatedSprite {
  public:
-  // TODO:: remove this.
-  AnimatedSprite() = default;
-
-  AnimatedSprite(const std::string& sprite_sheet_path,
-                 int sprite_width,
-                 bool loops,
-                 bool forwards_backwards,
-                 int frame_delay_ms);
+  static std::optional<AnimatedSprite> CreateAnimatedSprite(
+      const std::filesystem::path& sprite_sheet_path,
+      int sprite_width,
+      bool loops,
+      bool forwards_backwards,
+      int animation_duration_ms);
 
   void StartAnimation();
 
   // Returns true if it is a non looping sprite and there are no frames left.
-  bool Expired() const;
+  [[nodiscard]] bool Expired() const;
 
-  // I wish this was const but olc needs non const sprites (vom).
-  [[nodiscard]] olc::Sprite* GetFrame();
+  [[nodiscard]] const olc::Sprite* GetFrame() const;
 
  private:
+  AnimatedSprite() = default;
+
   bool loops_;
   bool forwards_backwards_;
   int frame_delay_ms_;
