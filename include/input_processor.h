@@ -18,6 +18,7 @@ class InputProcessor {
 
  private:
   bool IsPlayerShooting(const Player& player);
+  bool IsPlayerShootingOnGround(const Player& player);
 
   olc::PixelGameEngine* engine_ptr_;
   InputCapture input_;

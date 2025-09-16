@@ -10,12 +10,12 @@
 namespace platformer {
 
 void DecelerateAndStopPlayer(Player& player, const double deceleration) {
-  if (std::abs(player.velocity.x) < 0.1) {
-    player.acceleration.x = 0;
-    player.velocity.x = 0;
+  if (player.velocity.x == 0) {
     return;
   }
-  player.acceleration.x = -player.velocity.x * deceleration;
+  player.decelerating = true;
+  const int sign = player.velocity.x > 0 ? -1 : 1;
+  player.acceleration.x = sign * deceleration;
 }
 
 InputProcessor::InputProcessor(std::shared_ptr<const ParameterServer> parameter_server,
@@ -37,9 +37,9 @@ bool InputProcessor::ProcessInputs(Player& player) {
     player.animation_manager.StartAction(Action::Walk);
   }
 
-  if (input_.GetKey(InputAction::Left).held && !IsPlayerShooting(player)) {
+  if (input_.GetKey(InputAction::Left).held && !IsPlayerShootingOnGround(player)) {
     player.acceleration.x = -acceleration;
-  } else if (input_.GetKey(InputAction::Right).held && !IsPlayerShooting(player)) {
+  } else if (input_.GetKey(InputAction::Right).held && !IsPlayerShootingOnGround(player)) {
     player.acceleration.x = +acceleration;
   } else {
     if (!IsPlayerShooting(player)) {
@@ -64,9 +64,12 @@ bool InputProcessor::ProcessInputs(Player& player) {
       player.velocity.y = jump_velocity;
     }
   }
-  if (input_.GetKey(InputAction::Shoot).pressed) {
+  if (input_.GetKey(InputAction::Shoot).held) {
     if (!IsPlayerShooting(player)) {
-      player.velocity.x = 0;
+      if (player.collisions.bottom) {
+        player.velocity.x = 0;
+        player.acceleration.x = 0;
+      }
       player.started_shooting = GameClock::NowGlobal();
       player.animation_manager.StartAction(Action::Shoot);
     }
@@ -82,11 +85,23 @@ bool InputProcessor::ProcessInputs(Player& player) {
     engine_ptr_->ConsoleCaptureStdOut(true);
     PrintConsoleWelcome();
   }
+  if (!engine_ptr_->IsConsoleShowing()) {
+    GameClock::ResumeGlobal();
+    // engine_ptr_->ConsoleCaptureStdOut(false);
+  }
 
   return true;
 }
 
 bool InputProcessor::IsPlayerShooting(const Player& player) {
+  const auto shoot_delay = parameter_server_->GetParameter<double>("timing/shoot.delay");
+  return (GameClock::NowGlobal() - player.started_shooting).count() / 1e6 < shoot_delay;
+}
+
+bool InputProcessor::IsPlayerShootingOnGround(const Player& player) {
+  if (!player.collisions.bottom) {
+    return false;
+  }
   const auto shoot_delay = parameter_server_->GetParameter<double>("timing/shoot.delay");
   return (GameClock::NowGlobal() - player.started_shooting).count() / 1e6 < shoot_delay;
 }

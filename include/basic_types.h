@@ -44,17 +44,11 @@ struct Player {
 
   AnimationManager animation_manager;
 
-  // TODO:: THIS IT NOT HOW I WANT IT TO END UP.
-  // olc::Sprite* sprite;
-
-  // This is just for debug/visualizations.
   Collisions collisions{};
 
   bool facing_left{};
+  bool decelerating{};
   TimePoint started_shooting;
-
-  // int animation_frame = 0;
-  // TimePoint animation_update{GameClock::NowGlobal()};
 };
 
 }  // namespace platformer

@@ -20,7 +20,7 @@
 constexpr int kPixelSize = 3;
 
 constexpr double kAcceleration = 50.0;
-constexpr double kDeceleration = 10.0;
+constexpr double kDeceleration = 80.0;
 constexpr double kJumpVel = 21.0;
 constexpr double kFollowPlayerScreenRatio = 0.3;
 
@@ -122,17 +122,10 @@ bool Platformer::OnUserCreate() {
   player_.velocity = {0, 0};
 
   // TODO:: Configure this a bit better.
-  // zomdude params
   player_.x_offset_px = 30;
   player_.y_offset_px = 0;
   player_.collision_width_px = 18;
   player_.collision_height_px = 48;
-
-  // Megaman params
-  // player_.x_offset_px = 7;
-  // player_.y_offset_px = 0;
-  // player_.collision_width_px = 12;
-  // player_.collision_height_px = 22;
 
   return true;
 }
@@ -141,24 +134,24 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   const auto follow_ratio =
       parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio");
 
+  // Control
   if (!input_processor_->ProcessInputs(player_)) {
     return false;
   }
 
-  if (!IsConsoleShowing()) {
-    GameClock::ResumeGlobal();
-  }
-
+  // Model
   physics_engine_->PhysicsStep(player_);
+  // std::cout << player_.velocity.x << std::endl;
 
+  // View
   rendering_engine_->KeepPlayerInFrame(player_, follow_ratio);  // Split ratio to x/y
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
   rendering_engine_->RenderForeground();
 
-  // TODO:: Fixed frame rate.
-  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  // TODO:: Fix frame rate.
+  std::this_thread::sleep_for(std::chrono::milliseconds(8));
   return true;
 }
 

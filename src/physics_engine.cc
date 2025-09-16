@@ -140,12 +140,20 @@ void PhysicsEngine::PhysicsStep(Player& player) {
 
   const auto max_x_vel = parameter_server_->GetParameter<double>("physics/max.x.vel");
   const auto max_y_vel = parameter_server_->GetParameter<double>("physics/max.y.vel");
-  player.velocity.x += player.acceleration.x * delta_t;
+
+  // If the player is decelerating check if the step moves the velocity past zero and instead stop.
+  double delta_v_x = player.acceleration.x * delta_t;
+  if (player.decelerating && ((player.velocity.x > 0 && (player.velocity.x + delta_v_x) < 0) ||
+                              (player.velocity.x < 0 && (player.velocity.x + delta_v_x) > 0))) {
+    player.acceleration.x = 0;
+    player.velocity.x = 0;
+    player.decelerating = false;
+    delta_v_x = 0;
+  }
+
+  player.velocity.x += delta_v_x;
   player.velocity.x = std::min(player.velocity.x, max_x_vel);
   player.velocity.x = std::max(player.velocity.x, -max_x_vel);
-  if (std::abs(player.velocity.x) < 1e-3) {
-    player.velocity.x = 0;
-  }
   player.position.x += player.velocity.x * delta_t;
   this->CheckPlayerCollision(player, Axis::X);
 
