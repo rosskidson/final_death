@@ -13,6 +13,7 @@
 #include "input_processor.h"
 #include "load_game_configuration.h"
 #include "rendering_engine.h"
+#include "sound.h"
 #include "utils/developer_console.h"
 #include "utils/parameter_server.h"
 
@@ -23,7 +24,7 @@ constexpr double kJumpVel = 21.0;
 constexpr double kFollowPlayerScreenRatio = 0.3;
 
 // TODO:: Int parameters
-constexpr double kShootDelayMs = 500;
+constexpr double kShootDelayMs = 1000;
 
 namespace platformer {
 
@@ -64,7 +65,7 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       // path, sprite width, loops, forwards/backwards, animation_duration_ms, action
       {player_path / "player_idle.png", kWidth, true, false, 1400, Action::Idle},
       {player_path / "player_walk.png", kWidth, true, true, 800, Action::Walk},
-      {player_path / "player_fire_forwards.png", kWidth, false, false, shoot_delay, Action::Shoot},
+      {player_path / "player_fire_standing.png", kWidth, false, false, shoot_delay, Action::Shoot},
       {player_path / "player_crouch.png", kWidth, false, false, 1400, Action::Crouch},
       {player_path / "player_roll.png", kWidth, false, false, 500, Action::Roll},
   };
@@ -79,6 +80,27 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
     player.animation_manager.AddAnimation(std::move(*animated_sprite), animation.action);
   }
   return true;
+}
+
+#define RETURN_NULL_PTR_ON_ERROR(statement) \
+  if (!(statement)) {                       \
+    return nullptr;                         \
+  }
+
+std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
+  auto player = std::make_shared<SoundPlayer>();
+  const auto path = std::filesystem::path(SOURCE_DIR) / "assets" / "sounds";
+  RETURN_NULL_PTR_ON_ERROR(
+      player->LoadWavFromFilesystem(path / "sfx_shotgun_shot.wav", "shotgun_fire"));
+  RETURN_NULL_PTR_ON_ERROR(
+      player->LoadWavFromFilesystem(path / "sfx_shotgun_shot.wav", "shotgun_reload"));
+
+  // const auto music_path = std::filesystem::path(SOURCE_DIR) / "assets" / "music";
+  // RETURN_NULL_PTR_ON_ERROR(  //
+  //     player->LoadWavFromFilesystem(music_path / "welcome_to_the_hub.mp3", "music"));
+
+      player->test();
+  return player;
 }
 
 Platformer::Platformer() {
@@ -107,9 +129,13 @@ bool Platformer::OnUserCreate() {
     return false;
   }
 
+  sound_player_ = CreateSoundPlayer();
+  // if(!sound_player_->PlaySample("music", true)) {
+  //   return false;
+  // }
   parameter_server_ = CreateParameterServer();
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
-  input_processor_ = std::make_unique<InputProcessor>(parameter_server_, this);
+  input_processor_ = std::make_unique<InputProcessor>(parameter_server_, sound_player_, this);
 
   if (!InitializePlayerAnimationManager(*parameter_server_, player_)) {
     return false;

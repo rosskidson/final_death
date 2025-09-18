@@ -9,6 +9,7 @@
 #include "olcPixelGameEngine.h"
 #include "physics_engine.h"
 #include "rendering_engine.h"
+#include "sound.h"
 #include "utils/parameter_server.h"
 
 namespace platformer {
@@ -31,6 +32,7 @@ class Platformer : public olc::PixelGameEngine {
   std::unique_ptr<PhysicsEngine> physics_engine_;
   std::shared_ptr<ParameterServer> parameter_server_;
   std::unique_ptr<InputProcessor> input_processor_;
+  std::shared_ptr<SoundPlayer> sound_player_;
 
   Player player_{};
 

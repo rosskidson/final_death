@@ -3,6 +3,7 @@
 
 #include "basic_types.h"
 #include "input_capture.h"
+#include "sound.h"
 #include "utils/developer_console.h"
 #include "utils/game_clock.h"
 #include "utils/parameter_server.h"
@@ -10,8 +11,12 @@
 namespace platformer {
 
 InputProcessor::InputProcessor(std::shared_ptr<const ParameterServer> parameter_server,
+                               std::shared_ptr<const SoundPlayer> sound_player,
                                olc::PixelGameEngine* engine_ptr)
-    : input_{engine_ptr}, parameter_server_{std::move(parameter_server)}, engine_ptr_{engine_ptr} {}
+    : input_{engine_ptr},
+      parameter_server_{std::move(parameter_server)},
+      sound_player_{std::move(sound_player)},
+      engine_ptr_{engine_ptr} {}
 
 bool InputProcessor::ProcessInputs(Player& player) {
   if (engine_ptr_->IsConsoleShowing()) {
@@ -56,6 +61,7 @@ bool InputProcessor::ProcessInputs(Player& player) {
   }
   if (input_.GetKey(InputAction::Shoot).held) {
     if (!IsPlayerShooting(player)) {
+      sound_player_->PlaySample("shotgun_fire");
       if (player.collisions.bottom) {
         player.velocity.x = 0;
         player.acceleration.x = 0;

@@ -16,7 +16,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 INCLUDE_DIRECTORIES(olcPixelGameEngine)
 INCLUDE_DIRECTORIES(include)
-INCLUDE_DIRECTORIES(json/single_include)
 
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}")
 configure_file(config.h.in config.h)
@@ -29,13 +28,26 @@ if(WIN32)
     FetchContent_MakeAvailable(json)
 
     cmake_policy(SET CMP0015 NEW)
+
+    INCLUDE_DIRECTORIES(SDL-win32/include)
+    LINK_DIRECTORIES(SDL-win32/lib)
+
+    SET(SDL_LIBS SDL SDL_mixer)
 else()
     FIND_PACKAGE(PNG REQUIRED)
     FIND_PACKAGE(OpenGL REQUIRED)
     FIND_PACKAGE(nlohmann_json REQUIRED)
+    FIND_PACKAGE(SDL_mixer REQUIRED)
+    FIND_PACKAGE(SDL REQUIRED)
+    INCLUDE_DIRECTORIES(${SDL_INCLUDE_DIR} ${SDL_MIXER_INCLUDE_DIRS})
+
+    SET(SDL_LIBS
+        ${SDL_MIXER_LIBRARIES}
+        ${SDL_LIBRARY}
+        )
 
     #LINUX
-    #sudo apt install nlohmann-json3-dev
+    #sudo apt install nlohmann-json3-dev libsdl-mixer1.2-dev libsdl1.2-dev
 
     MESSAGE("Building for linux...")
     SET(OLC_LIBS
@@ -62,6 +74,7 @@ add_executable(platformer
   src/physics_engine.cc
   src/platformer.cc
   src/rendering_engine.cc
+  src/sound.cc
   src/tileset.cc
 )
 
@@ -70,4 +83,5 @@ target_include_directories(platformer PRIVATE ${CMAKE_BINARY_DIR})
 target_link_libraries(platformer
   olc
   nlohmann_json::nlohmann_json
+  ${SDL_LIBS}
 )
