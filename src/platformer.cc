@@ -93,13 +93,11 @@ std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
   RETURN_NULL_PTR_ON_ERROR(
       player->LoadWavFromFilesystem(path / "sfx_shotgun_shot.wav", "shotgun_fire"));
   RETURN_NULL_PTR_ON_ERROR(
-      player->LoadWavFromFilesystem(path / "sfx_shotgun_shot.wav", "shotgun_reload"));
+      player->LoadWavFromFilesystem(path / "sfx_shotgun_reload.wav", "shotgun_reload"));
 
   // const auto music_path = std::filesystem::path(SOURCE_DIR) / "assets" / "music";
   // RETURN_NULL_PTR_ON_ERROR(  //
   //     player->LoadWavFromFilesystem(music_path / "welcome_to_the_hub.mp3", "music"));
-
-      player->test();
   return player;
 }
 
@@ -130,6 +128,9 @@ bool Platformer::OnUserCreate() {
   }
 
   sound_player_ = CreateSoundPlayer();
+  if(!sound_player_) {
+    return false;
+  }
   // if(!sound_player_->PlaySample("music", true)) {
   //   return false;
   // }
