@@ -18,7 +18,7 @@ class SoundPlayer {
 
   [[nodiscard]] bool LoadWavFromFilesystem(const std::filesystem::path& path, const std::string& sample_name);
 
-  bool PlaySample(const std::string& sample_name, bool loops=false) const;
+  bool PlaySample(const std::string& sample_name, bool loops=false, double volume=1.0) const;
 
   private:
   struct MaSoundDeleter {

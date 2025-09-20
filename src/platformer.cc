@@ -95,9 +95,9 @@ std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
   RETURN_NULL_PTR_ON_ERROR(
       player->LoadWavFromFilesystem(path / "sfx_shotgun_reload.wav", "shotgun_reload"));
 
-  // const auto music_path = std::filesystem::path(SOURCE_DIR) / "assets" / "music";
-  // RETURN_NULL_PTR_ON_ERROR(  //
-  //     player->LoadWavFromFilesystem(music_path / "welcome_to_the_hub.mp3", "music"));
+  const auto music_path = std::filesystem::path(SOURCE_DIR) / "assets" / "music";
+  // Failing to load music is okay.
+  (void)player->LoadWavFromFilesystem(music_path / "welcome_to_the_hub.mp3", "music");
   return player;
 }
 
@@ -131,9 +131,7 @@ bool Platformer::OnUserCreate() {
   if(!sound_player_) {
     return false;
   }
-  // if(!sound_player_->PlaySample("music", true)) {
-  //   return false;
-  // }
+  sound_player_->PlaySample("music", true, 0.3);
   parameter_server_ = CreateParameterServer();
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
   input_processor_ = std::make_unique<InputProcessor>(parameter_server_, sound_player_, this);
