@@ -15,10 +15,8 @@ class AnimatedSprite {
  public:
   static std::optional<AnimatedSprite> CreateAnimatedSprite(
       const std::filesystem::path& sprite_sheet_path,
-      int sprite_width,
       bool loops,
-      bool forwards_backwards,
-      int animation_duration_ms);
+      bool forwards_backwards);
 
   void StartAnimation();
 
@@ -32,9 +30,10 @@ class AnimatedSprite {
 
   bool loops_;
   bool forwards_backwards_;
-  int frame_delay_ms_;
+  // int total_frame_duration_ms_;
   std::vector<std::unique_ptr<olc::Sprite>> frames_;
-  int frame_count_;
+  std::vector<int> frame_timing_;
+  std::vector<int> frame_timing_lookup_;
   TimePoint start_time_;
 };
 

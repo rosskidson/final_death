@@ -40,10 +40,8 @@ namespace platformer {
 
 struct AnimationInfo {
   const std::filesystem::path sprite_path;
-  int sprite_width;
   bool loops;
   bool forwards_backwards;
-  int animation_duration_ms;
   Action action;
 };
 
@@ -72,18 +70,17 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
 
   constexpr int kWidth = 80;
   std::vector<AnimationInfo> animations = {
-      // path, sprite width, loops, forwards/backwards, animation_duration_ms, action
-      {player_path / "player_idle.png", kWidth, true, false, 1400, Action::Idle},
-      {player_path / "player_walk.png", kWidth, true, true, 800, Action::Walk},
-      {player_path / "player_fire_standing.png", kWidth, false, false, shoot_delay, Action::Shoot},
-      {player_path / "player_crouch.png", kWidth, false, false, 1400, Action::Crouch},
-      {player_path / "player_roll.png", kWidth, false, false, 500, Action::Roll},
+      // path, loops, forwards/backwards, action
+      {player_path / "player_idle_standing.png", true, false, Action::Idle},
+      {player_path / "player_walk.png", true, false, Action::Walk},
+      {player_path / "player_fire_standing.png", false, false, Action::Shoot},
+      {player_path / "player_idle_crouch.png", true, false, Action::Crouch},
+      {player_path / "player_roll.png", false, false, Action::Roll},
   };
 
   for (const auto& animation : animations) {
     auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
-        animation.sprite_path, animation.sprite_width, animation.loops,
-        animation.forwards_backwards, animation.animation_duration_ms);
+        animation.sprite_path, animation.loops, animation.forwards_backwards);
     if (!animated_sprite.has_value()) {
       return false;
     }

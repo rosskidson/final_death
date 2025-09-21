@@ -26,7 +26,7 @@ if errorlevel 1 (
 )
 
 REM Build the project
-cmake --build build
+cmake --build build -- -j %NUMBER_OF_PROCESSORS%
 if errorlevel 1 (
     echo [ERROR] Build failed.
     pause

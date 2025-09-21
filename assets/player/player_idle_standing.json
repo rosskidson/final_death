@@ -1,0 +1,90 @@
+{ "frames": {
+   "player_idle_standing 0.aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   },
+   "player_idle_standing 1.aseprite": {
+    "frame": { "x": 80, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   },
+   "player_idle_standing 2.aseprite": {
+    "frame": { "x": 160, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   },
+   "player_idle_standing 3.aseprite": {
+    "frame": { "x": 240, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   },
+   "player_idle_standing 4.aseprite": {
+    "frame": { "x": 320, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   },
+   "player_idle_standing 5.aseprite": {
+    "frame": { "x": 400, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   },
+   "player_idle_standing 6.aseprite": {
+    "frame": { "x": 480, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   },
+   "player_idle_standing 7.aseprite": {
+    "frame": { "x": 560, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   },
+   "player_idle_standing 8.aseprite": {
+    "frame": { "x": 640, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 200
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.14.4-x64",
+  "image": "player_idle_standing.png",
+  "format": "RGBA8888",
+  "size": { "w": 720, "h": 48 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "Layer 1", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

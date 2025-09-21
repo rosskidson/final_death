@@ -1,0 +1,218 @@
+{ "frames": {
+   "player_fire_backdodge 0.aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 15
+   },
+   "player_fire_backdodge 1.aseprite": {
+    "frame": { "x": 80, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 2.aseprite": {
+    "frame": { "x": 160, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 3.aseprite": {
+    "frame": { "x": 240, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 4.aseprite": {
+    "frame": { "x": 320, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 5.aseprite": {
+    "frame": { "x": 400, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 6.aseprite": {
+    "frame": { "x": 480, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 7.aseprite": {
+    "frame": { "x": 560, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 8.aseprite": {
+    "frame": { "x": 640, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 9.aseprite": {
+    "frame": { "x": 720, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 10.aseprite": {
+    "frame": { "x": 800, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 11.aseprite": {
+    "frame": { "x": 880, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 12.aseprite": {
+    "frame": { "x": 960, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 13.aseprite": {
+    "frame": { "x": 1040, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 14.aseprite": {
+    "frame": { "x": 1120, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 15.aseprite": {
+    "frame": { "x": 1200, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 16.aseprite": {
+    "frame": { "x": 1280, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 17.aseprite": {
+    "frame": { "x": 1360, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 18.aseprite": {
+    "frame": { "x": 1440, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 19.aseprite": {
+    "frame": { "x": 1520, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 20.aseprite": {
+    "frame": { "x": 1600, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 21.aseprite": {
+    "frame": { "x": 1680, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   },
+   "player_fire_backdodge 22.aseprite": {
+    "frame": { "x": 1760, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 60
+   },
+   "player_fire_backdodge 23.aseprite": {
+    "frame": { "x": 1840, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_fire_backdodge 24.aseprite": {
+    "frame": { "x": 1920, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 30
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.14.4-x64",
+  "image": "player_fire_backdodge.png",
+  "format": "RGBA8888",
+  "size": { "w": 2000, "h": 48 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "Layer 1", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}
