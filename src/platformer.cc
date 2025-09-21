@@ -41,6 +41,8 @@ namespace platformer {
 struct AnimationInfo {
   const std::filesystem::path sprite_path;
   bool loops;
+  int start_frame_idx;
+  int end_frame_idx;
   bool forwards_backwards;
   Action action;
 };
@@ -70,17 +72,20 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
 
   constexpr int kWidth = 80;
   std::vector<AnimationInfo> animations = {
-      // path, loops, forwards/backwards, action
-      {player_path / "player_idle_standing.png", true, false, Action::Idle},
-      {player_path / "player_walk.png", true, false, Action::Walk},
-      {player_path / "player_fire_standing.png", false, false, Action::Shoot},
-      {player_path / "player_idle_crouch.png", true, false, Action::Crouch},
-      {player_path / "player_roll.png", false, false, Action::Roll},
+      // path, loops, start_frame_idx, end_frame_idx, forwards/backwards, action
+      {player_path / "player_idle_standing.png", true, 0, -1, false, Action::Idle},
+      {player_path / "player_walk.png", true, 0, -1, false, Action::Walk},
+      {player_path / "player_fire_standing.png", false, 0, -1, false, Action::Shoot},
+      {player_path / "player_idle_crouch.png", true, 0, -1, false, Action::Crouch},
+      {player_path / "player_roll.png", false, 0, -1, false, Action::Roll},
+      {player_path / "player_jump.png", false, 1, -1, false, Action::JumpCrouch},
+      // {player_path / "player_jump.png", false, 2, 4, true, Action::Fly},
   };
 
   for (const auto& animation : animations) {
     auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
-        animation.sprite_path, animation.loops, animation.forwards_backwards);
+        animation.sprite_path, animation.loops, animation.start_frame_idx, animation.end_frame_idx,
+        animation.forwards_backwards);
     if (!animated_sprite.has_value()) {
       return false;
     }
@@ -146,6 +151,13 @@ bool Platformer::OnUserCreate() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
 
+  const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
+  player_.animation_manager.GetAnimation(Action::JumpCrouch).AddCallback(0, [&, jump_velocity]() {
+    if (player_.collisions.bottom) {
+      player_.velocity.y = jump_velocity;
+    }
+  });
+
   player_.position = {10, 10};
   player_.velocity = {0, 0};
 
@@ -168,8 +180,8 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   }
 
   // Model
-  physics_engine_->PhysicsStep(player_);
   player_.animation_manager.GetActiveAnimation().TriggerCallbacks();
+  physics_engine_->PhysicsStep(player_);
 
   // std::cout << player_.velocity.x << std::endl;
 

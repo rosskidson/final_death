@@ -7,7 +7,7 @@
 
 namespace platformer {
 
-enum class Action { Idle, Walk, Shoot, Jump, Crouch, Roll };
+enum class Action { Idle, Walk, Shoot, JumpCrouch, Fly, Crouch, Roll };
 
 class AnimationManager {
  public:

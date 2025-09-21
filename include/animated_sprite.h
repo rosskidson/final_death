@@ -16,6 +16,8 @@ class AnimatedSprite {
   static std::optional<AnimatedSprite> CreateAnimatedSprite(
       const std::filesystem::path& sprite_sheet_path,
       bool loops,
+      int start_frame_idx = 0,
+      int end_frame_idx = -1,
       bool forwards_backwards=false);
 
   void StartAnimation();

@@ -17,10 +17,14 @@ namespace fs = std::filesystem;
 using json = nlohmann::json;
 
 // The metadata format uses an index instead of just a list of frames, ¯\_(ツ)_/¯
-std::vector<std::string> GenerateIndexLookup(const std::string& sprite_base_name, int size) {
+std::vector<std::string> GenerateIndexLookup(const std::string& sprite_base_name,
+                                             const int size,
+                                             const int start_frame_idx,
+                                             const int end_frame_idx) {
   std::vector<std::string> index;
+  auto actual_end_frame_idx = end_frame_idx == -1 ? size : end_frame_idx + 1;
   index.reserve(size);
-  for (int i = 0; i < size; ++i) {
+  for (int i = start_frame_idx; i < actual_end_frame_idx; ++i) {
     index.push_back(sprite_base_name + " " + std::to_string(i) + ".aseprite");
   }
   return index;
@@ -29,6 +33,8 @@ std::vector<std::string> GenerateIndexLookup(const std::string& sprite_base_name
 std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     const std::filesystem::path& sprite_sheet_path,
     bool loops,
+    int start_frame_idx,
+    int end_frame_idx,
     bool forwards_backwards) try {
   // Check both spritesheet and metadata files are preset.
   if (!fs::exists(sprite_sheet_path)) {
@@ -62,9 +68,23 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     LOG_ERROR("Sprite has zero frames.");
     return std::nullopt;
   }
+  if (start_frame_idx < 0 || start_frame_idx >= frame_count) {
+    LOG_ERROR("Invalid start frame idx " << start_frame_idx << " for sprite with " << frame_count
+                                         << " frames.");
+    return std::nullopt;
+  }
+  if (end_frame_idx > 0 && (end_frame_idx < start_frame_idx || end_frame_idx >= frame_count)) {
+    LOG_ERROR("Invalid end frame idx " << end_frame_idx << " for sprite with " << frame_count
+                                       << " frames.");
+    return std::nullopt;
+  }
+  if (end_frame_idx != -1) {
+    frame_count = end_frame_idx - start_frame_idx + 1;
+  }
   std::optional<int> width;
   std::optional<int> height;
-  for (const std::string& index : GenerateIndexLookup(metadata_path.stem(), frame_count)) {
+  for (const std::string& index :
+       GenerateIndexLookup(metadata_path.stem(), frame_count, start_frame_idx, end_frame_idx)) {
     const auto& frame = sprite_meta["frames"][index];
     if (!width.has_value() || !height.has_value()) {
       width = frame["frame"]["w"];
@@ -178,8 +198,8 @@ void AnimatedSprite::TriggerCallbacks() {
   }
   for (const auto& callback : callbacks_[frame_idx]) {
     callback();
-    callback_triggered_[frame_idx] = true;
   }
+  callback_triggered_[frame_idx] = true;
 }
 
 void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {

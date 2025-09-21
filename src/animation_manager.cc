@@ -1,5 +1,5 @@
 #include "animation_manager.h"
-
+#include "utils/logging.h"
 #include "animated_sprite.h"
 
 namespace platformer {
@@ -17,8 +17,11 @@ AnimatedSprite& AnimationManager::GetActiveAnimation() {
   if (active_actions_.count(Action::Shoot) != 0) {
     return animated_sprites_.at(Action::Shoot);
   }
-  if (active_actions_.count(Action::Jump) != 0) {
-    return animated_sprites_.at(Action::Jump);
+  if (active_actions_.count(Action::JumpCrouch) != 0) {
+    return animated_sprites_.at(Action::JumpCrouch);
+  }
+  if (active_actions_.count(Action::Fly) != 0) {
+    return animated_sprites_.at(Action::Fly);
   }
   if (active_actions_.count(Action::Roll) != 0) {
     return animated_sprites_.at(Action::Roll);
