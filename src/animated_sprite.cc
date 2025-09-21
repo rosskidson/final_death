@@ -111,6 +111,8 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     animated_sprite.frame_timing_lookup_.push_back(animated_sprite.frame_timing_[i] +
                                                    animated_sprite.frame_timing_lookup_[i - 1]);
   }
+  animated_sprite.callbacks_.resize(animated_sprite.frames_.size());
+  animated_sprite.callback_triggered_.resize(animated_sprite.frames_.size());
   return animated_sprite;
 } catch (const json::parse_error& e) {
   LOG_ERROR("Failed parsing json metadata for sprite sheet '" << sprite_sheet_path
@@ -141,6 +143,13 @@ const olc::Sprite* AnimatedSprite::GetFrame() const {
   if (Expired()) {
     return nullptr;
   }
+  return frames_.at(GetCurrentFrameIdx()).get();
+}
+
+int AnimatedSprite::GetCurrentFrameIdx() const {
+  if (Expired()) {
+    return -1;
+  }
   int time_elapsed = static_cast<int>((GameClock::NowGlobal() - start_time_).count() / 1e6);
   time_elapsed = time_elapsed % frame_timing_lookup_.back();
 
@@ -148,10 +157,34 @@ const olc::Sprite* AnimatedSprite::GetFrame() const {
       std::upper_bound(frame_timing_lookup_.begin(), frame_timing_lookup_.end(), time_elapsed);
 
   if (itr == frame_timing_lookup_.end()) {
-    return frames_.back().get();
+    return static_cast<int>(frames_.size()) - 1;
   }
-  const int frame_idx = std::distance(frame_timing_lookup_.begin(), itr);
-  return frames_.at(frame_idx).get();
+  return static_cast<int>(std::distance(frame_timing_lookup_.begin(), itr));
+}
+
+void AnimatedSprite::TriggerCallbacks() {
+  const int frame_idx = GetCurrentFrameIdx();
+  if (frame_idx < 0 || frame_idx >= callbacks_.size()) {
+    return;
+  }
+  // Clear all callback triggered other than this frame.
+  for (int i = 0; i < callback_triggered_.size(); ++i) {
+    if (i != frame_idx) {
+      callback_triggered_[i] = false;
+    }
+  }
+  if (callback_triggered_[frame_idx]) {
+    return;
+  }
+  for (const auto& callback : callbacks_[frame_idx]) {
+    callback();
+    callback_triggered_[frame_idx] = true;
+  }
+}
+
+void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {
+  assert(frame_idx >= 0 && frame_idx < callbacks_.size());
+  callbacks_[frame_idx].push_back(std::move(callback));
 }
 
 }  // namespace platformer

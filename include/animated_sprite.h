@@ -16,7 +16,7 @@ class AnimatedSprite {
   static std::optional<AnimatedSprite> CreateAnimatedSprite(
       const std::filesystem::path& sprite_sheet_path,
       bool loops,
-      bool forwards_backwards);
+      bool forwards_backwards=false);
 
   void StartAnimation();
 
@@ -25,16 +25,23 @@ class AnimatedSprite {
 
   [[nodiscard]] const olc::Sprite* GetFrame() const;
 
+  void TriggerCallbacks();
+
+  void AddCallback(int frame_idx, std::function<void()> callback);
+
  private:
   AnimatedSprite() = default;
+  [[nodiscard]] int GetCurrentFrameIdx() const;
 
   bool loops_;
   bool forwards_backwards_;
-  // int total_frame_duration_ms_;
   std::vector<std::unique_ptr<olc::Sprite>> frames_;
   std::vector<int> frame_timing_;
   std::vector<int> frame_timing_lookup_;
   TimePoint start_time_;
+
+  std::vector<std::vector<std::function<void()>>> callbacks_;
+  std::vector<bool> callback_triggered_;
 };
 
 }  // namespace platformer

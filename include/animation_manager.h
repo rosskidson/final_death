@@ -14,11 +14,15 @@ class AnimationManager {
   AnimationManager() = default;  // REMOVE
   void AddAnimation(AnimatedSprite sprite, Action action);
 
+  AnimatedSprite& GetAnimation(Action action);
+
+  [[nodiscard]] AnimatedSprite& GetActiveAnimation() ; // TODO:: const
+
   void StartAction(Action action);
 
   void EndAction(Action action);
 
-  const olc::Sprite* GetSprite();
+  const olc::Sprite* GetSprite();  // TODO:: const
 
  private:
   void RemoveExpiredActions();

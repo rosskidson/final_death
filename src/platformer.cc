@@ -86,6 +86,7 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
     }
     player.animation_manager.AddAnimation(std::move(*animated_sprite), animation.action);
   }
+
   return true;
 }
 
@@ -138,6 +139,13 @@ bool Platformer::OnUserCreate() {
 
   RETURN_FALSE_IF_FAILED(InitializePlayerAnimationManager(*parameter_server_, player_));
 
+  player_.animation_manager.GetAnimation(Action::Shoot).AddCallback(1, [&]() {
+    sound_player_->PlaySample("shotgun_fire", false);
+  });
+  player_.animation_manager.GetAnimation(Action::Shoot).AddCallback(5, [&]() {
+    sound_player_->PlaySample("shotgun_reload", false);
+  });
+
   player_.position = {10, 10};
   player_.velocity = {0, 0};
 
@@ -161,6 +169,8 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
   // Model
   physics_engine_->PhysicsStep(player_);
+  player_.animation_manager.GetActiveAnimation().TriggerCallbacks();
+
   // std::cout << player_.velocity.x << std::endl;
 
   // View

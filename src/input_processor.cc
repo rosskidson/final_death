@@ -61,7 +61,6 @@ bool InputProcessor::ProcessInputs(Player& player) {
   }
   if (input_.GetKey(InputAction::Shoot).held) {
     if (!IsPlayerShooting(player)) {
-      sound_player_->PlaySample("shotgun_fire");
       if (player.collisions.bottom) {
         player.velocity.x = 0;
         player.acceleration.x = 0;
