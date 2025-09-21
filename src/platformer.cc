@@ -28,6 +28,16 @@ constexpr double kShootDelayMs = 1000;
 
 namespace platformer {
 
+#define RETURN_NULL_PTR_ON_ERROR(statement) \
+  if (!(statement)) {                       \
+    return nullptr;                         \
+  }
+
+#define RETURN_FALSE_IF_FAILED(statement) \
+  if (!(statement)) {                     \
+    return false;                         \
+  }
+
 struct AnimationInfo {
   const std::filesystem::path sprite_path;
   int sprite_width;
@@ -82,11 +92,6 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
   return true;
 }
 
-#define RETURN_NULL_PTR_ON_ERROR(statement) \
-  if (!(statement)) {                       \
-    return nullptr;                         \
-  }
-
 std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
   auto player = std::make_shared<SoundPlayer>();
   const auto path = std::filesystem::path(SOURCE_DIR) / "assets" / "sounds";
@@ -123,22 +128,19 @@ bool Platformer::OnUserCreate() {
 
   rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel());
   const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
-  if (!rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4)) {
-    return false;
-  }
+  RETURN_FALSE_IF_FAILED(
+      rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4));
 
   sound_player_ = CreateSoundPlayer();
-  if(!sound_player_) {
-    return false;
-  }
+  RETURN_FALSE_IF_FAILED(sound_player_);
   sound_player_->PlaySample("music", true, 0.3);
+
   parameter_server_ = CreateParameterServer();
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
   input_processor_ = std::make_unique<InputProcessor>(parameter_server_, sound_player_, this);
 
-  if (!InitializePlayerAnimationManager(*parameter_server_, player_)) {
-    return false;
-  }
+  RETURN_FALSE_IF_FAILED(InitializePlayerAnimationManager(*parameter_server_, player_));
+
   player_.position = {10, 10};
   player_.velocity = {0, 0};
 
