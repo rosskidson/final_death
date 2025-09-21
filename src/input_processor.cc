@@ -55,11 +55,11 @@ bool InputProcessor::ProcessInputs(Player& player) {
   }
 
   if (input_.GetKey(InputAction::Jump).pressed) {
-    player.animation_manager.StartAction(Action::JumpCrouch);
+    if (player.collisions.bottom) {
+      player.velocity.y = jump_velocity;
+    }
     // player.animation_manager.StartAction(Action::Fly);
-    // if (player.collisions.bottom) {
-    //   player.velocity.y = jump_velocity;
-    // }
+    // player.animation_manager.StartAction(Action::Fly);
   }
   if (input_.GetKey(InputAction::Shoot).held) {
     if (!IsPlayerShooting(player)) {

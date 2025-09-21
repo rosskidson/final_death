@@ -16,6 +16,7 @@ class AnimationManager {
 
   AnimatedSprite& GetAnimation(Action action);
 
+  [[nodiscard]] Action GetActiveAction() const;
   [[nodiscard]] AnimatedSprite& GetActiveAnimation() ; // TODO:: const
 
   void StartAction(Action action);

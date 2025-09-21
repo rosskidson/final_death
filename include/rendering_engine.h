@@ -23,7 +23,7 @@ class RenderingEngine {
   // Move the camera to keep it focused on the player.
   // The screen ratio is how much of a buffer from the player to the side of the screen
   // as a fraction of the screen size.
-  void KeepPlayerInFrame(const Player& player, double screen_ratio);
+  void KeepPlayerInFrame(const Player& player, double screen_ratio_x, double screen_ratio_y);
 
   void RenderBackground();
   void RenderForeground();

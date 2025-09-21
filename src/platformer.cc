@@ -21,7 +21,8 @@ constexpr int kPixelSize = 3;
 
 constexpr double kAcceleration = 50.0;
 constexpr double kJumpVel = 21.0;
-constexpr double kFollowPlayerScreenRatio = 0.3;
+constexpr double kFollowPlayerScreenRatioX = 0.3;
+constexpr double kFollowPlayerScreenRatioY = 0.5;
 
 // TODO:: Int parameters
 constexpr double kShootDelayMs = 1000;
@@ -54,10 +55,16 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
   parameter_server->AddParameter("physics/jump.velocity", kJumpVel,
                                  "The instantaneous vertical velocity when you jump, unit: tile/s");
   parameter_server->AddParameter(
-      "rendering/follow.player.screen.ratio", kFollowPlayerScreenRatio,
+      "rendering/follow.player.screen.ratio.x", kFollowPlayerScreenRatioX,
       "How far the player can walk towards the side of the screen before the camera follows, as a "
       "percentage of the screen size. The larger the ratio, the more centered the player will be "
       "on the screen.");
+  parameter_server->AddParameter(
+      "rendering/follow.player.screen.ratio.y", kFollowPlayerScreenRatioY,
+      "How far the player can walk towards the side of the screen before the camera follows, as a "
+      "percentage of the screen size. The larger the ratio, the more centered the player will be "
+      "on the screen.");
+
 
   parameter_server->AddParameter("timing/shoot.delay", kShootDelayMs,
                                  "How long it takes to shoot and reload");
@@ -79,7 +86,7 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_idle_crouch.png", true, 0, -1, false, Action::Crouch},
       {player_path / "player_roll.png", false, 0, -1, false, Action::Roll},
       {player_path / "player_jump.png", false, 1, -1, false, Action::JumpCrouch},
-      // {player_path / "player_jump.png", false, 2, 4, true, Action::Fly},
+      {player_path / "player_jump.png", true, 2, 4, true, Action::Fly},
   };
 
   for (const auto& animation : animations) {
@@ -151,12 +158,12 @@ bool Platformer::OnUserCreate() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
 
-  const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
-  player_.animation_manager.GetAnimation(Action::JumpCrouch).AddCallback(0, [&, jump_velocity]() {
-    if (player_.collisions.bottom) {
-      player_.velocity.y = jump_velocity;
-    }
-  });
+  // const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
+  // player_.animation_manager.GetAnimation(Action::JumpCrouch).AddCallback(0, [&, jump_velocity]() {
+  //   if (player_.collisions.bottom) {
+  //     player_.velocity.y = jump_velocity;
+  //   }
+  // });
 
   player_.position = {10, 10};
   player_.velocity = {0, 0};
@@ -171,8 +178,10 @@ bool Platformer::OnUserCreate() {
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
-  const auto follow_ratio =
-      parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio");
+  const auto follow_ratio_x =
+      parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.x");
+  const auto follow_ratio_y =
+      parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.y");
 
   // Control
   if (!input_processor_->ProcessInputs(player_)) {
@@ -182,11 +191,16 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   // Model
   player_.animation_manager.GetActiveAnimation().TriggerCallbacks();
   physics_engine_->PhysicsStep(player_);
+  if(player_.collisions.bottom){
+    player_.animation_manager.EndAction(Action::Fly);
+  } else if(player_.animation_manager.GetActiveAction() != Action::Fly){
+    player_.animation_manager.StartAction(Action::Fly);
+  }
 
   // std::cout << player_.velocity.x << std::endl;
 
   // View
-  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio);  // Split ratio to x/y
+  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x, follow_ratio_y);  // Split ratio to x/y
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
