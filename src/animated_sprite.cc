@@ -160,8 +160,9 @@ bool AnimatedSprite::Expired() const {
 }
 
 const olc::Sprite* AnimatedSprite::GetFrame() const {
+  // If the animation has expired, return the last frame.
   if (Expired()) {
-    return nullptr;
+    return frames_.back().get();
   }
   return frames_.at(GetCurrentFrameIdx()).get();
 }
@@ -184,6 +185,19 @@ int AnimatedSprite::GetCurrentFrameIdx() const {
 
 void AnimatedSprite::TriggerCallbacks() {
   const int frame_idx = GetCurrentFrameIdx();
+  if (frame_idx == -1) {
+    if(expire_callback_triggered_) {
+      return;
+    }
+    for (const auto& callback : expire_callbacks_) {
+      callback();
+    }
+    expire_callback_triggered_ = true;
+    return;
+  }
+
+  expire_callback_triggered_ = false;
+
   if (frame_idx < 0 || frame_idx >= callbacks_.size()) {
     return;
   }
@@ -205,6 +219,10 @@ void AnimatedSprite::TriggerCallbacks() {
 void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {
   assert(frame_idx >= 0 && frame_idx < callbacks_.size());
   callbacks_[frame_idx].push_back(std::move(callback));
+}
+
+void AnimatedSprite::AddExpireCallback(std::function<void()> callback) {
+  expire_callbacks_.push_back(std::move(callback));
 }
 
 }  // namespace platformer

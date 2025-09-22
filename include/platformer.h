@@ -7,6 +7,7 @@
 #include "game_configuration.h"
 #include "input_processor.h"
 #include "olcPixelGameEngine.h"
+#include "player.h"
 #include "physics_engine.h"
 #include "rendering_engine.h"
 #include "sound.h"

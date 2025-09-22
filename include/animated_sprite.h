@@ -22,6 +22,9 @@ class AnimatedSprite {
 
   void StartAnimation();
 
+  [[nodiscard]] TimePoint GetStartTime() const { return start_time_; }
+  void SetStartTime(TimePoint time) { start_time_ = time; }
+
   // Returns true if it is a non looping sprite and there are no frames left.
   [[nodiscard]] bool Expired() const;
 
@@ -29,7 +32,11 @@ class AnimatedSprite {
 
   void TriggerCallbacks();
 
+  // Add a callback to be triggered when a certain frame is reached.
   void AddCallback(int frame_idx, std::function<void()> callback);
+
+  // Add a callback to be triggered when the animation expires (only for non-looping animations).
+  void AddExpireCallback(std::function<void()> callback);
 
  private:
   AnimatedSprite() = default;
@@ -44,6 +51,8 @@ class AnimatedSprite {
 
   std::vector<std::vector<std::function<void()>>> callbacks_;
   std::vector<bool> callback_triggered_;
+  std::vector<std::function<void()>> expire_callbacks_;
+  bool expire_callback_triggered_{false};
 };
 
 }  // namespace platformer

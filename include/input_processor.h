@@ -6,6 +6,7 @@
 #include "input_capture.h"
 #include "olcPixelGameEngine.h"
 #include "sound.h"
+#include "player.h"
 #include "utils/parameter_server.h"
 
 namespace platformer {
@@ -19,9 +20,6 @@ class InputProcessor {
   bool ProcessInputs(Player& player);
 
  private:
-  bool IsPlayerShooting(const Player& player);
-  bool IsPlayerShootingOnGround(const Player& player);
-
   olc::PixelGameEngine* engine_ptr_;
   InputCapture input_;
   std::shared_ptr<const ParameterServer> parameter_server_;

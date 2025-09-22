@@ -12,16 +12,19 @@
 #include "global_defs.h"
 #include "input_processor.h"
 #include "load_game_configuration.h"
+#include "player.h"
+#include "player_state.h"
 #include "rendering_engine.h"
 #include "sound.h"
 #include "utils/developer_console.h"
+#include "utils/logging.h"
 #include "utils/parameter_server.h"
 
 constexpr int kPixelSize = 3;
 
 constexpr double kAcceleration = 50.0;
 constexpr double kJumpVel = 21.0;
-constexpr double kFollowPlayerScreenRatioX = 0.3;
+constexpr double kFollowPlayerScreenRatioX = 0.4;
 constexpr double kFollowPlayerScreenRatioY = 0.5;
 
 // TODO:: Int parameters
@@ -45,8 +48,23 @@ struct AnimationInfo {
   int start_frame_idx;
   int end_frame_idx;
   bool forwards_backwards;
-  Action action;
+  PlayerState action;
 };
+
+Player InitializePlayer() {
+  Player player;
+  player.position = {10, 10};
+  player.velocity = {0, 0};
+  player.state = PlayerState::Idle;
+
+  // TODO:: Configure this a bit better.
+  player.x_offset_px = 30;
+  player.y_offset_px = 0;
+  player.collision_width_px = 18;
+  player.collision_height_px = 48;
+
+  return player;
+}
 
 std::shared_ptr<ParameterServer> CreateParameterServer() {
   auto parameter_server = std::make_shared<ParameterServer>();
@@ -65,7 +83,6 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
       "percentage of the screen size. The larger the ratio, the more centered the player will be "
       "on the screen.");
 
-
   parameter_server->AddParameter("timing/shoot.delay", kShootDelayMs,
                                  "How long it takes to shoot and reload");
 
@@ -79,14 +96,18 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
 
   constexpr int kWidth = 80;
   std::vector<AnimationInfo> animations = {
-      // path, loops, start_frame_idx, end_frame_idx, forwards/backwards, action
-      {player_path / "player_idle_standing.png", true, 0, -1, false, Action::Idle},
-      {player_path / "player_walk.png", true, 0, -1, false, Action::Walk},
-      {player_path / "player_fire_standing.png", false, 0, -1, false, Action::Shoot},
-      {player_path / "player_idle_crouch.png", true, 0, -1, false, Action::Crouch},
-      {player_path / "player_roll.png", false, 0, -1, false, Action::Roll},
-      {player_path / "player_jump.png", false, 1, -1, false, Action::JumpCrouch},
-      {player_path / "player_jump.png", true, 2, 4, true, Action::Fly},
+      // path, loops, start_frame_idx, end_frame_idx, forwards/backwards, player state
+      {player_path / "player_idle_standing.png", true, 0, -1, false, PlayerState::Idle},
+      {player_path / "player_walk.png", true, 0, -1, false, PlayerState::Walk},
+      {player_path / "player_fire_standing.png", false, 1, -1, false, PlayerState::Shoot},
+      {player_path / "player_fire_jumping.png", false, 0, -1, false, PlayerState::InAirShoot},
+      {player_path / "player_fire_crouch.png", false, 0, -1, false, PlayerState::CrouchShoot},
+      {player_path / "player_idle_crouch.png", true, 0, -1, false, PlayerState::Crouch},
+      {player_path / "player_roll.png", false, 1, 6, false, PlayerState::PreRoll},
+      {player_path / "player_roll.png", true, 7, 10, false, PlayerState::Roll},
+      {player_path / "player_roll.png", false, 11, 15, false, PlayerState::PostRoll},
+      {player_path / "player_jump.png", false, 1, 1, false, PlayerState::PreJump},
+      {player_path / "player_jump.png", true, 2, 4, true, PlayerState::InAir},
   };
 
   for (const auto& animation : animations) {
@@ -143,38 +164,119 @@ bool Platformer::OnUserCreate() {
 
   sound_player_ = CreateSoundPlayer();
   RETURN_FALSE_IF_FAILED(sound_player_);
-  sound_player_->PlaySample("music", true, 0.3);
+  // sound_player_->PlaySample("music", true, 0.3);
 
   parameter_server_ = CreateParameterServer();
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
   input_processor_ = std::make_unique<InputProcessor>(parameter_server_, sound_player_, this);
 
+  player_ = InitializePlayer();
+
   RETURN_FALSE_IF_FAILED(InitializePlayerAnimationManager(*parameter_server_, player_));
 
-  player_.animation_manager.GetAnimation(Action::Shoot).AddCallback(1, [&]() {
+  // Animation Callbacks
+  player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
-  player_.animation_manager.GetAnimation(Action::Shoot).AddCallback(5, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(5, [&]() {
+    sound_player_->PlaySample("shotgun_reload", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::InAirShoot).AddCallback(0, [&]() {
+    sound_player_->PlaySample("shotgun_fire", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::InAirShoot).AddCallback(5, [&]() {
+    sound_player_->PlaySample("shotgun_reload", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(0, [&]() {
+    sound_player_->PlaySample("shotgun_fire", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
 
-  // const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
-  // player_.animation_manager.GetAnimation(Action::JumpCrouch).AddCallback(0, [&, jump_velocity]() {
-  //   if (player_.collisions.bottom) {
-  //     player_.velocity.y = jump_velocity;
-  //   }
-  // });
-
-  player_.position = {10, 10};
-  player_.velocity = {0, 0};
-
-  // TODO:: Configure this a bit better.
-  player_.x_offset_px = 30;
-  player_.y_offset_px = 0;
-  player_.collision_width_px = 18;
-  player_.collision_height_px = 48;
+  const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
+  player_.animation_manager.GetAnimation(PlayerState::PreJump)
+      .AddExpireCallback([&, jump_velocity]() {
+        if (player_.collisions.bottom) {
+          player_.velocity.y = jump_velocity;
+        }
+      });
 
   return true;
+}
+
+bool IsInterruptibleState(PlayerState state) {
+  switch (state) {
+    case PlayerState::Shoot:
+    case PlayerState::InAirShoot:
+    case PlayerState::CrouchShoot:
+    case PlayerState::PreRoll:
+    case PlayerState::Roll:
+    case PlayerState::PreJump:
+    case PlayerState::Suicide:
+      return false;
+  }
+  return true;
+}
+
+bool Shooting(const PlayerState state) {
+  return state == PlayerState::Shoot || state == PlayerState::CrouchShoot ||
+         state == PlayerState::InAirShoot;
+}
+
+void UpdateState(Player& player) {
+  if (!player.animation_manager.GetActiveAnimation().Expired() &&
+      !IsInterruptibleState(player.state)) {
+    if (player.state == PlayerState::InAirShoot && player.collisions.bottom) {
+      player.animation_manager.SwapToAnimation(PlayerState::Shoot);
+      player.state = PlayerState::Shoot;
+    }
+    return;
+  }
+  if (player.requested_states.count(PlayerState::Shoot)) {
+    bool restart_shot =
+        Shooting(player.state) && player.animation_manager.GetActiveAnimation().Expired();
+
+    if (!player.collisions.bottom) {
+      player.state = PlayerState::InAirShoot;
+    } else if (player.requested_states.count(PlayerState::Crouch)) {
+      player.state = PlayerState::CrouchShoot;
+    } else {
+      player.state = PlayerState::Shoot;
+    }
+    if (restart_shot) {
+      player.animation_manager.GetActiveAnimation().StartAnimation();
+    }
+    return;
+  }
+
+  if (player.state == PlayerState::PreRoll &&
+      player.animation_manager.GetActiveAnimation().Expired()) {
+    player.state = PlayerState::Roll;
+    return;
+  }
+
+  if (player.requested_states.count(PlayerState::PreRoll)) {
+    player.state = PlayerState::PreRoll;
+    return;
+  }
+  if (!player.collisions.bottom) {
+    player.state = PlayerState::InAir;
+    return;
+  }
+  if (player.requested_states.count(PlayerState::PreJump)) {
+    player.state = PlayerState::PreJump;
+    return;
+  }
+  if (player.requested_states.count(PlayerState::Crouch)) {
+    player.state = PlayerState::Crouch;
+    return;
+  }
+  if (player.requested_states.count(PlayerState::Walk)) {
+    player.state = PlayerState::Walk;
+    return;
+  }
+  player.state = PlayerState::Idle;
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
@@ -188,19 +290,19 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
     return false;
   }
 
+  // State update.
+  UpdateState(player_);
+  player_.animation_manager.Update(player_.state);
+  player_.requested_states.clear();
+
   // Model
-  player_.animation_manager.GetActiveAnimation().TriggerCallbacks();
   physics_engine_->PhysicsStep(player_);
-  if(player_.collisions.bottom){
-    player_.animation_manager.EndAction(Action::Fly);
-  } else if(player_.animation_manager.GetActiveAction() != Action::Fly){
-    player_.animation_manager.StartAction(Action::Fly);
-  }
 
   // std::cout << player_.velocity.x << std::endl;
 
   // View
-  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x, follow_ratio_y);  // Split ratio to x/y
+  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x,
+                                       follow_ratio_y);  // Split ratio to x/y
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);

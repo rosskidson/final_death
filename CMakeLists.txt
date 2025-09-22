@@ -71,6 +71,7 @@ add_executable(platformer
   src/main.cc
   src/physics_engine.cc
   src/platformer.cc
+  #src/player.cc
   src/rendering_engine.cc
   src/sound.cc
   src/tileset.cc

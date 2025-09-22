@@ -3,12 +3,21 @@
 
 #include "basic_types.h"
 #include "input_capture.h"
+#include "player.h"
 #include "sound.h"
 #include "utils/developer_console.h"
 #include "utils/game_clock.h"
 #include "utils/parameter_server.h"
 
 namespace platformer {
+
+bool IsPlayerShooting(const Player& player) {
+  return player.state == PlayerState::Shoot;
+}
+
+bool IsPlayerShootingOnGround(const Player& player) {
+  return player.collisions.bottom && player.state == PlayerState::Shoot;
+}
 
 InputProcessor::InputProcessor(std::shared_ptr<const ParameterServer> parameter_server,
                                std::shared_ptr<const SoundPlayer> sound_player,
@@ -28,8 +37,8 @@ bool InputProcessor::ProcessInputs(Player& player) {
   const auto acceleration = parameter_server_->GetParameter<double>("physics/player.acceleration");
   const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
 
-  if (input_.GetKey(InputAction::Left).pressed || input_.GetKey(InputAction::Right).pressed) {
-    player.animation_manager.StartAction(Action::Walk);
+  if(input_.GetKey(InputAction::Left).held || input_.GetKey(InputAction::Right).held) {
+    player.requested_states.insert(PlayerState::Walk);
   }
 
   if (input_.GetKey(InputAction::Left).held && !IsPlayerShootingOnGround(player)) {
@@ -37,38 +46,28 @@ bool InputProcessor::ProcessInputs(Player& player) {
   } else if (input_.GetKey(InputAction::Right).held && !IsPlayerShootingOnGround(player)) {
     player.acceleration.x = +acceleration;
   } else {
-    if (!IsPlayerShooting(player)) {
-      player.animation_manager.EndAction(Action::Walk);
-    }
     player.acceleration.x = 0;
   }
 
-  if (input_.GetKey(InputAction::Crouch).pressed) {
-    player.animation_manager.StartAction(Action::Crouch);
-  }
-  if (input_.GetKey(InputAction::Crouch).released) {
-    player.animation_manager.EndAction(Action::Crouch);
+  if (input_.GetKey(InputAction::Crouch).held) {
+    player.requested_states.insert(PlayerState::Crouch);
   }
 
   if (input_.GetKey(InputAction::Roll).pressed) {
-    player.animation_manager.StartAction(Action::Roll);
+    player.requested_states.insert(PlayerState::PreRoll);
   }
 
   if (input_.GetKey(InputAction::Jump).pressed) {
-    if (player.collisions.bottom) {
-      player.velocity.y = jump_velocity;
-    }
-    // player.animation_manager.StartAction(Action::Fly);
-    // player.animation_manager.StartAction(Action::Fly);
+    player.requested_states.insert(PlayerState::PreJump);
   }
+
   if (input_.GetKey(InputAction::Shoot).held) {
+    player.requested_states.insert(PlayerState::Shoot);
     if (!IsPlayerShooting(player)) {
       if (player.collisions.bottom) {
         player.velocity.x = 0;
         player.acceleration.x = 0;
       }
-      player.started_shooting = GameClock::NowGlobal();
-      player.animation_manager.StartAction(Action::Shoot);
     }
   }
 
@@ -88,19 +87,6 @@ bool InputProcessor::ProcessInputs(Player& player) {
   }
 
   return true;
-}
-
-bool InputProcessor::IsPlayerShooting(const Player& player) {
-  const auto shoot_delay = parameter_server_->GetParameter<double>("timing/shoot.delay");
-  return (GameClock::NowGlobal() - player.started_shooting).count() / 1e6 < shoot_delay;
-}
-
-bool InputProcessor::IsPlayerShootingOnGround(const Player& player) {
-  if (!player.collisions.bottom) {
-    return false;
-  }
-  const auto shoot_delay = parameter_server_->GetParameter<double>("timing/shoot.delay");
-  return (GameClock::NowGlobal() - player.started_shooting).count() / 1e6 < shoot_delay;
 }
 
 }  // namespace platformer

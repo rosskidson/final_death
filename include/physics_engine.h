@@ -2,6 +2,7 @@
 
 #include "basic_types.h"
 #include "game_configuration.h"
+#include "player.h"
 #include "utils/parameter_server.h"
 
 namespace platformer {

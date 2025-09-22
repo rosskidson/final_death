@@ -4,6 +4,7 @@
 
 #include "animated_sprite.h"
 #include "basic_types.h"
+#include "player.h"
 #include "game_configuration.h"
 
 namespace platformer {

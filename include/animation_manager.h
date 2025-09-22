@@ -1,34 +1,36 @@
 #pragma once
 
 #include <map>
-#include <set>
 
 #include "animated_sprite.h"
+#include "player_state.h"
 
 namespace platformer {
 
-enum class Action { Idle, Walk, Shoot, JumpCrouch, Fly, Crouch, Roll };
-
 class AnimationManager {
  public:
-  AnimationManager() = default;  // REMOVE
-  void AddAnimation(AnimatedSprite sprite, Action action);
+  AnimationManager() : active_action_(PlayerState::Idle) {}
 
-  AnimatedSprite& GetAnimation(Action action);
+  void AddAnimation(AnimatedSprite sprite, PlayerState action);
 
-  [[nodiscard]] Action GetActiveAction() const;
-  [[nodiscard]] AnimatedSprite& GetActiveAnimation() ; // TODO:: const
+  [[nodiscard]] const AnimatedSprite& GetAnimation(PlayerState action) const;
+  [[nodiscard]] AnimatedSprite& GetAnimation(PlayerState action);
 
-  void StartAction(Action action);
+  [[nodiscard]] const AnimatedSprite& GetActiveAnimation() const;
+  [[nodiscard]] AnimatedSprite& GetActiveAnimation();
 
-  void EndAction(Action action);
+  void SwapToAnimation(PlayerState action);
 
-  const olc::Sprite* GetSprite();  // TODO:: const
+  void Update(PlayerState new_action);
+
+  // void StartAction(Action action);
+  // void AddAction(Action action);
+  // void EndAction(Action action);
+
+  [[nodiscard]] const olc::Sprite* GetSprite() const;
 
  private:
-  void RemoveExpiredActions();
-
-  std::map<Action, AnimatedSprite> animated_sprites_;
-  std::set<Action> active_actions_;
+  std::map<PlayerState, AnimatedSprite> animated_sprites_;
+  PlayerState active_action_;
 };
 }  // namespace platformer
