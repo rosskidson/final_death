@@ -5,6 +5,14 @@
 
 namespace platformer {
 
+#define TRY_SET_STATE(player, STATE)                   \
+    do {                                               \
+        if ((player).requested_states.count(STATE)) {  \
+            (player).state = (STATE);                  \
+            return;                                    \
+        }                                              \
+    } while (0)
+
 namespace {
 
 bool IsInterruptibleState(PlayerState state) {
@@ -60,13 +68,7 @@ void UpdateStateImpl(Player& player) {
   }
 
   // Remaining non-interruptable states
-  std::vector<PlayerState> non_interruptable_states = {PlayerState::PreRoll};
-  for (const auto& state : non_interruptable_states) {
-    if (player.requested_states.count(state)) {
-      player.state = state;
-      return;
-    }
-  }
+  TRY_SET_STATE(player, PlayerState::PreRoll);
 
   // InAir has priority over other states.
   if (!player.collisions.bottom) {
@@ -75,14 +77,20 @@ void UpdateStateImpl(Player& player) {
   }
 
   // Lower priority interruptable states.
-  std::vector<PlayerState> lower_priority_states = {PlayerState::PreJump, PlayerState::Crouch,
-                                                    PlayerState::Walk, PlayerState::PreSuicide};
-  for (const auto& state : lower_priority_states) {
-    if (player.requested_states.count(state)) {
-      player.state = state;
-      return;
-    }
+  TRY_SET_STATE(player, PlayerState::PreJump);
+  TRY_SET_STATE(player, PlayerState::Crouch);
+  TRY_SET_STATE(player, PlayerState::PreSuicide);
+
+  // The landing crouch only has priority over walk/idle. Latched until expiration
+  if (player.collisions.bottom_changed ||
+      (player.state == PlayerState::Landing &&
+       !player.animation_manager.GetActiveAnimation().Expired())) {
+    player.state = PlayerState::Landing;
+    return;
   }
+
+  TRY_SET_STATE(player, PlayerState::Walk);
+
   player.state = PlayerState::Idle;
 }
 

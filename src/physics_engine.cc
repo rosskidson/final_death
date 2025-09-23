@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "player.h"
 #include "utils/game_clock.h"
 
 constexpr double kMaxVelX = 8;
@@ -11,6 +12,13 @@ constexpr double kGroundFriction = 50.0;
 constexpr double kAirFriction = 1.0;
 
 namespace platformer {
+
+void UpdateCollisionsChanged(Collisions& collisions, const Collisions& old_collisions) {
+  collisions.left_changed = collisions.left != old_collisions.left;
+  collisions.right_changed = collisions.right != old_collisions.right;
+  collisions.top_changed = collisions.top != old_collisions.top;
+  collisions.bottom_changed = collisions.bottom != old_collisions.bottom;
+}
 
 BoundingBox GetPlayerCollisionBox(const Player& player, int tile_size) {
   const double x_offset = static_cast<double>(player.x_offset_px) / tile_size;
@@ -160,6 +168,7 @@ void PhysicsEngine::PhysicsStep(Player& player) {
     }
   }
 
+  Collisions old_collisions = player.collisions;
   player.collisions = {};
 
   player.velocity.x += player.acceleration.x * delta_t;
@@ -177,6 +186,8 @@ void PhysicsEngine::PhysicsStep(Player& player) {
   if (player.velocity.x != 0.) {
     player.facing_left = player.velocity.x < 0;
   }
+
+  UpdateCollisionsChanged(player.collisions, old_collisions);
 
   player.last_update = now;
 }

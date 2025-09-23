@@ -10,6 +10,7 @@ namespace platformer {
 
 struct Collisions {
   bool left, right, top, bottom;
+  bool left_changed, right_changed, top_changed, bottom_changed;
 };
 
 struct Player {

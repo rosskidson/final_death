@@ -108,6 +108,7 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_roll.png", true, 7, 10, false, PlayerState::Roll},
       {player_path / "player_roll.png", false, 11, 15, false, PlayerState::PostRoll},
       {player_path / "player_jump.png", false, 1, 1, false, PlayerState::PreJump},
+      {player_path / "player_jump.png", false, 1, 1, false, PlayerState::Landing},
       {player_path / "player_jump.png", true, 2, 4, true, PlayerState::InAir},
   };
 
