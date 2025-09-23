@@ -26,17 +26,9 @@ bool Shooting(const PlayerState state) {
          state == PlayerState::InAirShoot;
 }
 
-}  // namespace
-
-void UpdateState(Player& player) {
+void UpdateStateImpl(Player& player) {
   if (!player.animation_manager.GetActiveAnimation().Expired() &&
       !IsInterruptibleState(player.state)) {
-    // Disallow movement during firing.
-    if (player.state == PlayerState::Shoot || player.state == PlayerState::CrouchShoot) {
-      player.velocity.x = 0;
-      player.acceleration.x = 0;
-    }
-
     // If the player is shooting in the air and lands, transition the animation to the standing
     // pose.  Only do this after the first few frame to avoid double fire.
     if (player.state == PlayerState::InAirShoot && player.collisions.bottom &&
@@ -92,6 +84,34 @@ void UpdateState(Player& player) {
     }
   }
   player.state = PlayerState::Idle;
+}
+
+}  // namespace
+
+void UpdatePlayerFromState(Player& player) {
+  // Disallow movement during firing.
+  if ((player.state == PlayerState::Shoot || player.state == PlayerState::CrouchShoot) &&
+      !player.animation_manager.GetActiveAnimation().Expired()) {
+    player.velocity.x = 0;
+    player.acceleration.x = 0;
+  }
+
+  // Disallow movement during crouch, except changing direction.
+  if (player.state == PlayerState::Crouch) {
+    if (player.facing_left && player.acceleration.x > 0) {
+      player.velocity.x = 1;
+    } else if (!player.facing_left && player.acceleration.x < 0) {
+      player.velocity.x = -1;
+    } else {
+      player.velocity.x = 0;
+    }
+    player.acceleration.x = 0;
+  }
+}
+
+void UpdateState(Player& player) {
+  UpdateStateImpl(player);
+  player.requested_states.clear();
 }
 
 }  // namespace platformer

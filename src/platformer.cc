@@ -177,21 +177,18 @@ bool Platformer::OnUserCreate() {
 
   // Animation Callbacks
   player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(0, [&]() {
-    LOG_INFO("stand shoot");
     sound_player_->PlaySample("shotgun_fire", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::InAirShoot).AddCallback(0, [&]() {
-    LOG_INFO("air shoot");
     sound_player_->PlaySample("shotgun_fire", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::InAirShoot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(0, [&]() {
-    LOG_INFO("crouch shoot");
     sound_player_->PlaySample("shotgun_fire", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(5, [&]() {
@@ -216,22 +213,16 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
       parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.y");
 
   // Control
-  if (!input_processor_->ProcessInputs(player_)) {
-    return false;
-  }
-
-  // State update.
-  UpdateState(player_);
-
-  player_.animation_manager.Update(player_.state);
-  player_.requested_states.clear();
+  RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
 
   // Model
+  UpdateState(player_);
+  UpdatePlayerFromState(player_);
+  player_.animation_manager.Update(player_.state);
   physics_engine_->PhysicsStep(player_);
 
   // View
-  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x,
-                                       follow_ratio_y);  // Split ratio to x/y
+  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x, follow_ratio_y);
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
