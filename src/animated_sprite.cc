@@ -83,8 +83,8 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
   }
   std::optional<int> width;
   std::optional<int> height;
-  for (const std::string& index :
-       GenerateIndexLookup(metadata_path.stem(), frame_count, start_frame_idx, end_frame_idx)) {
+  for (const std::string& index : GenerateIndexLookup(metadata_path.stem().string(), frame_count,
+                                                      start_frame_idx, end_frame_idx)) {
     const auto& frame = sprite_meta["frames"][index];
     if (!width.has_value() || !height.has_value()) {
       width = frame["frame"]["w"];
@@ -186,7 +186,7 @@ int AnimatedSprite::GetCurrentFrameIdx() const {
 void AnimatedSprite::TriggerCallbacks() {
   const int frame_idx = GetCurrentFrameIdx();
   if (frame_idx == -1) {
-    if(expire_callback_triggered_) {
+    if (expire_callback_triggered_) {
       return;
     }
     for (const auto& callback : expire_callbacks_) {
