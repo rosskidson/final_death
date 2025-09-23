@@ -148,30 +148,42 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
   return std::nullopt;
 }
 
-void AnimatedSprite::StartAnimation() { start_time_ = GameClock::NowGlobal(); }
-
-bool AnimatedSprite::Expired() const {
-  if (loops_) {
-    return false;
+void AnimatedSprite::StartAnimation() {
+  start_time_ = GameClock::NowGlobal();
+  for (int i = 0; i < callback_triggered_.size(); ++i) {
+    callback_triggered_[i] = false;
   }
-  const auto time_elapsed = GameClock::NowGlobal() - start_time_;
-  const auto frame_count = frames_.size();
-  return (time_elapsed.count() / 1000000) > frame_timing_lookup_.back();
+  expire_callback_triggered_ = false;
 }
 
+void AnimatedSprite::StartAnimation(const TimePoint& start_time) {
+  start_time_ = start_time;
+  for (int i = 0; i < callback_triggered_.size(); ++i) {
+    callback_triggered_[i] = false;
+  }
+  expire_callback_triggered_ = false;
+}
+
+// Only use GetCurrentFrameIdx to check if it is expired, rather than making another call to the
+// clock. This ensures timing consistency.
+bool AnimatedSprite::Expired() const { return GetCurrentFrameIdx() == -1; }
+
 const olc::Sprite* AnimatedSprite::GetFrame() const {
-  // If the animation has expired, return the last frame.
-  if (Expired()) {
+  const auto current_frame_idx = GetCurrentFrameIdx();
+  if (current_frame_idx == -1) {
     return frames_.back().get();
   }
-  return frames_.at(GetCurrentFrameIdx()).get();
+  return frames_.at(current_frame_idx).get();
 }
 
 int AnimatedSprite::GetCurrentFrameIdx() const {
-  if (Expired()) {
+  int time_elapsed = static_cast<int>((GameClock::NowGlobal() - start_time_).count() / 1e6);
+
+  // Check if it has expired first.
+  if (!loops_ && time_elapsed >= frame_timing_lookup_.back()) {
     return -1;
   }
-  int time_elapsed = static_cast<int>((GameClock::NowGlobal() - start_time_).count() / 1e6);
+
   time_elapsed = time_elapsed % frame_timing_lookup_.back();
 
   const auto itr =
@@ -198,9 +210,8 @@ void AnimatedSprite::TriggerCallbacks() {
 
   expire_callback_triggered_ = false;
 
-  if (frame_idx < 0 || frame_idx >= callbacks_.size()) {
-    return;
-  }
+  assert(frame_idx >= 0 && frame_idx < frames_.size());
+
   // Clear all callback triggered other than this frame.
   for (int i = 0; i < callback_triggered_.size(); ++i) {
     if (i != frame_idx) {
@@ -214,6 +225,11 @@ void AnimatedSprite::TriggerCallbacks() {
     callback();
   }
   callback_triggered_[frame_idx] = true;
+
+  for (int i = 0; i < callback_triggered_.size(); ++i) {
+    std::cout << callback_triggered_[i] << " ";
+  }
+  std::cout << std::endl;
 }
 
 void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {

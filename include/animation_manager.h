@@ -19,7 +19,7 @@ class AnimationManager {
   [[nodiscard]] const AnimatedSprite& GetActiveAnimation() const;
   [[nodiscard]] AnimatedSprite& GetActiveAnimation();
 
-  void SwapToAnimation(PlayerState action);
+  void SwapAnimation(PlayerState action);
 
   void Update(PlayerState new_action);
 

@@ -16,6 +16,7 @@
 #include "player_state.h"
 #include "rendering_engine.h"
 #include "sound.h"
+#include "update_player_state.h"
 #include "utils/developer_console.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
@@ -164,7 +165,7 @@ bool Platformer::OnUserCreate() {
 
   sound_player_ = CreateSoundPlayer();
   RETURN_FALSE_IF_FAILED(sound_player_);
-  // sound_player_->PlaySample("music", true, 0.3);
+  sound_player_->PlaySample("music", true, 0.2);
 
   parameter_server_ = CreateParameterServer();
   physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
@@ -176,18 +177,21 @@ bool Platformer::OnUserCreate() {
 
   // Animation Callbacks
   player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(0, [&]() {
+    LOG_INFO("stand shoot");
     sound_player_->PlaySample("shotgun_fire", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::InAirShoot).AddCallback(0, [&]() {
+    LOG_INFO("air shoot");
     sound_player_->PlaySample("shotgun_fire", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::InAirShoot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(0, [&]() {
+    LOG_INFO("crouch shoot");
     sound_player_->PlaySample("shotgun_fire", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(5, [&]() {
@@ -205,80 +209,6 @@ bool Platformer::OnUserCreate() {
   return true;
 }
 
-bool IsInterruptibleState(PlayerState state) {
-  switch (state) {
-    case PlayerState::Shoot:
-    case PlayerState::InAirShoot:
-    case PlayerState::CrouchShoot:
-    case PlayerState::PreRoll:
-    case PlayerState::Roll:
-    case PlayerState::PreJump:
-    case PlayerState::Suicide:
-      return false;
-  }
-  return true;
-}
-
-bool Shooting(const PlayerState state) {
-  return state == PlayerState::Shoot || state == PlayerState::CrouchShoot ||
-         state == PlayerState::InAirShoot;
-}
-
-void UpdateState(Player& player) {
-  if (!player.animation_manager.GetActiveAnimation().Expired() &&
-      !IsInterruptibleState(player.state)) {
-    if (player.state == PlayerState::InAirShoot && player.collisions.bottom) {
-      player.animation_manager.SwapToAnimation(PlayerState::Shoot);
-      player.state = PlayerState::Shoot;
-    }
-    return;
-  }
-  if (player.requested_states.count(PlayerState::Shoot)) {
-    bool restart_shot =
-        Shooting(player.state) && player.animation_manager.GetActiveAnimation().Expired();
-
-    if (!player.collisions.bottom) {
-      player.state = PlayerState::InAirShoot;
-    } else if (player.requested_states.count(PlayerState::Crouch)) {
-      player.state = PlayerState::CrouchShoot;
-    } else {
-      player.state = PlayerState::Shoot;
-    }
-    if (restart_shot) {
-      player.animation_manager.GetActiveAnimation().StartAnimation();
-    }
-    return;
-  }
-
-  if (player.state == PlayerState::PreRoll &&
-      player.animation_manager.GetActiveAnimation().Expired()) {
-    player.state = PlayerState::Roll;
-    return;
-  }
-
-  if (player.requested_states.count(PlayerState::PreRoll)) {
-    player.state = PlayerState::PreRoll;
-    return;
-  }
-  if (!player.collisions.bottom) {
-    player.state = PlayerState::InAir;
-    return;
-  }
-  if (player.requested_states.count(PlayerState::PreJump)) {
-    player.state = PlayerState::PreJump;
-    return;
-  }
-  if (player.requested_states.count(PlayerState::Crouch)) {
-    player.state = PlayerState::Crouch;
-    return;
-  }
-  if (player.requested_states.count(PlayerState::Walk)) {
-    player.state = PlayerState::Walk;
-    return;
-  }
-  player.state = PlayerState::Idle;
-}
-
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   const auto follow_ratio_x =
       parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.x");
@@ -292,13 +222,12 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
   // State update.
   UpdateState(player_);
+
   player_.animation_manager.Update(player_.state);
   player_.requested_states.clear();
 
   // Model
   physics_engine_->PhysicsStep(player_);
-
-  // std::cout << player_.velocity.x << std::endl;
 
   // View
   rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x,

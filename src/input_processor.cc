@@ -41,9 +41,9 @@ bool InputProcessor::ProcessInputs(Player& player) {
     player.requested_states.insert(PlayerState::Walk);
   }
 
-  if (input_.GetKey(InputAction::Left).held && !IsPlayerShootingOnGround(player)) {
+  if (input_.GetKey(InputAction::Left).held) {
     player.acceleration.x = -acceleration;
-  } else if (input_.GetKey(InputAction::Right).held && !IsPlayerShootingOnGround(player)) {
+  } else if (input_.GetKey(InputAction::Right).held) {
     player.acceleration.x = +acceleration;
   } else {
     player.acceleration.x = 0;
@@ -63,12 +63,6 @@ bool InputProcessor::ProcessInputs(Player& player) {
 
   if (input_.GetKey(InputAction::Shoot).held) {
     player.requested_states.insert(PlayerState::Shoot);
-    if (!IsPlayerShooting(player)) {
-      if (player.collisions.bottom) {
-        player.velocity.x = 0;
-        player.acceleration.x = 0;
-      }
-    }
   }
 
   if (input_.GetKey(InputAction::Quit).released) {

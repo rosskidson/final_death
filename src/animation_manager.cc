@@ -31,16 +31,19 @@ AnimatedSprite& AnimationManager::GetActiveAnimation() {
 void AnimationManager::Update(const PlayerState new_action) {
   // Trigger callbacks before changing away from an expired animation.
   GetActiveAnimation().TriggerCallbacks();
-  if (new_action != active_action_) {
+  if (new_action != active_action_ || GetActiveAnimation().Expired()) {
+    LOG_INFO("old action: " << ToString(active_action_)
+                            << ", new action: " << ToString(new_action)
+                            << ", expired: " << GetActiveAnimation().Expired());
     active_action_ = new_action;
     GetActiveAnimation().StartAnimation();
   }
 }
 
-void AnimationManager::SwapToAnimation(PlayerState action){
+void AnimationManager::SwapAnimation(PlayerState action) {
   const auto begin_time = GetActiveAnimation().GetStartTime();
   active_action_ = action;
-  GetActiveAnimation().SetStartTime(begin_time);
+  GetActiveAnimation().StartAnimation(begin_time);
 }
 
 const olc::Sprite* AnimationManager::GetSprite() const { return GetActiveAnimation().GetFrame(); }

@@ -75,6 +75,7 @@ add_executable(platformer
   src/rendering_engine.cc
   src/sound.cc
   src/tileset.cc
+  src/update_player_state.cc
 )
 
 target_include_directories(platformer PRIVATE ${CMAKE_BINARY_DIR} ${miniaudio_SOURCE_DIR})

@@ -17,13 +17,13 @@ class AnimatedSprite {
       const std::filesystem::path& sprite_sheet_path,
       bool loops,
       int start_frame_idx = 0,
-      int end_frame_idx = -1,
-      bool forwards_backwards=false);
+      int end_frame_idx = -1,  // Includes this frame idx, i.e. 0 to 4 means 5 frames.
+      bool forwards_backwards = false);
 
   void StartAnimation();
+  void StartAnimation(const TimePoint& start_time);
 
   [[nodiscard]] TimePoint GetStartTime() const { return start_time_; }
-  void SetStartTime(TimePoint time) { start_time_ = time; }
 
   // Returns true if it is a non looping sprite and there are no frames left.
   [[nodiscard]] bool Expired() const;

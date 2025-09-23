@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace platformer {
 
 enum class PlayerState {
@@ -19,5 +21,43 @@ enum class PlayerState {
   Dying,
   Dead
 };
+
+
+
+inline std::string ToString(PlayerState state) {
+  switch (state) {
+    case PlayerState::Idle:
+      return "Idle";
+    case PlayerState::Walk:
+      return "Walk";
+    case PlayerState::Shoot:
+      return "Shoot";
+    case PlayerState::PreJump:
+      return "PreJump";
+    case PlayerState::InAir:
+      return "InAir";
+    case PlayerState::InAirShoot:
+      return "InAirShoot";
+    case PlayerState::Crouch:
+      return "Crouch";
+    case PlayerState::CrouchShoot:
+      return "CrouchShoot";
+    case PlayerState::PreRoll:
+      return "PreRoll";
+    case PlayerState::Roll:
+      return "Roll";
+    case PlayerState::PostRoll:
+      return "PostRoll";
+    case PlayerState::PreSuicide:
+      return "PreSuicide";
+    case PlayerState::Suicide:
+      return "Suicide";
+    case PlayerState::Dying:
+      return "Dying";
+    case PlayerState::Dead:
+      return "Dead";
+  }
+  return "unknown state";
+}
 
 }
