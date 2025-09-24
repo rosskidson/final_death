@@ -61,6 +61,7 @@ void UpdateStateImpl(const PhysicsEngine& physics, Player& player) {
     if (player.state == PlayerState::Roll &&
         GameClock::NowGlobal() - player.roll_start_time > std::chrono::milliseconds(500)) {
       // HACK: set the collisions back to full size dude to check for squishing.
+      // TODO:: less hacky, copy the player, or supply a custom bounding box.
       player.x_offset_px = 30;
       player.y_offset_px = 0;
       player.collision_width_px = 18;
@@ -175,6 +176,7 @@ void UpdatePlayerFromState(Player& player) {
       player.velocity.x *= -1;
     }
 
+    // TODO:: This is hacky and should be configured better.
     player.x_offset_px = 32;
     player.y_offset_px = 0;
     player.collision_width_px = 16;
