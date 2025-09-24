@@ -2,16 +2,17 @@
 
 #include "player_state.h"
 #include "utils/game_clock.h"
+#include "utils/logging.h"
 
 namespace platformer {
 
-#define TRY_SET_STATE(player, STATE)                   \
-    do {                                               \
-        if ((player).requested_states.count(STATE)) {  \
-            (player).state = (STATE);                  \
-            return;                                    \
-        }                                              \
-    } while (0)
+#define TRY_SET_STATE(player, STATE)              \
+  do {                                            \
+    if ((player).requested_states.count(STATE)) { \
+      (player).state = (STATE);                   \
+      return;                                     \
+    }                                             \
+  } while (0)
 
 namespace {
 
@@ -23,6 +24,7 @@ bool IsInterruptibleState(PlayerState state) {
     case PlayerState::PreRoll:
     case PlayerState::Roll:
     case PlayerState::PreJump:
+    case PlayerState::Landing:
     case PlayerState::Suicide:
       return false;
   }
@@ -70,6 +72,12 @@ void UpdateStateImpl(Player& player) {
   // Remaining non-interruptable states
   TRY_SET_STATE(player, PlayerState::PreRoll);
 
+  if (player.collisions.bottom && player.collisions.bottom_changed && player.hard_landing) {
+    player.hard_landing = false;
+    player.state = PlayerState::Landing;
+    return;
+  }
+
   // InAir has priority over other states.
   if (!player.collisions.bottom) {
     player.state = PlayerState::InAir;
@@ -82,12 +90,12 @@ void UpdateStateImpl(Player& player) {
   TRY_SET_STATE(player, PlayerState::PreSuicide);
 
   // The landing crouch only has priority over walk/idle. Latched until expiration
-  if (player.collisions.bottom_changed ||
-      (player.state == PlayerState::Landing &&
-       !player.animation_manager.GetActiveAnimation().Expired())) {
-    player.state = PlayerState::Landing;
-    return;
-  }
+  // if (player.collisions.bottom_changed ||
+  //     (player.state == PlayerState::Landing &&
+  //      !player.animation_manager.GetActiveAnimation().Expired())) {
+  //   player.state = PlayerState::Landing;
+  //   return;
+  // }
 
   TRY_SET_STATE(player, PlayerState::Walk);
 
@@ -98,7 +106,8 @@ void UpdateStateImpl(Player& player) {
 
 void UpdatePlayerFromState(Player& player) {
   // Disallow movement during firing.
-  if ((player.state == PlayerState::Shoot || player.state == PlayerState::CrouchShoot) &&
+  if ((player.state == PlayerState::Shoot || player.state == PlayerState::CrouchShoot ||
+       player.state == PlayerState::Landing) &&
       !player.animation_manager.GetActiveAnimation().Expired()) {
     player.velocity.x = 0;
     player.acceleration.x = 0;
@@ -113,6 +122,14 @@ void UpdatePlayerFromState(Player& player) {
     } else {
       player.velocity.x = 0;
     }
+    player.acceleration.x = 0;
+  }
+
+  if (player.state == PlayerState::PreJump) {
+    if (player.velocity.x != 0) {
+      player.cached_velocity.x = player.velocity.x;
+    }
+    player.velocity.x = 0;
     player.acceleration.x = 0;
   }
 }

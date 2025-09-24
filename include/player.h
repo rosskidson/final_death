@@ -18,6 +18,8 @@ struct Player {
   Vector2d velocity{};
   Vector2d acceleration{};
 
+  Vector2d cached_velocity{};
+
   TimePoint last_update{GameClock::NowGlobal()};
 
   int x_offset_px{};
@@ -33,7 +35,9 @@ struct Player {
   Collisions collisions{};
 
   bool facing_left{};
-  bool directional_pressed{};
+
+  double distance_fallen{};
+  bool hard_landing{false};
 };
 
 // void SetPlayerState(Player& player, PlayerState new_state);

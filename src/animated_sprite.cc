@@ -226,10 +226,11 @@ void AnimatedSprite::TriggerCallbacks() {
   }
   callback_triggered_[frame_idx] = true;
 
-  for (int i = 0; i < callback_triggered_.size(); ++i) {
-    std::cout << callback_triggered_[i] << " ";
-  }
-  std::cout << std::endl;
+  // Print callback_triggered_
+  // for (int i = 0; i < callback_triggered_.size(); ++i) {
+  //   std::cout << callback_triggered_[i] << " ";
+  // }
+  // std::cout << std::endl;
 }
 
 void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {

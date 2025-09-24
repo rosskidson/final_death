@@ -32,9 +32,9 @@ void AnimationManager::Update(const PlayerState new_action) {
   // Trigger callbacks before changing away from an expired animation.
   GetActiveAnimation().TriggerCallbacks();
   if (new_action != active_action_ || GetActiveAnimation().Expired()) {
-    LOG_INFO("old action: " << ToString(active_action_)
-                            << ", new action: " << ToString(new_action)
-                            << ", expired: " << GetActiveAnimation().Expired());
+    // LOG_INFO("old action: " << ToString(active_action_)
+    //                         << ", new action: " << ToString(new_action)
+    //                         << ", expired: " << GetActiveAnimation().Expired());
     active_action_ = new_action;
     GetActiveAnimation().StartAnimation();
   }
