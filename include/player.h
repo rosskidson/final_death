@@ -38,6 +38,8 @@ struct Player {
 
   double distance_fallen{};
   bool hard_landing{false};
+
+  TimePoint roll_start_time{};
 };
 
 // void SetPlayerState(Player& player, PlayerState new_state);

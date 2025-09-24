@@ -4,6 +4,7 @@
 
 #include "player.h"
 #include "utils/game_clock.h"
+#include "utils/logging.h"
 
 constexpr double kMaxVelX = 8;
 constexpr double kMaxVelY = 25;
@@ -39,14 +40,12 @@ bool IsCollision(const Grid<int>& collision_grid, double x, double y) {
   return collision_grid.GetTile(int_x, int_y) == 1;
 }
 
-std::pair<bool, bool> CheckPlayerAxisCollision(const Player& player,
-                                               const Axis axis,
-                                               const int tile_size,
-                                               const Grid<int>& collision_grid) {
+AxisCollisions PhysicsEngine::CheckPlayerAxisCollision(const Player& player,
+                                                       const Axis axis) const {
   constexpr double kLowerSamplePercent = 0.2;
   constexpr double kMiddlSamplePercent = 0.5;
   constexpr double kUpperSamplePercent = 0.8;
-  const auto player_box = GetPlayerCollisionBox(player, tile_size);
+  const auto player_box = GetPlayerCollisionBox(player, tile_size_);
 
   std::vector<Vector2d> lower_collision_points;
   std::vector<Vector2d> upper_collision_points;
@@ -79,16 +78,12 @@ std::pair<bool, bool> CheckPlayerAxisCollision(const Player& player,
   bool lower_collision{};
   bool upper_collision{};
   for (const auto& pt : lower_collision_points) {
-    lower_collision |= IsCollision(collision_grid, pt.x, pt.y);
+    lower_collision |= IsCollision(collisions_grid_, pt.x, pt.y);
   }
   for (const auto& pt : upper_collision_points) {
-    upper_collision |= IsCollision(collision_grid, pt.x, pt.y);
+    upper_collision |= IsCollision(collisions_grid_, pt.x, pt.y);
   }
-  if (lower_collision && upper_collision) {
-    const std::string axis_str = axis == Axis::X ? "Horizontal" : "Vertical";
-    std::cout << axis_str << " Squish!" << std::endl;
-  }
-  return std::make_pair(lower_collision, upper_collision);
+  return {lower_collision, upper_collision};
 }
 
 void ResolveCollisions(Player& player,
@@ -189,11 +184,11 @@ void PhysicsEngine::PhysicsStep(Player& player) {
 
   UpdateCollisionsChanged(player.collisions, old_collisions);
 
-  if(player.collisions.bottom || player.velocity.y > 0) {
+  if (player.collisions.bottom || player.velocity.y > 0) {
     player.distance_fallen = 0;
   } else {
     player.distance_fallen += -1 * player.velocity.y * delta_t;
-    if(player.distance_fallen > 10) {
+    if (player.distance_fallen > 10) {
       player.hard_landing = true;
     }
   }
@@ -201,9 +196,13 @@ void PhysicsEngine::PhysicsStep(Player& player) {
   player.last_update = now;
 }
 
-void PhysicsEngine::CheckPlayerCollision(Player& player, const Axis& axis) {
-  const auto [lower_collision, upper_collision] =
-      CheckPlayerAxisCollision(player, axis, tile_size_, collisions_grid_);
+void PhysicsEngine::CheckPlayerCollision(Player& player, const Axis& axis) const{
+  const auto [lower_collision, upper_collision] = CheckPlayerAxisCollision(player, axis);
+
+  if (lower_collision && upper_collision) {
+    const std::string axis_str = axis == Axis::X ? "Horizontal" : "Vertical";
+    LOG_ERROR(axis_str << " Squish!");
+  }
 
   if (!lower_collision && !upper_collision) {
     return;

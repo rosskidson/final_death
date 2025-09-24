@@ -1,5 +1,8 @@
 #include "update_player_state.h"
 
+#include <chrono>
+
+#include "physics_engine.h"
 #include "player_state.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
@@ -36,7 +39,11 @@ bool Shooting(const PlayerState state) {
          state == PlayerState::InAirShoot;
 }
 
-void UpdateStateImpl(Player& player) {
+bool Squish(const AxisCollisions& collisions) {
+  return collisions.lower_collision && collisions.upper_collision;
+}
+
+void UpdateStateImpl(const PhysicsEngine& physics, Player& player) {
   if (!player.animation_manager.GetActiveAnimation().Expired() &&
       !IsInterruptibleState(player.state)) {
     // If the player is shooting in the air and lands, transition the animation to the standing
@@ -49,6 +56,22 @@ void UpdateStateImpl(Player& player) {
       player.animation_manager.SwapAnimation(PlayerState::Shoot);
       player.state = PlayerState::Shoot;
     }
+
+    // Transition from Roll to PostRoll
+    if (player.state == PlayerState::Roll &&
+        GameClock::NowGlobal() - player.roll_start_time > std::chrono::milliseconds(500)) {
+      // HACK: set the collisions back to full size dude to check for squishing.
+      player.x_offset_px = 30;
+      player.y_offset_px = 0;
+      player.collision_width_px = 18;
+      player.collision_height_px = 48;
+      AxisCollisions collisions_x = physics.CheckPlayerAxisCollision(player, Axis::X);
+      AxisCollisions collisions_y = physics.CheckPlayerAxisCollision(player, Axis::Y);
+      if (!Squish(collisions_x) && !Squish(collisions_y)) {
+        player.state = PlayerState::PostRoll;
+      }
+    }
+
     return;
   }
   if (player.requested_states.count(PlayerState::Shoot)) {
@@ -65,6 +88,7 @@ void UpdateStateImpl(Player& player) {
   // Transition from PreRoll to Roll
   if (player.state == PlayerState::PreRoll &&
       player.animation_manager.GetActiveAnimation().Expired()) {
+    player.roll_start_time = GameClock::NowGlobal();
     player.state = PlayerState::Roll;
     return;
   }
@@ -75,6 +99,12 @@ void UpdateStateImpl(Player& player) {
   if (player.collisions.bottom && player.collisions.bottom_changed && player.hard_landing) {
     player.hard_landing = false;
     player.state = PlayerState::Landing;
+    return;
+  }
+
+  // Latch post-roll
+  if (player.state == PlayerState::PostRoll &&
+      !player.animation_manager.GetActiveAnimation().Expired()) {
     return;
   }
 
@@ -132,10 +162,33 @@ void UpdatePlayerFromState(Player& player) {
     player.velocity.x = 0;
     player.acceleration.x = 0;
   }
+
+  // Roll
+  if (player.state == PlayerState::Roll) {
+    if (player.facing_left) {
+      player.velocity.x = -10;
+    } else {
+      player.velocity.x = 10;
+    }
+    if ((player.collisions.left && player.acceleration.x > 0) ||
+        (player.collisions.right && player.acceleration.x < 0)) {
+      player.velocity.x *= -1;
+    }
+
+    player.x_offset_px = 32;
+    player.y_offset_px = 0;
+    player.collision_width_px = 16;
+    player.collision_height_px = 16;
+  } else {
+    player.x_offset_px = 30;
+    player.y_offset_px = 0;
+    player.collision_width_px = 18;
+    player.collision_height_px = 48;
+  }
 }
 
-void UpdateState(Player& player) {
-  UpdateStateImpl(player);
+void UpdateState(const PhysicsEngine& physics, Player& player) {
+  UpdateStateImpl(physics, player);
   player.requested_states.clear();
 }
 

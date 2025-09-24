@@ -135,7 +135,7 @@ std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
 
   const auto music_path = std::filesystem::path(SOURCE_DIR) / "assets" / "music";
   // Failing to load music is okay.
-  (void)player->LoadWavFromFilesystem(music_path / "welcome_to_the_hub.mp3", "music");
+  // (void)player->LoadWavFromFilesystem(music_path / "welcome_to_the_hub.mp3", "music");
   return player;
 }
 
@@ -222,7 +222,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
 
   // Model
-  UpdateState(player_);
+  UpdateState(*physics_engine_, player_);
   UpdatePlayerFromState(player_);
   player_.animation_manager.Update(player_.state);
   physics_engine_->PhysicsStep(player_);
