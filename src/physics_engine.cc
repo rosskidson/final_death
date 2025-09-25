@@ -3,11 +3,14 @@
 #include <algorithm>
 
 #include "player.h"
+#include "player_state.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
+#include "utils/parameter_server.h"
 
 constexpr double kMaxVelX = 8;
 constexpr double kMaxVelY = 25;
+constexpr double kRollVelX = 15;
 constexpr double kGravity = 50.0;
 constexpr double kGroundFriction = 50.0;
 constexpr double kAirFriction = 1.0;
@@ -38,6 +41,16 @@ bool IsCollision(const Grid<int>& collision_grid, double x, double y) {
     return false;
   }
   return collision_grid.GetTile(int_x, int_y) == 1;
+}
+
+std::pair<double, double> GetMaxVelocity(const Player& player,
+                                         const ParameterServer& parameter_server) {
+  if (player.state == PlayerState::Roll) {
+    return {parameter_server.GetParameter<double>("physics/roll.x.vel"),
+            parameter_server.GetParameter<double>("physics/max.y.vel")};
+  }
+  return {parameter_server.GetParameter<double>("physics/max.x.vel"),
+          parameter_server.GetParameter<double>("physics/max.y.vel")};
 }
 
 AxisCollisions PhysicsEngine::CheckPlayerAxisCollision(const Player& player,
@@ -124,6 +137,22 @@ void ResolveCollisions(Player& player,
   }
 }
 
+void ApplyFriction(const ParameterServer& parameter_server, const double delta_t, Player& player) {
+  const auto ground_friction = parameter_server.GetParameter<double>("physics/ground.friction");
+  const auto air_friction = parameter_server.GetParameter<double>("physics/air.friction");
+  if (player.acceleration.x == 0) {
+    if (player.collisions.bottom) {
+      if (std::abs(player.velocity.x) < ground_friction * delta_t) {
+        player.velocity.x = 0;
+      } else {
+        player.velocity.x -= ground_friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
+      }
+    } else {
+      player.velocity.x -= player.velocity.x * air_friction * delta_t;
+    }
+  }
+}
+
 PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer> parameter_server)
     : tile_size_{level.level_tileset->GetTileSize()},
       collisions_grid_{level.property_grid},
@@ -133,6 +162,8 @@ PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer
                                   "Maximum horizontal velocity of the player");
   parameter_server_->AddParameter("physics/max.y.vel", kMaxVelY,
                                   "Maximum vertical velocity of the player");
+  parameter_server_->AddParameter("physics/roll.x.vel", kRollVelX,
+                                  "Maximum horizontal velocity of the player during a roll");
   parameter_server_->AddParameter("physics/ground.friction", kGroundFriction,
                                   "Controls deceleration on the ground.");
   parameter_server_->AddParameter("physics/air.friction", kAirFriction,
@@ -145,26 +176,12 @@ void PhysicsEngine::PhysicsStep(Player& player) {
 
   player.acceleration.y = -1 * parameter_server_->GetParameter<double>("physics/gravity");
 
-  const auto max_x_vel = parameter_server_->GetParameter<double>("physics/max.x.vel");
-  const auto max_y_vel = parameter_server_->GetParameter<double>("physics/max.y.vel");
-  const auto ground_friction = parameter_server_->GetParameter<double>("physics/ground.friction");
-  const auto air_friction = parameter_server_->GetParameter<double>("physics/air.friction");
-
-  // TODO:: function.
-  if (player.acceleration.x == 0) {
-    if (player.collisions.bottom) {
-      if (std::abs(player.velocity.x) < ground_friction * delta_t) {
-        player.velocity.x = 0;
-      } else {
-        player.velocity.x -= ground_friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
-      }
-    } else {
-      player.velocity.x -= player.velocity.x * air_friction * delta_t;
-    }
-  }
+  ApplyFriction(*parameter_server_, delta_t, player);
 
   Collisions old_collisions = player.collisions;
   player.collisions = {};
+
+  const auto [max_x_vel, max_y_vel] = GetMaxVelocity(player, *parameter_server_);
 
   player.velocity.x += player.acceleration.x * delta_t;
   player.velocity.x = std::min(player.velocity.x, max_x_vel);
@@ -196,7 +213,7 @@ void PhysicsEngine::PhysicsStep(Player& player) {
   player.last_update = now;
 }
 
-void PhysicsEngine::CheckPlayerCollision(Player& player, const Axis& axis) const{
+void PhysicsEngine::CheckPlayerCollision(Player& player, const Axis& axis) const {
   const auto [lower_collision, upper_collision] = CheckPlayerAxisCollision(player, axis);
 
   if (lower_collision && upper_collision) {

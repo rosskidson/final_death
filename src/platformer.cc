@@ -30,6 +30,7 @@ constexpr double kFollowPlayerScreenRatioY = 0.5;
 
 // TODO:: Int parameters
 constexpr double kShootDelayMs = 1000;
+constexpr double kRollDurationMs = 250;
 
 namespace platformer {
 
@@ -86,6 +87,8 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
 
   parameter_server->AddParameter("timing/shoot.delay", kShootDelayMs,
                                  "How long it takes to shoot and reload");
+  parameter_server->AddParameter("timing/roll.duration.ms", kRollDurationMs,
+                                 "How long the roll lasts.");
 
   return parameter_server;
 }
@@ -222,8 +225,8 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
 
   // Model
-  UpdateState(*physics_engine_, player_);
-  UpdatePlayerFromState(player_);
+  UpdateState(*parameter_server_, *physics_engine_, player_);
+  UpdatePlayerFromState(*parameter_server_, player_);
   player_.animation_manager.Update(player_.state);
   physics_engine_->PhysicsStep(player_);
 

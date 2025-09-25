@@ -6,6 +6,7 @@
 #include "player_state.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
+#include "utils/parameter_server.h"
 
 namespace platformer {
 
@@ -43,7 +44,9 @@ bool Squish(const AxisCollisions& collisions) {
   return collisions.lower_collision && collisions.upper_collision;
 }
 
-void UpdateStateImpl(const PhysicsEngine& physics, Player& player) {
+void UpdateStateImpl(const ParameterServer& parameter_server,
+                     const PhysicsEngine& physics,
+                     Player& player) {
   if (!player.animation_manager.GetActiveAnimation().Expired() &&
       !IsInterruptibleState(player.state)) {
     // If the player is shooting in the air and lands, transition the animation to the standing
@@ -58,8 +61,11 @@ void UpdateStateImpl(const PhysicsEngine& physics, Player& player) {
     }
 
     // Transition from Roll to PostRoll
-    if (player.state == PlayerState::Roll &&
-        GameClock::NowGlobal() - player.roll_start_time > std::chrono::milliseconds(500)) {
+    // TODO:: ints in parameter server
+    const int roll_duration_ms =
+        static_cast<int>(parameter_server.GetParameter<double>("timing/roll.duration.ms"));
+    if (player.state == PlayerState::Roll && GameClock::NowGlobal() - player.roll_start_time >
+                                                 std::chrono::milliseconds(roll_duration_ms)) {
       // HACK: set the collisions back to full size dude to check for squishing.
       // TODO:: less hacky, copy the player, or supply a custom bounding box.
       player.x_offset_px = 30;
@@ -135,7 +141,7 @@ void UpdateStateImpl(const PhysicsEngine& physics, Player& player) {
 
 }  // namespace
 
-void UpdatePlayerFromState(Player& player) {
+void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& player) {
   // Disallow movement during firing.
   if ((player.state == PlayerState::Shoot || player.state == PlayerState::CrouchShoot ||
        player.state == PlayerState::Landing) &&
@@ -165,11 +171,12 @@ void UpdatePlayerFromState(Player& player) {
   }
 
   // Roll
+  const auto roll_vel = parameter_server.GetParameter<double>("physics/roll.x.vel");
   if (player.state == PlayerState::Roll) {
     if (player.facing_left) {
-      player.velocity.x = -10;
+      player.velocity.x = -roll_vel;
     } else {
-      player.velocity.x = 10;
+      player.velocity.x = roll_vel;
     }
     if ((player.collisions.left && player.acceleration.x > 0) ||
         (player.collisions.right && player.acceleration.x < 0)) {
@@ -189,8 +196,10 @@ void UpdatePlayerFromState(Player& player) {
   }
 }
 
-void UpdateState(const PhysicsEngine& physics, Player& player) {
-  UpdateStateImpl(physics, player);
+void UpdateState(const ParameterServer& parameter_server,
+                 const PhysicsEngine& physics,
+                 Player& player) {
+  UpdateStateImpl(parameter_server, physics, player);
   player.requested_states.clear();
 }
 
