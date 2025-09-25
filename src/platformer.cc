@@ -106,6 +106,7 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_fire_standing.png", false, 1, -1, false, PlayerState::Shoot},
       {player_path / "player_fire_jumping.png", false, 0, -1, false, PlayerState::InAirShoot},
       {player_path / "player_fire_crouch.png", false, 0, -1, false, PlayerState::CrouchShoot},
+      {player_path / "player_fire_jumping_downshot.png", false, 0, -1, false, PlayerState::InAirDownShoot},
       {player_path / "player_idle_crouch.png", true, 0, -1, false, PlayerState::Crouch},
       {player_path / "player_roll.png", false, 1, 6, false, PlayerState::PreRoll},
       {player_path / "player_roll.png", true, 7, 10, false, PlayerState::Roll},
@@ -197,6 +198,10 @@ bool Platformer::OnUserCreate() {
   });
   player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
+  });
+
+  player_.animation_manager.GetAnimation(PlayerState::InAirDownShoot).AddCallback(0, [&]() {
+    sound_player_->PlaySample("shotgun_fire", false);
   });
 
   const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");

@@ -6,10 +6,10 @@ InputCapture::InputCapture(olc::PixelGameEngine* engine_ptr) : engine_ptr_{engin
   // TODO:: Load this via some sort of config.
   bindings_[olc::Key::LEFT] = InputAction::Left;
   bindings_[olc::Key::RIGHT] = InputAction::Right;
+  bindings_[olc::Key::UP] = InputAction::Up;
+  bindings_[olc::Key::DOWN] = InputAction::Down;
   bindings_[olc::Key::CTRL] = InputAction::Shoot;
   bindings_[olc::Key::SPACE] = InputAction::Jump;
-  bindings_[olc::Key::DOWN] = InputAction::Crouch;
-  bindings_[olc::Key::C] = InputAction::Crouch;
   bindings_[olc::Key::SHIFT] = InputAction::Roll;
   bindings_[olc::Key::Z] = InputAction::Dodge;
   bindings_[olc::Key::Q] = InputAction::Quit;

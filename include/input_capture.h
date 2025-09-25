@@ -10,9 +10,10 @@ namespace platformer {
 enum class InputAction : uint8_t {
   Left,
   Right,
+  Up,
+  Down,
   Shoot,
   Jump,
-  Crouch,
   Roll,
   Dodge,
   Quit,

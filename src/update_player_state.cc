@@ -24,6 +24,7 @@ bool IsInterruptibleState(PlayerState state) {
   switch (state) {
     case PlayerState::Shoot:
     case PlayerState::InAirShoot:
+    case PlayerState::InAirDownShoot:
     case PlayerState::CrouchShoot:
     case PlayerState::PreRoll:
     case PlayerState::Roll:
@@ -51,7 +52,8 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
       !IsInterruptibleState(player.state)) {
     // If the player is shooting in the air and lands, transition the animation to the standing
     // pose.  Only do this after the first few frame to avoid double fire.
-    if (player.state == PlayerState::InAirShoot && player.collisions.bottom &&
+    if ((player.state == PlayerState::InAirShoot || player.state == PlayerState::InAirDownShoot) &&
+        player.collisions.bottom &&
         ((GameClock::NowGlobal() - player.animation_manager.GetActiveAnimation().GetStartTime())
                  .count() /
              1e6 >
@@ -117,7 +119,11 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
 
   // InAir has priority over other states.
   if (!player.collisions.bottom) {
-    player.state = PlayerState::InAir;
+    if (player.requested_states.count(PlayerState::InAirDownShoot)) {
+      player.state = PlayerState::InAirDownShoot;
+    } else {
+      player.state = PlayerState::InAir;
+    }
     return;
   }
 

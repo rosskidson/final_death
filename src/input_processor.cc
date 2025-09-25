@@ -1,6 +1,7 @@
 
-#include "input_processor.h"
 
+#include "input_processor.h"
+#include "utils/logging.h"
 #include "basic_types.h"
 #include "input_capture.h"
 #include "player.h"
@@ -11,9 +12,7 @@
 
 namespace platformer {
 
-bool IsPlayerShooting(const Player& player) {
-  return player.state == PlayerState::Shoot;
-}
+bool IsPlayerShooting(const Player& player) { return player.state == PlayerState::Shoot; }
 
 bool IsPlayerShootingOnGround(const Player& player) {
   return player.collisions.bottom && player.state == PlayerState::Shoot;
@@ -37,7 +36,7 @@ bool InputProcessor::ProcessInputs(Player& player) {
   const auto acceleration = parameter_server_->GetParameter<double>("physics/player.acceleration");
   const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
 
-  if(input_.GetKey(InputAction::Left).held || input_.GetKey(InputAction::Right).held) {
+  if (input_.GetKey(InputAction::Left).held || input_.GetKey(InputAction::Right).held) {
     player.requested_states.insert(PlayerState::Walk);
   }
 
@@ -49,7 +48,7 @@ bool InputProcessor::ProcessInputs(Player& player) {
     player.acceleration.x = 0;
   }
 
-  if (input_.GetKey(InputAction::Crouch).held) {
+  if (input_.GetKey(InputAction::Down).held) {
     player.requested_states.insert(PlayerState::Crouch);
   }
 
@@ -62,7 +61,11 @@ bool InputProcessor::ProcessInputs(Player& player) {
   }
 
   if (input_.GetKey(InputAction::Shoot).held) {
-    player.requested_states.insert(PlayerState::Shoot);
+    if (input_.GetKey(InputAction::Down).held) {
+      player.requested_states.insert(PlayerState::InAirDownShoot);
+    } else {
+      player.requested_states.insert(PlayerState::Shoot);
+    }
   }
 
   if (input_.GetKey(InputAction::Quit).released) {
