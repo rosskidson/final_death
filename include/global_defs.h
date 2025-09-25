@@ -2,7 +2,7 @@
 
 namespace platformer {
 
-constexpr int kScreenWidthPx = 480;
-constexpr int kScreenHeightPx = 270;
+constexpr int kScreenWidthPx = 640;
+constexpr int kScreenHeightPx = 360;
 
 };  // namespace platformer

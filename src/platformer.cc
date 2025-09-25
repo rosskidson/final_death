@@ -236,6 +236,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_engine_->PhysicsStep(player_);
 
   // View
+  // TODO:: BUG!! - follow ratio x is not symmetrical.  Not sure about y.
   rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x, follow_ratio_y);
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
