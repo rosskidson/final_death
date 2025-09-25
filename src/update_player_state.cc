@@ -57,7 +57,7 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
         ((GameClock::NowGlobal() - player.animation_manager.GetActiveAnimation().GetStartTime())
                  .count() /
              1e6 >
-         100)) {
+         300)) {
       player.animation_manager.SwapAnimation(PlayerState::Shoot);
       player.state = PlayerState::Shoot;
     }
