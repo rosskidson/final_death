@@ -201,13 +201,8 @@ void PhysicsEngine::PhysicsStep(Player& player) {
 
   UpdateCollisionsChanged(player.collisions, old_collisions);
 
-  if (player.collisions.bottom || player.velocity.y > 0) {
-    player.distance_fallen = 0;
-  } else {
+  if (player.velocity.y < 0) {
     player.distance_fallen += -1 * player.velocity.y * delta_t;
-    if (player.distance_fallen > 10) {
-      player.hard_landing = true;
-    }
   }
 
   player.last_update = now;

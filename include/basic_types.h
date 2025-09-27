@@ -9,6 +9,11 @@ struct Vector2d {
   double y{};
 };
 
+struct Vector2i {
+  int x{};
+  int y{};
+};
+
 struct BoundingBox {
   double left{};
   double right{};

@@ -1,13 +1,14 @@
 
 
 #include "input_processor.h"
-#include "utils/logging.h"
+
 #include "basic_types.h"
 #include "input_capture.h"
 #include "player.h"
 #include "sound.h"
 #include "utils/developer_console.h"
 #include "utils/game_clock.h"
+#include "utils/logging.h"
 #include "utils/parameter_server.h"
 
 namespace platformer {
@@ -61,11 +62,7 @@ bool InputProcessor::ProcessInputs(Player& player) {
   }
 
   if (input_.GetKey(InputAction::Shoot).held) {
-    if (input_.GetKey(InputAction::Down).held) {
-      player.requested_states.insert(PlayerState::InAirDownShoot);
-    } else {
-      player.requested_states.insert(PlayerState::Shoot);
-    }
+    player.requested_states.insert(PlayerState::Shoot);
   }
 
   if (input_.GetKey(InputAction::Quit).released) {

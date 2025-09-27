@@ -32,6 +32,10 @@ constexpr double kFollowPlayerScreenRatioY = 0.5;
 constexpr double kShootDelayMs = 1000;
 constexpr double kRollDurationMs = 250;
 
+constexpr double kShootDownUpwardVel = 10;
+
+constexpr double kHardFallDistance = 10;
+
 namespace platformer {
 
 #define RETURN_NULL_PTR_ON_ERROR(statement) \
@@ -90,6 +94,13 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
   parameter_server->AddParameter("timing/roll.duration.ms", kRollDurationMs,
                                  "How long the roll lasts.");
 
+  parameter_server->AddParameter(
+      "physics/shoot.down.upward.vel", kShootDownUpwardVel,
+      "How much kickback the player should get when he fires his weapon down in the air.");
+
+  parameter_server->AddParameter("physics/hard.fall.distance", kHardFallDistance,
+                                 "Distance to trigger a hard fall (crouch + delay for recovery)");
+
   return parameter_server;
 }
 
@@ -106,7 +117,8 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_fire_standing.png", false, 1, -1, false, PlayerState::Shoot},
       {player_path / "player_fire_jumping.png", false, 0, -1, false, PlayerState::InAirShoot},
       {player_path / "player_fire_crouch.png", false, 0, -1, false, PlayerState::CrouchShoot},
-      {player_path / "player_fire_jumping_downshot.png", false, 0, -1, false, PlayerState::InAirDownShoot},
+      {player_path / "player_fire_jumping_downshot.png", false, 0, -1, false,
+       PlayerState::InAirDownShoot},
       {player_path / "player_idle_crouch.png", true, 0, -1, false, PlayerState::Crouch},
       {player_path / "player_roll.png", false, 1, 6, false, PlayerState::PreRoll},
       {player_path / "player_roll.png", true, 7, 10, false, PlayerState::Roll},
@@ -200,8 +212,15 @@ bool Platformer::OnUserCreate() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
 
-  player_.animation_manager.GetAnimation(PlayerState::InAirDownShoot).AddCallback(0, [&]() {
-    sound_player_->PlaySample("shotgun_fire", false);
+  const auto shoot_down_upward_vel =
+      parameter_server_->GetParameter<double>("physics/shoot.down.upward.vel");
+  player_.animation_manager.GetAnimation(PlayerState::InAirDownShoot)
+      .AddCallback(0, [&, shoot_down_upward_vel]() {
+        sound_player_->PlaySample("shotgun_fire", false);
+        player_.velocity.y += shoot_down_upward_vel;
+      });
+  player_.animation_manager.GetAnimation(PlayerState::InAirDownShoot).AddCallback(5, [&]() {
+    sound_player_->PlaySample("shotgun_reload", false);
   });
 
   const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
@@ -236,7 +255,6 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_engine_->PhysicsStep(player_);
 
   // View
-  // TODO:: BUG!! - follow ratio x is not symmetrical.  Not sure about y.
   rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x, follow_ratio_y);
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();

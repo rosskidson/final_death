@@ -46,13 +46,23 @@ Vector2d RenderingEngine::GetCameraPosition() const {
 }
 
 // TODO split ratio to x and y
-void RenderingEngine::KeepPlayerInFrame(const Player& player, double screen_ratio_x, double screen_ratio_y) {
+void RenderingEngine::KeepPlayerInFrame(const Player& player,
+                                        double screen_ratio_x,
+                                        double screen_ratio_y) {
   const auto position = GetCameraPosition();
   const auto convert_to_px = [&](double val) -> int { return static_cast<int>(val * tile_size_); };
-  const int x_max_px = convert_to_px(player.position.x - viewport_width_ * screen_ratio_x);
-  const int x_min_px = convert_to_px(player.position.x - viewport_width_ * (1 - screen_ratio_x));
-  const int y_max_px = convert_to_px(player.position.y - viewport_height_ * screen_ratio_y);
-  const int y_min_px = convert_to_px(player.position.y - viewport_height_ * (1 - screen_ratio_y));
+  const Vector2i player_pos_px{convert_to_px(player.position.x), convert_to_px(player.position.y)};
+  // TODO:: Using the bounding box here means you get camera jerk if you change the bounding box
+  // state in the air (for example, roll).
+  const Vector2i middle_of_player_px{
+      player_pos_px.x + player.x_offset_px + player.collision_width_px / 2,
+      player_pos_px.y + player.y_offset_px + player.collision_height_px / 2};
+  const int x_max_px = middle_of_player_px.x - convert_to_px(viewport_width_ * screen_ratio_x);
+  const int x_min_px =
+      middle_of_player_px.x - convert_to_px(viewport_width_ * (1 - screen_ratio_x));
+  const int y_max_px = middle_of_player_px.y - convert_to_px(viewport_height_ * screen_ratio_y);
+  const int y_min_px =
+      middle_of_player_px.y - convert_to_px(viewport_height_ * (1 - screen_ratio_y));
 
   cam_position_px_x_ = std::max(cam_position_px_x_, x_min_px);
   cam_position_px_x_ = std::min(cam_position_px_x_, x_max_px);

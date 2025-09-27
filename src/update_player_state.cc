@@ -45,9 +45,45 @@ bool Squish(const AxisCollisions& collisions) {
   return collisions.lower_collision && collisions.upper_collision;
 }
 
+PlayerState GetShootState(const Player& player) {
+  if (!player.collisions.bottom) {
+    if (player.requested_states.count(PlayerState::Crouch)) {
+      return PlayerState::InAirDownShoot;
+    }
+    return PlayerState::InAirShoot;
+  }
+  if (player.requested_states.count(PlayerState::Crouch)) {
+    return PlayerState::CrouchShoot;
+  }
+  return PlayerState::Shoot;
+}
+
+bool SetHardLandingState(const ParameterServer& parameter_server, Player& player) {
+  const auto hard_fall_distance =
+      parameter_server.GetParameter<double>("physics/hard.fall.distance");
+  if (player.collisions.bottom) {
+    if (player.distance_fallen > hard_fall_distance) {
+      player.distance_fallen = 0;
+      player.state = PlayerState::Landing;
+      return true;
+    }
+  }
+  if (player.velocity.y > 0) {
+    player.distance_fallen = 0;
+    return false;
+  }
+  return false;
+}
+
 void UpdateStateImpl(const ParameterServer& parameter_server,
                      const PhysicsEngine& physics,
                      Player& player) {
+  // There is one thing that can interrupt non interuptable actions: Hard falling.
+  if (SetHardLandingState(parameter_server, player)) {
+    return;
+  }
+
+  // Now check for non interruptable actions.
   if (!player.animation_manager.GetActiveAnimation().Expired() &&
       !IsInterruptibleState(player.state)) {
     // If the player is shooting in the air and lands, transition the animation to the standing
@@ -84,13 +120,7 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
     return;
   }
   if (player.requested_states.count(PlayerState::Shoot)) {
-    if (!player.collisions.bottom) {
-      player.state = PlayerState::InAirShoot;
-    } else if (player.requested_states.count(PlayerState::Crouch)) {
-      player.state = PlayerState::CrouchShoot;
-    } else {
-      player.state = PlayerState::Shoot;
-    }
+    player.state = GetShootState(player);
     return;
   }
 
@@ -104,12 +134,6 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
 
   // Remaining non-interruptable states
   TRY_SET_STATE(player, PlayerState::PreRoll);
-
-  if (player.collisions.bottom && player.collisions.bottom_changed && player.hard_landing) {
-    player.hard_landing = false;
-    player.state = PlayerState::Landing;
-    return;
-  }
 
   // Latch post-roll
   if (player.state == PlayerState::PostRoll &&
@@ -131,15 +155,6 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
   TRY_SET_STATE(player, PlayerState::PreJump);
   TRY_SET_STATE(player, PlayerState::Crouch);
   TRY_SET_STATE(player, PlayerState::PreSuicide);
-
-  // The landing crouch only has priority over walk/idle. Latched until expiration
-  // if (player.collisions.bottom_changed ||
-  //     (player.state == PlayerState::Landing &&
-  //      !player.animation_manager.GetActiveAnimation().Expired())) {
-  //   player.state = PlayerState::Landing;
-  //   return;
-  // }
-
   TRY_SET_STATE(player, PlayerState::Walk);
 
   player.state = PlayerState::Idle;

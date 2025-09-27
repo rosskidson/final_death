@@ -37,7 +37,6 @@ struct Player {
   bool facing_left{};
 
   double distance_fallen{};
-  bool hard_landing{false};
 
   TimePoint roll_start_time{};
 };
