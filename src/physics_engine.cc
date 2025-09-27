@@ -144,23 +144,25 @@ void ResolveCollisions(Player& player,
 }
 
 void ApplyFriction(const ParameterServer& parameter_server, const double delta_t, Player& player) {
-  const auto ground_friction = parameter_server.GetParameter<double>("physics/ground.friction");
-  const auto air_friction = parameter_server.GetParameter<double>("physics/air.friction");
-  const auto slide_friction = parameter_server.GetParameter<double>("physics/slide.friction");
-  auto friction = player.state == PlayerState::BackDodgeShot ? slide_friction : ground_friction;
-  if (player.acceleration.x == 0) {
-    if (player.collisions.bottom) {
-      if (std::abs(player.velocity.x) < friction * delta_t) {
-        player.velocity.x = 0;
-      } else {
-        // Coulomb friction: Resistance is relative to normal force, independent of velocity.
-        player.velocity.x -= friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
-      }
-    } else {
-      // Air drag: resistance is proportional to velocity.
-      player.velocity.x -= player.velocity.x * air_friction * delta_t;
-    }
+  if (player.acceleration.x != 0) {
+    return;
   }
+  if (!player.collisions.bottom) {
+    // Air drag: resistance is proportional to velocity.
+    const auto air_friction = parameter_server.GetParameter<double>("physics/air.friction");
+    player.velocity.x -= player.velocity.x * air_friction * delta_t;
+    return;
+  }
+  const std::string ground_friction_key = player.state == PlayerState::BackDodgeShot
+                                              ? "physics/slide.friction"
+                                              : "physics/ground.friction";
+  const auto ground_friction = parameter_server.GetParameter<double>(ground_friction_key);
+  if (std::abs(player.velocity.x) < ground_friction * delta_t) {
+    player.velocity.x = 0;
+    return;
+  }
+  // Coulomb friction: Resistance is relative to normal force, independent of velocity.
+  player.velocity.x -= ground_friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
 }
 
 PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer> parameter_server)
