@@ -226,6 +226,9 @@ bool Platformer::OnUserCreate() {
   player_.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
+  player_.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(4, [&]() {
+    sound_player_->PlaySample("shotgun_reload", false);
+  });
   player_.animation_manager.GetAnimation(PlayerState::BackShot).AddCallback(1, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
@@ -292,7 +295,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_engine_->RenderForeground();
 
   // TODO:: Fix frame rate.
-  std::this_thread::sleep_for(std::chrono::milliseconds(8));
+  std::this_thread::sleep_for(std::chrono::milliseconds(5));
   return true;
 }
 
