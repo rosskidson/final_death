@@ -50,6 +50,10 @@ bool InputProcessor::ProcessInputs(Player& player) {
     player.acceleration.x = 0;
   }
 
+  if (input_.GetKey(InputAction::Up).held) {
+    player.requested_states.insert(PlayerState::AimUp);
+  }
+
   if (input_.GetKey(InputAction::Down).held) {
     player.requested_states.insert(PlayerState::Crouch);
   }

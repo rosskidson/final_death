@@ -13,6 +13,8 @@ enum class PlayerState {
   InAir,
   InAirShoot,
   InAirDownShoot,
+  AimUp,
+  ShootUp,
   Crouch,
   CrouchShoot,
   PreRoll,
@@ -44,6 +46,10 @@ inline std::string ToString(PlayerState state) {
       return "InAirShoot";
     case PlayerState::InAirDownShoot:
       return "InAirDownShoot";
+    case PlayerState::AimUp:
+      return "AimUp";
+    case PlayerState::ShootUp:
+      return "ShootUp";
     case PlayerState::Crouch:
       return "Crouch";
     case PlayerState::CrouchShoot:

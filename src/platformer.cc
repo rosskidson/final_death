@@ -120,6 +120,8 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_fire_jumping_downshot.png", false, 0, -1, false,
        PlayerState::InAirDownShoot},
       {player_path / "player_idle_crouch.png", true, 0, -1, false, PlayerState::Crouch},
+      {player_path / "player_idle_up.png", true, 1, -1, false, PlayerState::AimUp},
+      {player_path / "player_fire_upwards.png", false, 0, -1, false, PlayerState::ShootUp},
       {player_path / "player_roll.png", false, 1, 6, false, PlayerState::PreRoll},
       {player_path / "player_roll.png", true, 7, 10, false, PlayerState::Roll},
       {player_path / "player_roll.png", false, 11, 15, false, PlayerState::PostRoll},
@@ -217,6 +219,9 @@ bool Platformer::OnUserCreate() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::Suicide).AddCallback(0, [&]() {
+    sound_player_->PlaySample("shotgun_fire", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::ShootUp).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
 

@@ -29,7 +29,7 @@ AnimatedSprite& AnimationManager::GetActiveAnimation() {
 }
 
 void AnimationManager::Update(const PlayerState new_action) {
-  if(animated_sprites_.count(new_action)==0){
+  if (animated_sprites_.count(new_action) == 0) {
     LOG_ERROR("No animation available for '" << ToString(new_action) << "'");
     return;
   }
@@ -46,7 +46,22 @@ void AnimationManager::Update(const PlayerState new_action) {
 }
 
 void AnimationManager::SwapAnimation(PlayerState action) {
-  const auto begin_time = GetActiveAnimation().GetStartTime();
+  if (animated_sprites_.count(action) == 0) {
+    LOG_ERROR("No animation available for '" << ToString(action) << "'");
+    return;
+  }
+
+  auto begin_time = GetActiveAnimation().GetStartTime();
+  const auto& new_animation = animated_sprites_.at(action);
+
+  // If the new action is shorter than the old one, we must handle the difference to expire the new
+  // one at the appropriate time. 
+  // I hate this function.
+  const int duration_difference =
+      GetActiveAnimation().GetTotalAnimationTimeMs() - new_animation.GetTotalAnimationTimeMs();
+  if (duration_difference > 0) {
+    begin_time += std::chrono::milliseconds(duration_difference);
+  }
   active_action_ = action;
   GetActiveAnimation().StartAnimation(begin_time);
 }

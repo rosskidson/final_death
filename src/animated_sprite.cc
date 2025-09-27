@@ -176,6 +176,10 @@ const olc::Sprite* AnimatedSprite::GetFrame() const {
   return frames_.at(current_frame_idx).get();
 }
 
+int AnimatedSprite::GetTotalAnimationTimeMs() const{
+  return frame_timing_lookup_.back();
+}
+
 int AnimatedSprite::GetCurrentFrameIdx() const {
   int time_elapsed = static_cast<int>((GameClock::NowGlobal() - start_time_).count() / 1e6);
 

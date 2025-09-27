@@ -30,6 +30,7 @@ namespace {
 bool IsInterruptibleState(PlayerState state) {
   switch (state) {
     case PlayerState::Shoot:
+    case PlayerState::ShootUp:
     case PlayerState::InAirShoot:
     case PlayerState::InAirDownShoot:
     case PlayerState::CrouchShoot:
@@ -42,6 +43,19 @@ bool IsInterruptibleState(PlayerState state) {
   }
   return true;
 }
+bool MovementDisallowed(PlayerState state) {
+  switch (state) {
+    case PlayerState::Shoot:
+    case PlayerState::ShootUp:
+    case PlayerState::AimUp:
+    case PlayerState::CrouchShoot:
+    case PlayerState::Landing:
+    case PlayerState::PreSuicide:
+    case PlayerState::Suicide:
+      return true;
+  }
+  return false;
+}
 
 bool Shooting(const PlayerState state) {
   return state == PlayerState::Shoot || state == PlayerState::CrouchShoot ||
@@ -53,7 +67,7 @@ bool Squish(const AxisCollisions& collisions) {
 }
 
 PlayerState GetShootState(const Player& player) {
-  if(player.state==PlayerState::PreSuicide) {
+  if (player.state == PlayerState::PreSuicide) {
     return PlayerState::Suicide;
   }
   if (!player.collisions.bottom) {
@@ -61,6 +75,9 @@ PlayerState GetShootState(const Player& player) {
       return PlayerState::InAirDownShoot;
     }
     return PlayerState::InAirShoot;
+  }
+  if (player.state == PlayerState::AimUp || player.state == PlayerState::ShootUp) {
+    return PlayerState::ShootUp;
   }
   if (player.requested_states.count(PlayerState::Crouch)) {
     return PlayerState::CrouchShoot;
@@ -161,6 +178,7 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
   // Lower priority interruptable states.
   TRY_SET_STATE(player, PlayerState::PreJump);
   TRY_SET_STATE(player, PlayerState::Crouch);
+  TRY_SET_STATE(player, PlayerState::AimUp);
   TRY_SET_STATE(player, PlayerState::PreSuicide);
   TRY_SET_STATE(player, PlayerState::Walk);
 
@@ -170,9 +188,8 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
 }  // namespace
 
 void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& player) {
-  // Disallow movement during firing.
-  if ((player.state == PlayerState::Shoot || player.state == PlayerState::CrouchShoot ||
-       player.state == PlayerState::Landing) &&
+  // Disallow movement for certain states.
+  if ((MovementDisallowed(player.state)) &&
       !player.animation_manager.GetActiveAnimation().Expired()) {
     player.velocity.x = 0;
     player.acceleration.x = 0;

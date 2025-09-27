@@ -38,6 +38,8 @@ class AnimatedSprite {
   // Add a callback to be triggered when the animation expires (only for non-looping animations).
   void AddExpireCallback(std::function<void()> callback);
 
+  [[nodiscard]] int GetTotalAnimationTimeMs() const;
+
  private:
   AnimatedSprite() = default;
   [[nodiscard]] int GetCurrentFrameIdx() const;
