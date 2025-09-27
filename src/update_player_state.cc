@@ -2,6 +2,7 @@
 
 #include <chrono>
 
+#include "input_capture.h"
 #include "physics_engine.h"
 #include "player_state.h"
 #include "utils/game_clock.h"
@@ -31,6 +32,7 @@ bool IsInterruptibleState(PlayerState state) {
   switch (state) {
     case PlayerState::Shoot:
     case PlayerState::ShootUp:
+    case PlayerState::ShootBackwards:
     case PlayerState::InAirShoot:
     case PlayerState::InAirDownShoot:
     case PlayerState::CrouchShoot:
@@ -47,6 +49,7 @@ bool MovementDisallowed(PlayerState state) {
   switch (state) {
     case PlayerState::Shoot:
     case PlayerState::ShootUp:
+    case PlayerState::ShootBackwards:
     case PlayerState::AimUp:
     case PlayerState::CrouchShoot:
     case PlayerState::Landing:
@@ -147,6 +150,13 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
   }
   if (player.requested_states.count(PlayerState::Shoot)) {
     player.state = GetShootState(player);
+    return;
+  }
+
+  // Shoot backwards only when standing or walking.
+  if (player.requested_states.count(PlayerState::ShootBackwards) && 
+      (player.state == PlayerState::Walk || player.state == PlayerState::Idle)) {
+    player.state = PlayerState::ShootBackwards;
     return;
   }
 

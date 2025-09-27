@@ -70,6 +70,10 @@ bool InputProcessor::ProcessInputs(Player& player) {
     player.requested_states.insert(PlayerState::Shoot);
   }
 
+  if (input_.GetKey(InputAction::Backshot).held) {
+    player.requested_states.insert(PlayerState::ShootBackwards);
+  }
+
   if (input_.GetKey(InputAction::Suicide).pressed) {
     player.requested_states.insert(PlayerState::PreSuicide);
   }

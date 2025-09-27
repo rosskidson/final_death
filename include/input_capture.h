@@ -15,7 +15,7 @@ enum class InputAction : uint8_t {
   Shoot,
   Jump,
   Roll,
-  Dodge,
+  Backshot,
   Suicide,
   Quit,
   Menu,
