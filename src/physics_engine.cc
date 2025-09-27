@@ -11,9 +11,11 @@
 constexpr double kMaxVelX = 8;
 constexpr double kMaxVelY = 25;
 constexpr double kRollVelX = 15;
+constexpr double kSlideVelX = 10;
 constexpr double kGravity = 50.0;
 constexpr double kGroundFriction = 50.0;
 constexpr double kAirFriction = 1.0;
+constexpr double kSlideFriction = 5.0;  // For backdodge
 
 namespace platformer {
 
@@ -45,6 +47,10 @@ bool IsCollision(const Grid<int>& collision_grid, double x, double y) {
 
 std::pair<double, double> GetMaxVelocity(const Player& player,
                                          const ParameterServer& parameter_server) {
+  if (player.state == PlayerState::BackDodgeShot) {
+    return {parameter_server.GetParameter<double>("physics/slide.x.vel"),
+            parameter_server.GetParameter<double>("physics/max.y.vel")};
+  }
   if (player.state == PlayerState::Roll) {
     return {parameter_server.GetParameter<double>("physics/roll.x.vel"),
             parameter_server.GetParameter<double>("physics/max.y.vel")};
@@ -140,14 +146,18 @@ void ResolveCollisions(Player& player,
 void ApplyFriction(const ParameterServer& parameter_server, const double delta_t, Player& player) {
   const auto ground_friction = parameter_server.GetParameter<double>("physics/ground.friction");
   const auto air_friction = parameter_server.GetParameter<double>("physics/air.friction");
+  const auto slide_friction = parameter_server.GetParameter<double>("physics/slide.friction");
+  auto friction = player.state == PlayerState::BackDodgeShot ? slide_friction : ground_friction;
   if (player.acceleration.x == 0) {
     if (player.collisions.bottom) {
-      if (std::abs(player.velocity.x) < ground_friction * delta_t) {
+      if (std::abs(player.velocity.x) < friction * delta_t) {
         player.velocity.x = 0;
       } else {
-        player.velocity.x -= ground_friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
+        // Coulomb friction: Resistance is relative to normal force, independent of velocity.
+        player.velocity.x -= friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
       }
     } else {
+      // Air drag: resistance is proportional to velocity.
       player.velocity.x -= player.velocity.x * air_friction * delta_t;
     }
   }
@@ -164,9 +174,13 @@ PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer
                                   "Maximum vertical velocity of the player");
   parameter_server_->AddParameter("physics/roll.x.vel", kRollVelX,
                                   "Maximum horizontal velocity of the player during a roll");
+  parameter_server_->AddParameter("physics/slide.x.vel", kSlideVelX,
+                                  "Maximum horizontal velocity of the player during a slide");
   parameter_server_->AddParameter("physics/ground.friction", kGroundFriction,
                                   "Controls deceleration on the ground.");
   parameter_server_->AddParameter("physics/air.friction", kAirFriction,
+                                  "Controls deceleration in the air.");
+  parameter_server_->AddParameter("physics/slide.friction", kSlideFriction,
                                   "Controls deceleration in the air.");
 }
 
@@ -195,7 +209,7 @@ void PhysicsEngine::PhysicsStep(Player& player) {
   player.position.y += player.velocity.y * delta_t;
   this->CheckPlayerCollision(player, Axis::Y);
 
-  if (player.velocity.x != 0.) {
+  if (player.velocity.x != 0. && player.state != PlayerState::BackDodgeShot) {
     player.facing_left = player.velocity.x < 0;
   }
 

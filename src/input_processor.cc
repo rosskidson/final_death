@@ -71,7 +71,7 @@ bool InputProcessor::ProcessInputs(Player& player) {
   }
 
   if (input_.GetKey(InputAction::Backshot).held) {
-    player.requested_states.insert(PlayerState::ShootBackwards);
+    player.requested_states.insert(PlayerState::BackShot);
   }
 
   if (input_.GetKey(InputAction::Suicide).pressed) {

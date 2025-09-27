@@ -115,13 +115,13 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_idle_standing.png", true, 0, -1, false, PlayerState::Idle},
       {player_path / "player_walk.png", true, 0, -1, false, PlayerState::Walk},
       {player_path / "player_fire_standing.png", false, 1, -1, false, PlayerState::Shoot},
-      {player_path / "player_fire_jumping.png", false, 0, -1, false, PlayerState::InAirShoot},
-      {player_path / "player_fire_crouch.png", false, 0, -1, false, PlayerState::CrouchShoot},
+      {player_path / "player_fire_jumping.png", false, 0, -1, false, PlayerState::InAirShot},
+      {player_path / "player_fire_crouch.png", false, 0, -1, false, PlayerState::CrouchShot},
       {player_path / "player_fire_jumping_downshot.png", false, 0, -1, false,
-       PlayerState::InAirDownShoot},
+       PlayerState::InAirDownShot},
       {player_path / "player_idle_crouch.png", true, 0, -1, false, PlayerState::Crouch},
       {player_path / "player_idle_up.png", true, 1, -1, false, PlayerState::AimUp},
-      {player_path / "player_fire_upwards.png", false, 0, -1, false, PlayerState::ShootUp},
+      {player_path / "player_fire_upwards.png", false, 0, -1, false, PlayerState::UpShot},
       {player_path / "player_roll.png", false, 1, 6, false, PlayerState::PreRoll},
       {player_path / "player_roll.png", true, 7, 10, false, PlayerState::Roll},
       {player_path / "player_roll.png", false, 11, 15, false, PlayerState::PostRoll},
@@ -130,7 +130,8 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_jump.png", true, 2, 4, true, PlayerState::InAir},
       {player_path / "player_fire_killself_count.png", false, 0, -1, false, PlayerState::PreSuicide},
       {player_path / "player_fire_killself_fire.png", false, 0, -1, false, PlayerState::Suicide},
-      {player_path / "player_fire_backshot.png", false, 0, -1, false, PlayerState::ShootBackwards},
+      {player_path / "player_fire_backshot.png", false, 0, -1, false, PlayerState::BackShot},
+      {player_path / "player_fire_backdodge.png", false, 0, -1, false, PlayerState::BackDodgeShot},
   };
 
   for (const auto& animation : animations) {
@@ -204,16 +205,16 @@ bool Platformer::OnUserCreate() {
   player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
-  player_.animation_manager.GetAnimation(PlayerState::InAirShoot).AddCallback(0, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::InAirShot).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
-  player_.animation_manager.GetAnimation(PlayerState::InAirShoot).AddCallback(5, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::InAirShot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
-  player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(0, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::CrouchShot).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
-  player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(5, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::CrouchShot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::PreSuicide).AddCallback(0, [&]() {
@@ -222,24 +223,33 @@ bool Platformer::OnUserCreate() {
   player_.animation_manager.GetAnimation(PlayerState::Suicide).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
-  player_.animation_manager.GetAnimation(PlayerState::ShootUp).AddCallback(0, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
-  player_.animation_manager.GetAnimation(PlayerState::ShootBackwards).AddCallback(1, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::BackShot).AddCallback(1, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
-  player_.animation_manager.GetAnimation(PlayerState::ShootBackwards).AddCallback(6, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::BackShot).AddCallback(6, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(6, [&]() {
+    sound_player_->PlaySample("shotgun_fire", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(9, [&]() {
+    sound_player_->PlaySample("shotgun_reload", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(0, [&]() {
+    player_.velocity.x = player_.facing_left ? 100 : -100;
   });
 
   const auto shoot_down_upward_vel =
       parameter_server_->GetParameter<double>("physics/shoot.down.upward.vel");
-  player_.animation_manager.GetAnimation(PlayerState::InAirDownShoot)
+  player_.animation_manager.GetAnimation(PlayerState::InAirDownShot)
       .AddCallback(0, [&, shoot_down_upward_vel]() {
         sound_player_->PlaySample("shotgun_fire", false);
         player_.velocity.y += shoot_down_upward_vel;
       });
-  player_.animation_manager.GetAnimation(PlayerState::InAirDownShoot).AddCallback(5, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::InAirDownShot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
 

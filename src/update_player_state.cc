@@ -31,11 +31,12 @@ namespace {
 bool IsInterruptibleState(PlayerState state) {
   switch (state) {
     case PlayerState::Shoot:
-    case PlayerState::ShootUp:
-    case PlayerState::ShootBackwards:
-    case PlayerState::InAirShoot:
-    case PlayerState::InAirDownShoot:
-    case PlayerState::CrouchShoot:
+    case PlayerState::UpShot:
+    case PlayerState::BackShot:
+    case PlayerState::BackDodgeShot:
+    case PlayerState::InAirShot:
+    case PlayerState::InAirDownShot:
+    case PlayerState::CrouchShot:
     case PlayerState::PreRoll:
     case PlayerState::Roll:
     case PlayerState::PreJump:
@@ -48,10 +49,10 @@ bool IsInterruptibleState(PlayerState state) {
 bool MovementDisallowed(PlayerState state) {
   switch (state) {
     case PlayerState::Shoot:
-    case PlayerState::ShootUp:
-    case PlayerState::ShootBackwards:
+    case PlayerState::UpShot:
+    case PlayerState::BackShot:
     case PlayerState::AimUp:
-    case PlayerState::CrouchShoot:
+    case PlayerState::CrouchShot:
     case PlayerState::Landing:
     case PlayerState::PreSuicide:
     case PlayerState::Suicide:
@@ -61,8 +62,8 @@ bool MovementDisallowed(PlayerState state) {
 }
 
 bool Shooting(const PlayerState state) {
-  return state == PlayerState::Shoot || state == PlayerState::CrouchShoot ||
-         state == PlayerState::InAirShoot;
+  return state == PlayerState::Shoot || state == PlayerState::CrouchShot ||
+         state == PlayerState::InAirShot;
 }
 
 bool Squish(const AxisCollisions& collisions) {
@@ -75,15 +76,15 @@ PlayerState GetShootState(const Player& player) {
   }
   if (!player.collisions.bottom) {
     if (player.requested_states.count(PlayerState::Crouch)) {
-      return PlayerState::InAirDownShoot;
+      return PlayerState::InAirDownShot;
     }
-    return PlayerState::InAirShoot;
+    return PlayerState::InAirShot;
   }
-  if (player.state == PlayerState::AimUp || player.state == PlayerState::ShootUp) {
-    return PlayerState::ShootUp;
+  if (player.state == PlayerState::AimUp || player.state == PlayerState::UpShot) {
+    return PlayerState::UpShot;
   }
   if (player.requested_states.count(PlayerState::Crouch)) {
-    return PlayerState::CrouchShoot;
+    return PlayerState::CrouchShot;
   }
   return PlayerState::Shoot;
 }
@@ -118,7 +119,7 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
       !IsInterruptibleState(player.state)) {
     // If the player is shooting in the air and lands, transition the animation to the standing
     // pose.  Only do this after the first few frame to avoid double fire.
-    if ((player.state == PlayerState::InAirShoot || player.state == PlayerState::InAirDownShoot) &&
+    if ((player.state == PlayerState::InAirShot || player.state == PlayerState::InAirDownShot) &&
         player.collisions.bottom &&
         ((GameClock::NowGlobal() - player.animation_manager.GetActiveAnimation().GetStartTime())
                  .count() /
@@ -154,9 +155,17 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
   }
 
   // Shoot backwards only when standing or walking.
-  if (player.requested_states.count(PlayerState::ShootBackwards) && 
+  if (player.requested_states.count(PlayerState::BackShot) &&
       (player.state == PlayerState::Walk || player.state == PlayerState::Idle)) {
-    player.state = PlayerState::ShootBackwards;
+    player.state = PlayerState::BackShot;
+    return;
+  }
+
+  // BackDodgeShot only from crouching state.
+  if ((player.state == PlayerState::Crouch || player.state == PlayerState::CrouchShot) &&
+      player.requested_states.count(PlayerState::Crouch) &&
+      player.requested_states.count(PlayerState::BackShot)) {
+    player.state = PlayerState::BackDodgeShot;
     return;
   }
 
@@ -177,8 +186,8 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
 
   // InAir has priority over other states.
   if (!player.collisions.bottom) {
-    if (player.requested_states.count(PlayerState::InAirDownShoot)) {
-      player.state = PlayerState::InAirDownShoot;
+    if (player.requested_states.count(PlayerState::InAirDownShot)) {
+      player.state = PlayerState::InAirDownShot;
     } else {
       player.state = PlayerState::InAir;
     }
@@ -248,6 +257,11 @@ void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& play
     player.y_offset_px = 0;
     player.collision_width_px = 18;
     player.collision_height_px = 48;
+  }
+
+  if(player.state == PlayerState::BackDodgeShot) {
+    player.acceleration.x = 0;
+    // player.velocity.x = player.facing_left ? 10 : -10;
   }
 }
 

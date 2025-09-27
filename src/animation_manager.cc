@@ -42,6 +42,7 @@ void AnimationManager::Update(const PlayerState new_action) {
     //                         << ", expired: " << GetActiveAnimation().Expired());
     active_action_ = new_action;
     GetActiveAnimation().StartAnimation();
+    GetActiveAnimation().TriggerCallbacks();
   }
 }
 
@@ -55,7 +56,7 @@ void AnimationManager::SwapAnimation(PlayerState action) {
   const auto& new_animation = animated_sprites_.at(action);
 
   // If the new action is shorter than the old one, we must handle the difference to expire the new
-  // one at the appropriate time. 
+  // one at the appropriate time.
   // I hate this function.
   const int duration_difference =
       GetActiveAnimation().GetTotalAnimationTimeMs() - new_animation.GetTotalAnimationTimeMs();
