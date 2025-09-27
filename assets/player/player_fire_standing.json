@@ -5,7 +5,7 @@
     "trimmed": false,
     "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
     "sourceSize": { "w": 80, "h": 48 },
-    "duration": 30
+    "duration": 5
    },
    "player_fire_standing 1.aseprite": {
     "frame": { "x": 80, "y": 0, "w": 80, "h": 48 },
