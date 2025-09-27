@@ -5,6 +5,7 @@
 #include "basic_types.h"
 #include "input_capture.h"
 #include "player.h"
+#include "player_state.h"
 #include "sound.h"
 #include "utils/developer_console.h"
 #include "utils/game_clock.h"
@@ -65,8 +66,8 @@ bool InputProcessor::ProcessInputs(Player& player) {
     player.requested_states.insert(PlayerState::Shoot);
   }
 
-  if (input_.GetKey(InputAction::Quit).released) {
-    return false;
+  if (input_.GetKey(InputAction::Suicide).pressed) {
+    player.requested_states.insert(PlayerState::PreSuicide);
   }
 
   if (input_.GetKey(InputAction::Console).pressed) {
@@ -78,6 +79,10 @@ bool InputProcessor::ProcessInputs(Player& player) {
   if (!engine_ptr_->IsConsoleShowing()) {
     GameClock::ResumeGlobal();
     // engine_ptr_->ConsoleCaptureStdOut(false);
+  }
+
+  if (input_.GetKey(InputAction::Quit).released) {
+    return false;
   }
 
   return true;

@@ -18,6 +18,13 @@ namespace platformer {
     }                                             \
   } while (0)
 
+#define LATCH_STATE(player, STATE)                                                                 \
+  do {                                                                                             \
+    if ((player).state == (STATE) && !(player).animation_manager.GetActiveAnimation().Expired()) { \
+      return;                                                                                      \
+    }                                                                                              \
+  } while (0)
+
 namespace {
 
 bool IsInterruptibleState(PlayerState state) {
@@ -46,6 +53,9 @@ bool Squish(const AxisCollisions& collisions) {
 }
 
 PlayerState GetShootState(const Player& player) {
+  if(player.state==PlayerState::PreSuicide) {
+    return PlayerState::Suicide;
+  }
   if (!player.collisions.bottom) {
     if (player.requested_states.count(PlayerState::Crouch)) {
       return PlayerState::InAirDownShoot;
@@ -116,7 +126,6 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
         player.state = PlayerState::PostRoll;
       }
     }
-
     return;
   }
   if (player.requested_states.count(PlayerState::Shoot)) {
@@ -135,11 +144,9 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
   // Remaining non-interruptable states
   TRY_SET_STATE(player, PlayerState::PreRoll);
 
-  // Latch post-roll
-  if (player.state == PlayerState::PostRoll &&
-      !player.animation_manager.GetActiveAnimation().Expired()) {
-    return;
-  }
+  // Next is to latch some non interruptable states.
+  LATCH_STATE(player, PlayerState::PostRoll);
+  LATCH_STATE(player, PlayerState::PreSuicide);
 
   // InAir has priority over other states.
   if (!player.collisions.bottom) {

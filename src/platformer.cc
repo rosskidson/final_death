@@ -126,6 +126,8 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_jump.png", false, 1, 1, false, PlayerState::PreJump},
       {player_path / "player_land.png", false, 1, 1, false, PlayerState::Landing},
       {player_path / "player_jump.png", true, 2, 4, true, PlayerState::InAir},
+      {player_path / "player_fire_killself_count.png", false, 0, -1, false, PlayerState::PreSuicide},
+      {player_path / "player_fire_killself_fire.png", false, 0, -1, false, PlayerState::Suicide},
   };
 
   for (const auto& animation : animations) {
@@ -210,6 +212,12 @@ bool Platformer::OnUserCreate() {
   });
   player_.animation_manager.GetAnimation(PlayerState::CrouchShoot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::PreSuicide).AddCallback(0, [&]() {
+    sound_player_->PlaySample("shotgun_reload", false);
+  });
+  player_.animation_manager.GetAnimation(PlayerState::Suicide).AddCallback(0, [&]() {
+    sound_player_->PlaySample("shotgun_fire", false);
   });
 
   const auto shoot_down_upward_vel =

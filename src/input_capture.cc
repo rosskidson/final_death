@@ -12,6 +12,7 @@ InputCapture::InputCapture(olc::PixelGameEngine* engine_ptr) : engine_ptr_{engin
   bindings_[olc::Key::SPACE] = InputAction::Jump;
   bindings_[olc::Key::SHIFT] = InputAction::Roll;
   bindings_[olc::Key::Z] = InputAction::Dodge;
+  bindings_[olc::Key::S] = InputAction::Suicide;
   bindings_[olc::Key::Q] = InputAction::Quit;
   bindings_[olc::Key::ESCAPE] = InputAction::Menu;
   bindings_[olc::Key::TAB] = InputAction::Console;

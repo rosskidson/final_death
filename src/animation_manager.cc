@@ -29,6 +29,11 @@ AnimatedSprite& AnimationManager::GetActiveAnimation() {
 }
 
 void AnimationManager::Update(const PlayerState new_action) {
+  if(animated_sprites_.count(new_action)==0){
+    LOG_ERROR("No animation available for '" << ToString(new_action) << "'");
+    return;
+  }
+
   // Trigger callbacks before changing away from an expired animation.
   GetActiveAnimation().TriggerCallbacks();
   if (new_action != active_action_ || GetActiveAnimation().Expired()) {
