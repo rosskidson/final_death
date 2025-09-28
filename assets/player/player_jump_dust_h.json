@@ -1,0 +1,82 @@
+{ "frames": {
+   "player_jump_dust_h 0.aseprite": {
+    "frame": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 10
+   },
+   "player_jump_dust_h 1.aseprite": {
+    "frame": { "x": 80, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 10
+   },
+   "player_jump_dust_h 2.aseprite": {
+    "frame": { "x": 160, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_jump_dust_h 3.aseprite": {
+    "frame": { "x": 240, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_jump_dust_h 4.aseprite": {
+    "frame": { "x": 320, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_jump_dust_h 5.aseprite": {
+    "frame": { "x": 400, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 100
+   },
+   "player_jump_dust_h 6.aseprite": {
+    "frame": { "x": 480, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 10
+   },
+   "player_jump_dust_h 7.aseprite": {
+    "frame": { "x": 560, "y": 0, "w": 80, "h": 48 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 80, "h": 48 },
+    "sourceSize": { "w": 80, "h": 48 },
+    "duration": 10
+   }
+ },
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.14.4-x64",
+  "image": "player_jump_dust_h.png",
+  "format": "RGBA8888",
+  "size": { "w": 640, "h": 48 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "Layer 1", "opacity": 255, "blendMode": "normal" }
+  ],
+  "slices": [
+  ]
+ }
+}

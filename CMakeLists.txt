@@ -85,4 +85,3 @@ target_link_libraries(platformer
   olc
   nlohmann_json::nlohmann_json
 )
-

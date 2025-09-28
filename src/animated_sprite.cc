@@ -1,9 +1,9 @@
 
 #include "animated_sprite.h"
 
+#include <utils/check.h>
 #include <utils/game_clock.h>
 
-#include <cassert>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -176,9 +176,7 @@ const olc::Sprite* AnimatedSprite::GetFrame() const {
   return frames_.at(current_frame_idx).get();
 }
 
-int AnimatedSprite::GetTotalAnimationTimeMs() const{
-  return frame_timing_lookup_.back();
-}
+int AnimatedSprite::GetTotalAnimationTimeMs() const { return frame_timing_lookup_.back(); }
 
 int AnimatedSprite::GetCurrentFrameIdx() const {
   int time_elapsed = static_cast<int>((GameClock::NowGlobal() - start_time_).count() / 1e6);
@@ -214,7 +212,7 @@ void AnimatedSprite::TriggerCallbacks() {
 
   expire_callback_triggered_ = false;
 
-  assert(frame_idx >= 0 && frame_idx < frames_.size());
+  CHECK(frame_idx >= 0 && frame_idx < frames_.size());
 
   // Clear all callback triggered other than this frame.
   for (int i = 0; i < callback_triggered_.size(); ++i) {
@@ -238,7 +236,7 @@ void AnimatedSprite::TriggerCallbacks() {
 }
 
 void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {
-  assert(frame_idx >= 0 && frame_idx < callbacks_.size());
+  CHECK(frame_idx >= 0 && frame_idx < callbacks_.size());
   callbacks_[frame_idx].push_back(std::move(callback));
 }
 

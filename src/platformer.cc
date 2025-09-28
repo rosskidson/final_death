@@ -120,15 +120,18 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
       {player_path / "player_fire_jumping_downshot.png", false, 0, -1, false,
        PlayerState::InAirDownShot},
       {player_path / "player_idle_crouch.png", true, 0, -1, false, PlayerState::Crouch},
+      // TODO:: The first frame of aim up has been deleted as there is special logic missing to only
+      // play it the on the transition from idle to up.
       {player_path / "player_idle_up.png", true, 1, -1, false, PlayerState::AimUp},
-      {player_path / "player_fire_upwards.png", false, 0, -1, false, PlayerState::UpShot},
+      {player_path / "player_fire_upwards.png", false, 2, -1, false, PlayerState::UpShot},
       {player_path / "player_roll.png", false, 1, 6, false, PlayerState::PreRoll},
       {player_path / "player_roll.png", true, 7, 10, false, PlayerState::Roll},
       {player_path / "player_roll.png", false, 11, 15, false, PlayerState::PostRoll},
       {player_path / "player_jump.png", false, 1, 1, false, PlayerState::PreJump},
       {player_path / "player_land.png", false, 1, 1, false, PlayerState::Landing},
       {player_path / "player_jump.png", true, 2, 4, true, PlayerState::InAir},
-      {player_path / "player_fire_killself_count.png", false, 0, -1, false, PlayerState::PreSuicide},
+      {player_path / "player_fire_killself_count.png", false, 0, -1, false,
+       PlayerState::PreSuicide},
       {player_path / "player_fire_killself_fire.png", false, 0, -1, false, PlayerState::Suicide},
       {player_path / "player_fire_backshot.png", false, 0, -1, false, PlayerState::BackShot},
       {player_path / "player_fire_backdodge.png", false, 0, -1, false, PlayerState::BackDodgeShot},
@@ -226,7 +229,7 @@ bool Platformer::OnUserCreate() {
   player_.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
-  player_.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(4, [&]() {
+  player_.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(5, [&]() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::BackShot).AddCallback(1, [&]() {

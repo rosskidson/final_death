@@ -52,11 +52,10 @@ void RenderingEngine::KeepPlayerInFrame(const Player& player,
   const auto position = GetCameraPosition();
   const auto convert_to_px = [&](double val) -> int { return static_cast<int>(val * tile_size_); };
   const Vector2i player_pos_px{convert_to_px(player.position.x), convert_to_px(player.position.y)};
-  // TODO:: Using the bounding box here means you get camera jerk if you change the bounding box
-  // state in the air (for example, roll).
+  // Note: The y is kept to the bottom of the sprite.  Using the center causes the camera to jerk in
+  // state transtions if moving up or down in the air.
   const Vector2i middle_of_player_px{
-      player_pos_px.x + player.x_offset_px + player.collision_width_px / 2,
-      player_pos_px.y + player.y_offset_px + player.collision_height_px / 2};
+      player_pos_px.x + player.x_offset_px + player.collision_width_px / 2, player_pos_px.y};
   const int x_max_px = middle_of_player_px.x - convert_to_px(viewport_width_ * screen_ratio_x);
   const int x_min_px =
       middle_of_player_px.x - convert_to_px(viewport_width_ * (1 - screen_ratio_x));

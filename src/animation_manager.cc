@@ -1,7 +1,5 @@
 #include "animation_manager.h"
 
-#include <cassert>
-
 #include "animated_sprite.h"
 #include "player_state.h"
 #include "utils/logging.h"
