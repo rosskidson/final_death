@@ -40,7 +40,7 @@ bool IsInterruptibleState(PlayerState state) {
     case PlayerState::PreRoll:
     case PlayerState::Roll:
     case PlayerState::PreJump:
-    case PlayerState::Landing:
+    case PlayerState::HardLanding:
     case PlayerState::Suicide:
       return false;
   }
@@ -53,7 +53,7 @@ bool MovementDisallowed(PlayerState state) {
     case PlayerState::BackShot:
     case PlayerState::AimUp:
     case PlayerState::CrouchShot:
-    case PlayerState::Landing:
+    case PlayerState::HardLanding:
     case PlayerState::PreSuicide:
     case PlayerState::Suicide:
       return true;
@@ -95,7 +95,7 @@ bool SetHardLandingState(const ParameterServer& parameter_server, Player& player
   if (player.collisions.bottom) {
     if (player.distance_fallen > hard_fall_distance) {
       player.distance_fallen = 0;
-      player.state = PlayerState::Landing;
+      player.state = PlayerState::HardLanding;
       return true;
     }
   }
@@ -200,6 +200,13 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
   TRY_SET_STATE(player, PlayerState::AimUp);
   TRY_SET_STATE(player, PlayerState::PreSuicide);
   TRY_SET_STATE(player, PlayerState::Walk);
+
+  // Soft landing may be interrupted by anything : lowest priority.
+  if(player.collisions.bottom && player.collisions.bottom_changed) {
+    player.state = PlayerState::SoftLanding;
+    return;
+  }
+  LATCH_STATE(player, PlayerState::SoftLanding);
 
   player.state = PlayerState::Idle;
 }
