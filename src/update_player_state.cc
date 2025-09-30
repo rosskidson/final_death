@@ -202,7 +202,7 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
   TRY_SET_STATE(player, PlayerState::Walk);
 
   // Soft landing may be interrupted by anything : lowest priority.
-  if(player.collisions.bottom && player.collisions.bottom_changed) {
+  if (player.collisions.bottom && player.collisions.bottom_changed) {
     player.state = PlayerState::SoftLanding;
     return;
   }
@@ -259,6 +259,11 @@ void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& play
     player.y_offset_px = 0;
     player.collision_width_px = 16;
     player.collision_height_px = 16;
+  } else if (player.state == PlayerState::BackDodgeShot) {
+    player.x_offset_px = 28;
+    player.y_offset_px = 0;
+    player.collision_width_px = 22;
+    player.collision_height_px = 16;
   } else {
     player.x_offset_px = 30;
     player.y_offset_px = 0;
@@ -266,7 +271,7 @@ void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& play
     player.collision_height_px = 48;
   }
 
-  if(player.state == PlayerState::BackDodgeShot) {
+  if (player.state == PlayerState::BackDodgeShot) {
     player.acceleration.x = 0;
     // player.velocity.x = player.facing_left ? 10 : -10;
   }

@@ -12,6 +12,7 @@
 #include "rendering_engine.h"
 #include "sound.h"
 #include "utils/parameter_server.h"
+#include "utils/rate_timer.h"
 
 namespace platformer {
 
@@ -42,6 +43,8 @@ class Platformer : public olc::PixelGameEngine {
 
   // TODO:: You will need to rethink this one.
   std::map<std::string, olc::Sprite> sprite_storage_;
+
+  RateTimer rate_;
 };
 
 }  // namespace platformer

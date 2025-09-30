@@ -21,8 +21,6 @@
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
 
-constexpr int kPixelSize = 3;
-
 constexpr double kAcceleration = 50.0;
 constexpr double kJumpVel = 21.0;
 constexpr double kFollowPlayerScreenRatioX = 0.4;
@@ -165,7 +163,7 @@ std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
   return player;
 }
 
-Platformer::Platformer() {
+Platformer::Platformer() : rate_(kGameFrequency) {
   this->Construct(kScreenWidthPx, kScreenHeightPx, kPixelSize, kPixelSize);
 }
 
@@ -273,6 +271,8 @@ bool Platformer::OnUserCreate() {
     player_.cached_velocity.x = 0;
   });
 
+  rate_.Reset();
+
   return true;
 }
 
@@ -298,8 +298,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_engine_->RenderPlayer(player_);
   rendering_engine_->RenderForeground();
 
-  // TODO:: Fix frame rate.
-  std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  rate_.Sleep(false);
   return true;
 }
 
