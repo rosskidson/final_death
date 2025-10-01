@@ -254,6 +254,11 @@ bool Platformer::OnUserCreate() {
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
+  // TODO::
+  // transitions from roll the backwards dodge
+  // transition from backwards dodge to roll (if you're in a tunnel)
+  // aiming down shoot
+  //
   // profiler_.Reset();
   // Control
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));

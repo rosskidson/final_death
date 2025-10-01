@@ -147,6 +147,13 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
         player.state = PlayerState::PostRoll;
       }
     }
+
+    if (player.state == PlayerState::Roll && player.requested_states.count(PlayerState::BackShot)) {
+      // TODO:: Changing facing_left here feels very hacky.
+      player.facing_left = !player.facing_left;
+      player.state = PlayerState::BackDodgeShot;
+      return;
+    }
     return;
   }
   if (player.requested_states.count(PlayerState::Shoot)) {
