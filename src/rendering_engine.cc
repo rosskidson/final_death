@@ -9,13 +9,15 @@
 #include "game_configuration.h"
 #include "global_defs.h"
 #include "tileset.h"
-#include "utils/parameter_server.h"
 #include "utils/logging.h"
+#include "utils/parameter_server.h"
 
 namespace platformer {
 
 constexpr double kFollowPlayerScreenRatioX = 0.4;
 constexpr double kFollowPlayerScreenRatioY = 0.5;
+
+constexpr double kDrawPlayerCollisions = 0.0;  // TODO::Bool
 
 RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
                                  Level level,
@@ -33,6 +35,9 @@ RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
       "How far the player can walk towards the side of the screen before the camera follows, as a "
       "percentage of the screen size. The larger the ratio, the more centered the player will be "
       "on the screen.");
+
+  parameter_server_->AddParameter("viz/draw.player.collisions", kDrawPlayerCollisions,
+                                  "Visualize collisions of the player");
 
   const int grid_width = level_.tile_grid.GetWidth();
   const int grid_height = level_.tile_grid.GetHeight();
@@ -226,38 +231,40 @@ void RenderingEngine::RenderTiles() {
 
 void RenderingEngine::RenderPlayer(Player& player) {
   const auto position_in_screen = player.position - GetCameraPosition();
-  // if (position_in_screen.x < 0 || position_in_screen.y < 0 ||
-  //     position_in_screen.x > viewport_width_ || position_in_screen.y > viewport_height_) {
-  //   return;
-  // }
 
   // The player position is bottom left, but the rendering engine requires top left.
   // This conversion is done here.
   const olc::Sprite* sprite = player.animation_manager.GetSprite();
-  const int position_px_x = static_cast<int>(position_in_screen.x * tile_size_);
-  const int position_px_y =
+  const int player_top_left_px_x = static_cast<int>(position_in_screen.x * tile_size_);
+  const int player_top_left_px_y =
       kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;
   const auto flip = player.facing_left;
-  engine_ptr_->DrawSprite(position_px_x, position_px_y, const_cast<olc::Sprite*>(sprite), 1,
-                          static_cast<uint8_t>(flip));
+  engine_ptr_->DrawSprite(player_top_left_px_x, player_top_left_px_y,
+                          const_cast<olc::Sprite*>(sprite), 1, static_cast<uint8_t>(flip));
 
-  // const auto& width = sprite->width;
-  // const auto& height = sprite->height;
-  // TODO:: Add a parameter to turn this on/off.
-  // if (player.collisions.bottom) {
-  //   engine_ptr_->DrawLine(position_px_x, position_px_y + height, position_px_x + width,
-  //                         position_px_y + height);
-  // }
-  // if (player.collisions.top) {
-  //   engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x + width, position_px_y);
-  // }
-  // if (player.collisions.left) {
-  //   engine_ptr_->DrawLine(position_px_x, position_px_y, position_px_x, position_px_y + height);
-  // }
-  // if (player.collisions.right) {
-  //   engine_ptr_->DrawLine(position_px_x + width, position_px_y, position_px_x + width,
-  //                         position_px_y + height);
-  // }
+  const bool draw_bounding_box =
+      parameter_server_->GetParameter<double>("viz/draw.player.collisions") == 1.;
+  if (draw_bounding_box) {
+    const auto& bb_width = player.collision_width_px;
+    const auto& bb_height = player.collision_height_px;
+    const auto bb_bottom_left_x = player_top_left_px_x + player.x_offset_px;
+    const auto bb_bottom_left_y = player_top_left_px_y + sprite->height + player.y_offset_px;
+    auto color = player.collisions.bottom ? olc::WHITE : olc::BLACK;
+    engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y, bb_bottom_left_x + bb_width,
+                          bb_bottom_left_y, color);
+
+    color = player.collisions.top ? olc::WHITE : olc::BLACK;
+    engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y - bb_height,
+                          bb_bottom_left_x + bb_width, bb_bottom_left_y - bb_height, color);
+
+    color = player.collisions.left ? olc::WHITE : olc::BLACK;
+    engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y, bb_bottom_left_x,
+                          bb_bottom_left_y - bb_height, color);
+
+    color = player.collisions.right ? olc::WHITE : olc::BLACK;
+    engine_ptr_->DrawLine(bb_bottom_left_x + bb_width, bb_bottom_left_y,
+                          bb_bottom_left_x + bb_width, bb_bottom_left_y - bb_height, color);
+  }
 }
 
 void RenderingEngine::KeepCameraInBounds() {

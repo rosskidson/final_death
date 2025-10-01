@@ -21,11 +21,12 @@ class PhysicsEngine {
 
   void PhysicsStep(Player& player);
 
-  [[nodiscard]] AxisCollisions CheckPlayerAxisCollision(const Player& player,
-                                                        Axis axis) const;
+  [[nodiscard]] AxisCollisions CheckPlayerAxisCollision(const Player& player, Axis axis) const;
 
  private:
-  void CheckPlayerCollision(Player& player, const Axis& axis)const;
+  void PhysicsStep(const double delta_t, Player& player);
+  void CheckPlayerCollision(Player& player, const Axis& axis) const;
+
   int tile_size_;
   Grid<int> collisions_grid_;
   std::shared_ptr<ParameterServer> parameter_server_;

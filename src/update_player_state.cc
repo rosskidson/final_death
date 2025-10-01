@@ -260,9 +260,9 @@ void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& play
     player.collision_width_px = 16;
     player.collision_height_px = 16;
   } else if (player.state == PlayerState::BackDodgeShot) {
-    player.x_offset_px = 28;
+    player.x_offset_px = 20;
     player.y_offset_px = 0;
-    player.collision_width_px = 22;
+    player.collision_width_px = 30;
     player.collision_height_px = 16;
   } else {
     player.x_offset_px = 30;
@@ -273,7 +273,6 @@ void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& play
 
   if (player.state == PlayerState::BackDodgeShot) {
     player.acceleration.x = 0;
-    // player.velocity.x = player.facing_left ? 10 : -10;
   }
 }
 

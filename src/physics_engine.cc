@@ -186,15 +186,11 @@ PhysicsEngine::PhysicsEngine(const Level& level, std::shared_ptr<ParameterServer
                                   "Controls deceleration in the air.");
 }
 
-void PhysicsEngine::PhysicsStep(Player& player) {
-  const auto now = GameClock::NowGlobal();
-  const double delta_t = (now - player.last_update).count() / 1e9;
-
+void PhysicsEngine::PhysicsStep(const double delta_t, Player& player) {
   player.acceleration.y = -1 * parameter_server_->GetParameter<double>("physics/gravity");
 
   ApplyFriction(*parameter_server_, delta_t, player);
 
-  Collisions old_collisions = player.collisions;
   player.collisions = {};
 
   const auto [max_x_vel, max_y_vel] = GetMaxVelocity(player, *parameter_server_);
@@ -215,11 +211,29 @@ void PhysicsEngine::PhysicsStep(Player& player) {
     player.facing_left = player.velocity.x < 0;
   }
 
-  UpdateCollisionsChanged(player.collisions, old_collisions);
-
   if (player.velocity.y < 0) {
     player.distance_fallen += -1 * player.velocity.y * delta_t;
   }
+}
+
+void PhysicsEngine::PhysicsStep(Player& player) {
+  const auto now = GameClock::NowGlobal();
+  const double delta_t = (now - player.last_update).count() / 1e9;
+  Collisions old_collisions = player.collisions;
+
+  if (delta_t > 0.1) {
+    // Collision detection will not work if the game is running very slow (<10hz).
+    // Therefore break it up into many smaller steps.
+    const int num_steps = static_cast<int>(delta_t / 0.02);
+    const double delta_t_fraction = delta_t / num_steps;
+    for (int i = 0; i < num_steps; ++i) {
+      PhysicsStep(delta_t_fraction, player);
+    }
+  } else {
+    PhysicsStep(delta_t, player);
+  }
+
+  UpdateCollisionsChanged(player.collisions, old_collisions);
 
   player.last_update = now;
 }

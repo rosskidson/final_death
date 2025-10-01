@@ -50,7 +50,7 @@ struct AnimationInfo {
 
 Player InitializePlayer() {
   Player player;
-  player.position = {10, 10};
+  player.position = {2, 10};
   player.velocity = {0, 0};
   player.state = PlayerState::Idle;
 
@@ -273,8 +273,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
   rendering_engine_->RenderForeground();
-  profiler_.LogEvent("06_render_foreground");
-
+  profiler_.LogEvent("06_render");
 
   // profiler_.PrintTimings();
   rate_.Sleep(false);
