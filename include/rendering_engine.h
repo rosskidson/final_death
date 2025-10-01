@@ -8,6 +8,7 @@
 #include "game_configuration.h"
 #include "player.h"
 #include "utils/parameter_server.h"
+#include "utils/simple_profiler.h"
 
 namespace platformer {
 
@@ -85,6 +86,8 @@ class RenderingEngine {
   int tile_size_;
   double viewport_width_;   // The width in tile units.
   double viewport_height_;  // The height in tile units.
+
+  SimpleProfiler profiler_;
 };
 
 }  // namespace platformer

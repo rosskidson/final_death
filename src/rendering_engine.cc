@@ -10,6 +10,7 @@
 #include "global_defs.h"
 #include "tileset.h"
 #include "utils/parameter_server.h"
+#include "utils/logging.h"
 
 namespace platformer {
 
@@ -22,7 +23,6 @@ RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
     : engine_ptr_{engine_ptr},
       level_{std::move(level)},
       parameter_server_{std::move(parameter_server)} {
-
   parameter_server_->AddParameter(
       "rendering/follow.player.screen.ratio.x", kFollowPlayerScreenRatioX,
       "How far the player can walk towards the side of the screen before the camera follows, as a "
@@ -149,6 +149,7 @@ void RenderingEngine::RenderBackgroundLayer(const BackgroundLayer& background_la
   const auto total_height_pixels =
       level_.tile_grid.GetHeight() * level_.level_tileset->GetTileSize();
 
+  int num_of_background_draws{};
   // If the background is taller than the screensize, linearly move the camera such that you see the
   // top of the background at the top of the level, and the bottom at the bottom.
   if (background->height > kScreenHeightPx) {
@@ -162,6 +163,7 @@ void RenderingEngine::RenderBackgroundLayer(const BackgroundLayer& background_la
         static_cast<int>(y_multiplier * cam_position_px_y_ - background->height + kScreenHeightPx);
     auto x_pos = -(static_cast<int>(cam_position_px_x_ / scroll_factor) % background->width);
     while (x_pos < kScreenWidthPx) {
+      num_of_background_draws++;
       engine_ptr_->DrawSprite(x_pos, y_pos, background.get());
       x_pos += background->width;
     }
@@ -172,12 +174,14 @@ void RenderingEngine::RenderBackgroundLayer(const BackgroundLayer& background_la
     while (y_pos < kScreenHeightPx) {
       auto x_pos = -(static_cast<int>(cam_position_px_x_ / scroll_factor) % background->width);
       while (x_pos < kScreenWidthPx) {
+        num_of_background_draws++;
         engine_ptr_->DrawSprite(x_pos, y_pos, background.get());
         x_pos += background->width;
       }
       y_pos += background->height;
     }
   }
+  // LOG_INFO("number of draws " << num_of_background_draws);
 }
 
 void RenderingEngine::RenderTiles() {

@@ -254,9 +254,10 @@ bool Platformer::OnUserCreate() {
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
+  profiler_.Reset();
   // Control
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
-  profiler_.LogEvent("control");
+  profiler_.LogEvent("00_control");
 
   // Model
   UpdateState(*parameter_server_, *physics_engine_, player_);
@@ -264,13 +265,18 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   player_.animation_manager.Update(player_.state);
   physics_engine_->PhysicsStep(player_);
 
+  profiler_.LogEvent("01_update_player_state");
+
   // View
   rendering_engine_->KeepPlayerInFrame(player_);
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
   rendering_engine_->RenderForeground();
+  profiler_.LogEvent("06_render_foreground");
 
+
+  // profiler_.PrintTimings();
   rate_.Sleep(false);
   return true;
 }
