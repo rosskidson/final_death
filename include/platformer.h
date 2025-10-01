@@ -14,6 +14,7 @@
 #include "utils/parameter_server.h"
 #include "utils/rate_timer.h"
 #include "utils/simple_profiler.h"
+#include "utils/windows_high_res_timer.h"
 
 namespace platformer {
 
@@ -48,6 +49,10 @@ class Platformer : public olc::PixelGameEngine {
 
   RateTimer rate_;
   SimpleProfiler profiler_;
+
+  #ifdef _WIN32
+  WindowsHighResTimer high_res_timer_{1};
+  #endif
 };
 
 }  // namespace platformer

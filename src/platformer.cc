@@ -229,13 +229,13 @@ bool Platformer::OnUserCreate() {
   level_idx_ = 0;
   const auto& tile_grid = GetCurrentLevel().tile_grid;
 
-  LOG_SIMPLE("Loading backgrounds");
+  LOG_SIMPLE("Loading backgrounds...");
   rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel(), parameter_server_);
   const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
   RETURN_FALSE_IF_FAILED(
       rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4));
 
-  LOG_SIMPLE("Loading sounds/music");
+  LOG_SIMPLE("Loading sounds/music...");
   sound_player_ = CreateSoundPlayer();
   RETURN_FALSE_IF_FAILED(sound_player_);
   // sound_player_->PlaySample("music", true, 0.2);
@@ -248,24 +248,23 @@ bool Platformer::OnUserCreate() {
   RETURN_FALSE_IF_FAILED(InitializePlayerAnimationManager(*parameter_server_, player_));
   SetAnimationCallbacks();
 
-  LOG_INFO("Initialization successful.");
+  LOG_SIMPLE("Initialization successful.");
   rate_.Reset();
   return true;
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
-  profiler_.Reset();
+  // profiler_.Reset();
   // Control
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
-  profiler_.LogEvent("00_control");
-
+  // profiler_.LogEvent("00_control");
+  
   // Model
   UpdateState(*parameter_server_, *physics_engine_, player_);
   UpdatePlayerFromState(*parameter_server_, player_);
   player_.animation_manager.Update(player_.state);
   physics_engine_->PhysicsStep(player_);
-
-  profiler_.LogEvent("01_update_player_state");
+  // profiler_.LogEvent("01_update_player_state");
 
   // View
   rendering_engine_->KeepPlayerInFrame(player_);
@@ -273,7 +272,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
   rendering_engine_->RenderForeground();
-  profiler_.LogEvent("06_render");
+  // profiler_.LogEvent("02_render");
 
   // profiler_.PrintTimings();
   rate_.Sleep(false);

@@ -25,25 +25,35 @@ class RateTimer {
         std::cerr << "Frame timer has overrun. " << std::endl;
       }
       if (debug) {
-        std::cout << "Now (us):          " << GetMs(now) << std::endl;
-        std::cout << "End of frame (us): " << GetMs(frame_end_) << std::endl;
-        std::cout << "Time overrun (us): " << GetMs(now - frame_end_) << std::endl;
+        std::cout << "Now (us):          " << GetUs(now) << std::endl;
+        std::cout << "End of frame (us): " << GetUs(frame_end_) << std::endl;
+        std::cout << "Time overrun (us): " << GetUs(now - frame_end_) << std::endl;
       }
 
       // If overrun occurs, reset so the loop doesn't have to play catch up.
       Reset();
+      frame_end_ += single_frame_;
+      return;
     }
 
-    std::this_thread::sleep_until(frame_end_);
+    #ifdef _WIN32
+    // Windows has terrible clock precision. 
+    // Sleep until 2ms before the deadline and then busy wait the rest
+    std::this_thread::sleep_until(frame_end_ - std::chrono::milliseconds(2));
+    while(Clock::now() < frame_end_);
+    #else
+    std::this_thread::sleep_until(frame_end_ );
+    #endif
+
     frame_end_ += single_frame_;
   }
 
  private:
-  static uint64_t GetMs(const TimePoint& time_point) {
+  static uint64_t GetUs(const TimePoint& time_point) {
     return std::chrono::duration_cast<std::chrono::microseconds>(time_point.time_since_epoch())
-        .count();
+        .count() % 100000;
   }
-  static uint64_t GetMs(const Duration& duration) {
+  static uint64_t GetUs(const Duration& duration) {
     return std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
   }
 
