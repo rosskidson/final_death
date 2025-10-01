@@ -1,11 +1,13 @@
 #pragma once
 
+#include <memory>
 #include <optional>
 
 #include "animated_sprite.h"
 #include "basic_types.h"
-#include "player.h"
 #include "game_configuration.h"
+#include "player.h"
+#include "utils/parameter_server.h"
 
 namespace platformer {
 
@@ -15,7 +17,9 @@ class RenderingEngine {
   // The level is copied in, as opposed to a ref or pointer.
   // This class has invariants based on the level grids, so a reference could
   // result in having the rug pulled from its feet.
-  RenderingEngine(olc::PixelGameEngine* engine_ptr, Level level);
+  RenderingEngine(olc::PixelGameEngine* engine_ptr,
+                  Level level,
+                  std::shared_ptr<ParameterServer> parameter_server);
 
   [[nodiscard]] Vector2d GetCameraPosition() const;
   void SetCameraPosition(const Vector2d& absolute_vec);
@@ -24,7 +28,7 @@ class RenderingEngine {
   // Move the camera to keep it focused on the player.
   // The screen ratio is how much of a buffer from the player to the side of the screen
   // as a fraction of the screen size.
-  void KeepPlayerInFrame(const Player& player, double screen_ratio_x, double screen_ratio_y);
+  void KeepPlayerInFrame(const Player& player);
 
   void RenderBackground();
   void RenderForeground();
@@ -58,6 +62,8 @@ class RenderingEngine {
   void RenderBackgroundLayer(const BackgroundLayer& background_layer);
 
   olc::PixelGameEngine* engine_ptr_;
+
+  std::shared_ptr<ParameterServer> parameter_server_;
 
   // std::unique_ptr<olc::Sprite> background_;
   std::vector<BackgroundLayer> background_layers_;

@@ -9,11 +9,31 @@
 #include "game_configuration.h"
 #include "global_defs.h"
 #include "tileset.h"
+#include "utils/parameter_server.h"
 
 namespace platformer {
 
-RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr, Level level)
-    : engine_ptr_{engine_ptr}, level_{std::move(level)} {
+constexpr double kFollowPlayerScreenRatioX = 0.4;
+constexpr double kFollowPlayerScreenRatioY = 0.5;
+
+RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
+                                 Level level,
+                                 std::shared_ptr<ParameterServer> parameter_server)
+    : engine_ptr_{engine_ptr},
+      level_{std::move(level)},
+      parameter_server_{std::move(parameter_server)} {
+
+  parameter_server_->AddParameter(
+      "rendering/follow.player.screen.ratio.x", kFollowPlayerScreenRatioX,
+      "How far the player can walk towards the side of the screen before the camera follows, as a "
+      "percentage of the screen size. The larger the ratio, the more centered the player will be "
+      "on the screen.");
+  parameter_server_->AddParameter(
+      "rendering/follow.player.screen.ratio.y", kFollowPlayerScreenRatioY,
+      "How far the player can walk towards the side of the screen before the camera follows, as a "
+      "percentage of the screen size. The larger the ratio, the more centered the player will be "
+      "on the screen.");
+
   const int grid_width = level_.tile_grid.GetWidth();
   const int grid_height = level_.tile_grid.GetHeight();
 
@@ -46,9 +66,11 @@ Vector2d RenderingEngine::GetCameraPosition() const {
 }
 
 // TODO split ratio to x and y
-void RenderingEngine::KeepPlayerInFrame(const Player& player,
-                                        double screen_ratio_x,
-                                        double screen_ratio_y) {
+void RenderingEngine::KeepPlayerInFrame(const Player& player) {
+  const auto screen_ratio_x =
+      parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.x");
+  const auto screen_ratio_y =
+      parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.y");
   const auto position = GetCameraPosition();
   const auto convert_to_px = [&](double val) -> int { return static_cast<int>(val * tile_size_); };
   const Vector2i player_pos_px{convert_to_px(player.position.x), convert_to_px(player.position.y)};

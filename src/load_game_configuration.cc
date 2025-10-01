@@ -19,13 +19,12 @@ std::shared_ptr<TileSet> LoadTileSet(const json& tileset_json) {
   const int height = tileset_json["__cHei"];
   const int tile_size = tileset_json["tileGridSize"];
   const std::string identifier = tileset_json["identifier"];
-  std::cout << "loading tileset " << identifier << std::endl;
+  LOG_SIMPLE("  Loading tileset '" << identifier << "'");
   const int uid = tileset_json["uid"];
   auto tileset_ptr = std::make_shared<TileSet>(identifier, uid, width, height, tile_size);
 
   const std::string path_from_config = tileset_json["relPath"];
   const auto tile_path = std::filesystem::path(SOURCE_DIR) / path_from_config;
-  std::cout << "path " << tile_path << std::endl;
   olc::Sprite tileset_img(tile_path.string());
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
@@ -61,7 +60,7 @@ Grid<Tile> LoadTileMap(const json& tilemap_json) {
     int src_x = tile["src"][0];
     int src_y = tile["src"][1];
   }
-  std::cout << "  Loaded " << tiles.GetHeight() * tiles.GetWidth() << " tiles " << std::endl;
+  LOG_SIMPLE("    Loaded " << tiles.GetHeight() * tiles.GetWidth() << " tiles ");
   return tiles;
 }
 
@@ -78,7 +77,7 @@ Grid<int> LoadIntGrid(const json& intgrid_json) {
     tiles.SetTile(x, y_inv, tile);
     counter++;
   }
-  std::cout << "  Loaded " << tiles.GetHeight() * tiles.GetWidth() << " tiles " << std::endl;
+  LOG_SIMPLE("    Loaded " << tiles.GetHeight() * tiles.GetWidth() << " tiles ");
   return tiles;
 }
 
@@ -92,16 +91,18 @@ std::optional<GameConfiguration> LoadGameConfiguration(const std::string& path) 
   GameConfiguration config;
   const json ldtk = json::parse(file_in);
 
+  LOG_SIMPLE("Loading Tilesets:");
   for (const auto& tileset_json : ldtk["defs"]["tilesets"]) {
     const int uid = tileset_json["uid"];
     config.tilesets[uid] = LoadTileSet(tileset_json);
   }
 
+  LOG_SIMPLE("Loading Levels:");
   for (const auto& level_json : ldtk["levels"]) {
     Level level{};
 
     const std::string levelName = level_json["identifier"];
-    std::cout << "Level: " << levelName << "\n";
+    LOG_SIMPLE("  Level: " << levelName);
 
     // Each level contains layerInstances (drawn in reverse order)
     if (!level_json.contains("layerInstances")) {
@@ -110,14 +111,14 @@ std::optional<GameConfiguration> LoadGameConfiguration(const std::string& path) 
     for (const auto& layer_json : level_json["layerInstances"]) {
       const std::string layer_name = layer_json["__identifier"];
       const std::string layer_type = layer_json["__type"];
-      std::cout << "  Layer: " << layer_name << " (" << layer_type << ")\n";
+      LOG_SIMPLE("    Layer: " << layer_name << " (" << layer_type << ")");
 
       if (layer_type == "Tiles") {
         level.tile_grid = LoadTileMap(layer_json);
         const int tileset_uid = layer_json["__tilesetDefUid"];
         if (!config.tilesets.count(tileset_uid)) {
           LOG_ERROR("Tileset uid " << tileset_uid << " not found in config.");
-          exit(1);
+          return std::nullopt;
         }
         level.level_tileset = config.tilesets[tileset_uid];
       }

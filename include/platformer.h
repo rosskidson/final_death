@@ -7,12 +7,13 @@
 #include "game_configuration.h"
 #include "input_processor.h"
 #include "olcPixelGameEngine.h"
-#include "player.h"
 #include "physics_engine.h"
+#include "player.h"
 #include "rendering_engine.h"
 #include "sound.h"
 #include "utils/parameter_server.h"
 #include "utils/rate_timer.h"
+#include "utils/simple_profiler.h"
 
 namespace platformer {
 
@@ -25,12 +26,13 @@ class Platformer : public olc::PixelGameEngine {
   bool OnConsoleCommand(const std::string& sCommand) override;
 
  private:
+  void SetAnimationCallbacks();
   bool Keyboard();
   Level& GetCurrentLevel() { return config_.levels.at(level_idx_); };
 
   GameConfiguration config_;
   int level_idx_;
-  // TODO:: Remove all unique ptrs. They are like this for delayed initialization 
+  // TODO:: Remove all unique ptrs. They are like this for delayed initialization
   // (constructor requires resources not available at Platformer constructor time)
   // Change to a static creation factory pattern.
   std::unique_ptr<RenderingEngine> rendering_engine_;
@@ -45,6 +47,7 @@ class Platformer : public olc::PixelGameEngine {
   std::map<std::string, olc::Sprite> sprite_storage_;
 
   RateTimer rate_;
+  SimpleProfiler profiler_;
 };
 
 }  // namespace platformer

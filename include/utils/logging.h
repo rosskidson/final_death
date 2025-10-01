@@ -16,3 +16,5 @@ inline std::string getFilename(const std::string& str) {
 #define LOG_INFO(msg)                                                                              \
   std::cout << "[INFO] " << logging::getFilename(std::string{__FILE__}) << ":" << __LINE__ << ": " \
             << msg << std::endl;
+
+#define LOG_SIMPLE(msg) std::cout << msg << std::endl;

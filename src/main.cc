@@ -2,7 +2,6 @@
 #include "platformer.h"
 
 int main() {
-  std::cout << "Loading ... " << std::endl;
   platformer::Platformer platformer{};
 
   if (platformer.Start() == olc::rcode::FAIL) {

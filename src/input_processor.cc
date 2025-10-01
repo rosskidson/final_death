@@ -14,19 +14,27 @@
 
 namespace platformer {
 
+constexpr double kAcceleration = 50.0;
+constexpr double kJumpVel = 21.0;
+
 bool IsPlayerShooting(const Player& player) { return player.state == PlayerState::Shoot; }
 
 bool IsPlayerShootingOnGround(const Player& player) {
   return player.collisions.bottom && player.state == PlayerState::Shoot;
 }
 
-InputProcessor::InputProcessor(std::shared_ptr<const ParameterServer> parameter_server,
+InputProcessor::InputProcessor(std::shared_ptr<ParameterServer> parameter_server,
                                std::shared_ptr<const SoundPlayer> sound_player,
                                olc::PixelGameEngine* engine_ptr)
     : input_{engine_ptr},
       parameter_server_{std::move(parameter_server)},
       sound_player_{std::move(sound_player)},
-      engine_ptr_{engine_ptr} {}
+      engine_ptr_{engine_ptr} {
+  parameter_server_->AddParameter("physics/player.acceleration", kAcceleration,
+                                 "Horizontal acceleration of the player, unit: tile/s²");
+  parameter_server_->AddParameter("physics/jump.velocity", kJumpVel,
+                                 "The instantaneous vertical velocity when you jump, unit: tile/s");
+}
 
 bool InputProcessor::ProcessInputs(Player& player) {
   if (engine_ptr_->IsConsoleShowing()) {

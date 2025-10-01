@@ -21,17 +21,10 @@
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
 
-constexpr double kAcceleration = 50.0;
-constexpr double kJumpVel = 21.0;
-constexpr double kFollowPlayerScreenRatioX = 0.4;
-constexpr double kFollowPlayerScreenRatioY = 0.5;
-
 // TODO:: Int parameters
 constexpr double kShootDelayMs = 1000;
 constexpr double kRollDurationMs = 250;
-
 constexpr double kShootDownUpwardVel = 10;
-
 constexpr double kHardFallDistance = 10;
 
 namespace platformer {
@@ -72,21 +65,6 @@ Player InitializePlayer() {
 
 std::shared_ptr<ParameterServer> CreateParameterServer() {
   auto parameter_server = std::make_shared<ParameterServer>();
-  parameter_server->AddParameter("physics/player.acceleration", kAcceleration,
-                                 "Horizontal acceleration of the player, unit: tile/s²");
-  parameter_server->AddParameter("physics/jump.velocity", kJumpVel,
-                                 "The instantaneous vertical velocity when you jump, unit: tile/s");
-  parameter_server->AddParameter(
-      "rendering/follow.player.screen.ratio.x", kFollowPlayerScreenRatioX,
-      "How far the player can walk towards the side of the screen before the camera follows, as a "
-      "percentage of the screen size. The larger the ratio, the more centered the player will be "
-      "on the screen.");
-  parameter_server->AddParameter(
-      "rendering/follow.player.screen.ratio.y", kFollowPlayerScreenRatioY,
-      "How far the player can walk towards the side of the screen before the camera follows, as a "
-      "percentage of the screen size. The larger the ratio, the more centered the player will be "
-      "on the screen.");
-
   parameter_server->AddParameter("timing/shoot.delay", kShootDelayMs,
                                  "How long it takes to shoot and reload");
   parameter_server->AddParameter("timing/roll.duration.ms", kRollDurationMs,
@@ -104,9 +82,6 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
 
 bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, Player& player) {
   const auto player_path = std::filesystem::path(SOURCE_DIR) / "assets" / "player";
-  const int shoot_delay =
-      static_cast<int>(parameter_server.GetParameter<double>("timing/shoot.delay"));
-
   constexpr int kWidth = 80;
   std::vector<AnimationInfo> animations = {
       // path, loops, start_frame_idx, end_frame_idx, forwards/backwards, player state
@@ -149,58 +124,7 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
   return true;
 }
 
-std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
-  auto player = std::make_shared<SoundPlayer>();
-  const auto path = std::filesystem::path(SOURCE_DIR) / "assets" / "sounds";
-  RETURN_NULL_PTR_ON_ERROR(
-      player->LoadWavFromFilesystem(path / "sfx_shotgun_shot.wav", "shotgun_fire"));
-  RETURN_NULL_PTR_ON_ERROR(
-      player->LoadWavFromFilesystem(path / "sfx_shotgun_reload.wav", "shotgun_reload"));
-
-  const auto music_path = std::filesystem::path(SOURCE_DIR) / "assets" / "music";
-  // Failing to load music is okay.
-  // (void)player->LoadWavFromFilesystem(music_path / "welcome_to_the_hub.mp3", "music");
-  return player;
-}
-
-Platformer::Platformer() : rate_(kGameFrequency) {
-  this->Construct(kScreenWidthPx, kScreenHeightPx, kPixelSize, kPixelSize);
-}
-
-bool Platformer::OnUserDestroy() { return true; }
-
-bool Platformer::OnUserCreate() {
-  // TODO(FOR RELEASE): Path is assumed to be cmake source. Store it in the binary, or do a proper
-  // install
-  this->SetPixelMode(olc::Pixel::Mode::MASK);
-  const auto levels_path = std::filesystem::path(SOURCE_DIR) / "levels.json";
-  auto config = platformer::LoadGameConfiguration(levels_path.string());
-  if (!config.has_value()) {
-    std::cout << "Failed loading config " << std::endl;
-    return false;
-  }
-  config_ = std::move(*config);
-  level_idx_ = 0;
-  const auto& tile_grid = GetCurrentLevel().tile_grid;
-
-  rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel());
-  const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
-  RETURN_FALSE_IF_FAILED(
-      rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4));
-
-  sound_player_ = CreateSoundPlayer();
-  RETURN_FALSE_IF_FAILED(sound_player_);
-  sound_player_->PlaySample("music", true, 0.2);
-
-  parameter_server_ = CreateParameterServer();
-  physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
-  input_processor_ = std::make_unique<InputProcessor>(parameter_server_, sound_player_, this);
-
-  player_ = InitializePlayer();
-
-  RETURN_FALSE_IF_FAILED(InitializePlayerAnimationManager(*parameter_server_, player_));
-
-  // Animation Callbacks
+void Platformer::SetAnimationCallbacks() {
   player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(0, [&]() {
     sound_player_->PlaySample("shotgun_fire", false);
   });
@@ -271,19 +195,68 @@ bool Platformer::OnUserCreate() {
     player_.cached_velocity.x = 0;
   });
 
-  rate_.Reset();
 
+}
+
+std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
+  auto player = std::make_shared<SoundPlayer>();
+  const auto path = std::filesystem::path(SOURCE_DIR) / "assets" / "sounds";
+  RETURN_NULL_PTR_ON_ERROR(
+      player->LoadWavFromFilesystem(path / "sfx_shotgun_shot.wav", "shotgun_fire"));
+  RETURN_NULL_PTR_ON_ERROR(
+      player->LoadWavFromFilesystem(path / "sfx_shotgun_reload.wav", "shotgun_reload"));
+
+  const auto music_path = std::filesystem::path(SOURCE_DIR) / "assets" / "music";
+  // Failing to load music is okay.
+  (void)player->LoadWavFromFilesystem(music_path / "welcome_to_the_hub.mp3", "music");
+  return player;
+}
+
+Platformer::Platformer() : parameter_server_{CreateParameterServer()}, rate_(kGameFrequency) {
+  this->Construct(kScreenWidthPx, kScreenHeightPx, kPixelSize, kPixelSize);
+}
+
+bool Platformer::OnUserDestroy() { return true; }
+
+bool Platformer::OnUserCreate() {
+  this->SetPixelMode(olc::Pixel::Mode::MASK);
+
+  // TODO(FOR RELEASE): Path is assumed to be cmake source. Store assets in the binary.
+  const auto levels_path = std::filesystem::path(SOURCE_DIR) / "levels.json";
+  auto config = platformer::LoadGameConfiguration(levels_path.string());
+  RETURN_FALSE_IF_FAILED(config);
+  config_ = std::move(*config);
+  level_idx_ = 0;
+  const auto& tile_grid = GetCurrentLevel().tile_grid;
+
+  LOG_SIMPLE("Loading backgrounds");
+  rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel(), parameter_server_);
+  const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
+  RETURN_FALSE_IF_FAILED(
+      rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4));
+
+  LOG_SIMPLE("Loading sounds/music");
+  sound_player_ = CreateSoundPlayer();
+  RETURN_FALSE_IF_FAILED(sound_player_);
+  // sound_player_->PlaySample("music", true, 0.2);
+
+  physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
+  input_processor_ = std::make_unique<InputProcessor>(parameter_server_, sound_player_, this);
+
+  player_ = InitializePlayer();
+
+  RETURN_FALSE_IF_FAILED(InitializePlayerAnimationManager(*parameter_server_, player_));
+  SetAnimationCallbacks();
+
+  LOG_INFO("Initialization successful.");
+  rate_.Reset();
   return true;
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
-  const auto follow_ratio_x =
-      parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.x");
-  const auto follow_ratio_y =
-      parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.y");
-
   // Control
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
+  profiler_.LogEvent("control");
 
   // Model
   UpdateState(*parameter_server_, *physics_engine_, player_);
@@ -292,7 +265,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_engine_->PhysicsStep(player_);
 
   // View
-  rendering_engine_->KeepPlayerInFrame(player_, follow_ratio_x, follow_ratio_y);
+  rendering_engine_->KeepPlayerInFrame(player_);
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
   rendering_engine_->RenderPlayer(player_);
