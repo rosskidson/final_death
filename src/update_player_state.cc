@@ -4,6 +4,7 @@
 
 #include "input_capture.h"
 #include "physics_engine.h"
+#include "player.h"
 #include "player_state.h"
 #include "utils/chrono_helpers.h"
 #include "utils/game_clock.h"
@@ -148,8 +149,7 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
     }
 
     if (player.state == PlayerState::Roll && player.requested_states.count(PlayerState::BackShot)) {
-      // TODO:: Changing facing_left here feels very hacky.
-      player.facing_left = !player.facing_left;
+      player.facing = player.facing == Direction::LEFT ? Direction::RIGHT : Direction::LEFT;
       player.state = PlayerState::BackDodgeShot;
       return;
     }
@@ -229,9 +229,9 @@ void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& play
 
   // Disallow movement during crouch, except changing direction.
   if (player.state == PlayerState::Crouch) {
-    if (player.facing_left && player.acceleration.x > 0) {
+    if (player.facing == Direction::LEFT && player.acceleration.x > 0) {
       player.velocity.x = 1;
-    } else if (!player.facing_left && player.acceleration.x < 0) {
+    } else if (player.facing == Direction::RIGHT && player.acceleration.x < 0) {
       player.velocity.x = -1;
     } else {
       player.velocity.x = 0;
@@ -250,7 +250,8 @@ void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& play
   // Roll
   const auto roll_vel = parameter_server.GetParameter<double>("physics/roll.x.vel");
   if (player.state == PlayerState::Roll) {
-    if (player.facing_left) {
+    player.acceleration.x = 0;
+    if (player.facing == Direction::LEFT) {
       player.velocity.x = -roll_vel;
     } else {
       player.velocity.x = roll_vel;
@@ -275,10 +276,6 @@ void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& play
     player.y_offset_px = 0;
     player.collision_width_px = 18;
     player.collision_height_px = 48;
-  }
-
-  if (player.state == PlayerState::BackDodgeShot) {
-    player.acceleration.x = 0;
   }
 }
 

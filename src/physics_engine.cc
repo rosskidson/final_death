@@ -207,8 +207,8 @@ void PhysicsEngine::PhysicsStep(const double delta_t, Player& player) {
   player.position.y += player.velocity.y * delta_t;
   this->CheckPlayerCollision(player, Axis::Y);
 
-  if (player.velocity.x != 0. && player.state != PlayerState::BackDodgeShot) {
-    player.facing_left = player.velocity.x < 0;
+  if (player.acceleration.x != 0) {
+    player.facing = player.acceleration.x < 0 ? Direction::LEFT : Direction::RIGHT;
   }
 
   if (player.velocity.y < 0) {

@@ -171,7 +171,7 @@ void Platformer::SetAnimationCallbacks() {
     sound_player_->PlaySample("shotgun_reload", false);
   });
   player_.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(0, [&]() {
-    player_.velocity.x = player_.facing_left ? 100 : -100;
+    player_.velocity.x = (player_.facing == Direction::LEFT) ? 100 : -100;
   });
 
   const auto shoot_down_upward_vel =

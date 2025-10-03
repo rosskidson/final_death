@@ -1,10 +1,11 @@
 #pragma once
 
 #include <set>
+
 #include "animation_manager.h"
 #include "basic_types.h"
-#include "utils/game_clock.h"
 #include "player_state.h"
+#include "utils/game_clock.h"
 
 namespace platformer {
 
@@ -13,10 +14,22 @@ struct Collisions {
   bool left_changed, right_changed, top_changed, bottom_changed;
 };
 
+enum class Direction : uint8_t { LEFT, RIGHT };
+
+struct Entity {
+  Vector2d position{};
+  Vector2d velocity{};
+  Vector2d acceleration{};
+
+  Collisions collisions{};
+};
+
 struct Player {
   Vector2d position{};
   Vector2d velocity{};
   Vector2d acceleration{};
+
+  Collisions collisions{};
 
   Vector2d cached_velocity{};
 
@@ -32,9 +45,7 @@ struct Player {
 
   std::set<PlayerState> requested_states;
 
-  Collisions collisions{};
-
-  bool facing_left{};
+  Direction facing{Direction::RIGHT};
 
   double distance_fallen{};
 

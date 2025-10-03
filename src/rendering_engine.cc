@@ -8,6 +8,7 @@
 #include "config.h"
 #include "game_configuration.h"
 #include "global_defs.h"
+#include "player.h"
 #include "tileset.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
@@ -238,7 +239,7 @@ void RenderingEngine::RenderPlayer(Player& player) {
   const int player_top_left_px_x = static_cast<int>(position_in_screen.x * tile_size_);
   const int player_top_left_px_y =
       kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;
-  const auto flip = player.facing_left;
+  const bool flip = player.facing == Direction::LEFT;
   engine_ptr_->DrawSprite(player_top_left_px_x, player_top_left_px_y,
                           const_cast<olc::Sprite*>(sprite), 1, static_cast<uint8_t>(flip));
 
