@@ -13,11 +13,21 @@ namespace platformer {
 
 class AnimatedSprite {
  public:
+  // sprite_sheet_path: Path to the .png spritesheet. This also expects a metadata file with
+  //                    the same name but with a .json extension.
+  // loops:           True to loop the animation, False it will 'expire' after completion
+  // start_frame_idx: If greater than zero, those frames will be skipped when loading
+  // end_frame_idx:   As per start_frame_idx. Includes this frame idx, i.e. 0 to 4 means 5 frames
+  // intro_frames:    For looping only: play the first n frames only once the first time through.
+  //                  e.g. '2' = first 3 frames are played the first time, then loops starting at 3.
+  //                  Applies to indices after start/end have been applied.
+  // forwards_backwards: Will play the frames from start to end, then from end back to start.
+  //
   static std::optional<AnimatedSprite> CreateAnimatedSprite(
       const std::filesystem::path& sprite_sheet_path,
       bool loops,
       int start_frame_idx = 0,
-      int end_frame_idx = -1,  // Includes this frame idx, i.e. 0 to 4 means 5 frames.
+      int end_frame_idx = -1,
       int intro_frames = -1,
       bool forwards_backwards = false);
 
@@ -34,6 +44,8 @@ class AnimatedSprite {
   void TriggerCallbacks();
 
   // Add a callback to be triggered when a certain frame is reached.
+  // The index is after the start/end frame idx range has been applied.
+  // E.g. start_frame_idx = 1, Callback on 2nd frame, frame_idx = 1.
   void AddCallback(int frame_idx, std::function<void()> callback);
 
   // Add a callback to be triggered when the animation expires (only for non-looping animations).
