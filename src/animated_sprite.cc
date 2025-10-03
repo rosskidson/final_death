@@ -9,6 +9,7 @@
 #include <optional>
 
 #include "nlohmann/json.hpp"
+#include "utils/chrono_helpers.h"
 #include "utils/logging.h"
 
 namespace platformer {
@@ -179,7 +180,7 @@ const olc::Sprite* AnimatedSprite::GetFrame() const {
 int AnimatedSprite::GetTotalAnimationTimeMs() const { return frame_timing_lookup_.back(); }
 
 int AnimatedSprite::GetCurrentFrameIdx() const {
-  int time_elapsed = static_cast<int>((GameClock::NowGlobal() - start_time_).count() / 1e6);
+  auto time_elapsed = ToMs(GameClock::NowGlobal() - start_time_);
 
   // Check if it has expired first.
   if (!loops_ && time_elapsed >= frame_timing_lookup_.back()) {

@@ -5,6 +5,7 @@
 #include "input_capture.h"
 #include "physics_engine.h"
 #include "player_state.h"
+#include "utils/chrono_helpers.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
@@ -121,10 +122,8 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
     // pose.  Only do this after the first few frame to avoid double fire.
     if ((player.state == PlayerState::InAirShot || player.state == PlayerState::InAirDownShot) &&
         player.collisions.bottom &&
-        ((GameClock::NowGlobal() - player.animation_manager.GetActiveAnimation().GetStartTime())
-                 .count() /
-             1e6 >
-         300)) {
+        (ToMs(GameClock::NowGlobal() -
+              player.animation_manager.GetActiveAnimation().GetStartTime()) > 300)) {
       player.animation_manager.SwapAnimation(PlayerState::Shoot);
       player.state = PlayerState::Shoot;
     }

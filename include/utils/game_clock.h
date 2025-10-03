@@ -1,12 +1,8 @@
 #pragma once
 
-#include <chrono>
+#include "chrono_helpers.h"
 
 namespace platformer {
-
-using Clock = std::chrono::steady_clock;
-using TimePoint = Clock::time_point;
-using Duration = Clock::duration;
 
 // Wraps std::chrono::steady_clock and enables pausing of the clock.
 // This is both an instance and a singleton static global

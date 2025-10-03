@@ -1,17 +1,14 @@
 #pragma once
 
-#include <chrono>
 #include <deque>
 #include <iostream>
 #include <map>
-#include <numeric>
 #include <string>
+#include "chrono_helpers.h"
+
+namespace platformer {
 
 class SimpleProfiler {
-  using Clock = std::chrono::steady_clock;
-  using TimePoint = Clock::time_point;
-  using Duration = Clock::duration;
-
  public:
   SimpleProfiler() = default;
 
@@ -20,7 +17,7 @@ class SimpleProfiler {
   void LogEvent(const std::string& key) {
     const auto delta = Clock::now() - last_measurement_;
     auto& timing_buffer = time_measurements_[key];
-    timing_buffer.push_back(GetUs(delta));
+    timing_buffer.push_back(ToUs(delta));
     while (timing_buffer.size() > kBufferSize) {
       timing_buffer.pop_front();
     }
@@ -34,11 +31,7 @@ class SimpleProfiler {
   }
 
  private:
-  static uint64_t GetUs(const Duration& duration) {
-    return std::chrono::duration_cast<std::chrono::microseconds>(duration).count();
-  }
-
-  static uint64_t GetAverage(const std::deque<uint64_t>& values) {
+  static uint64_t GetAverage(const std::deque<int64_t>& values) {
     if (values.empty()) {
       return 0;
     }
@@ -51,6 +44,8 @@ class SimpleProfiler {
   }
 
   static constexpr int kBufferSize = 100;
-  std::map<std::string, std::deque<uint64_t>> time_measurements_;
+  std::map<std::string, std::deque<int64_t>> time_measurements_;
   TimePoint last_measurement_;
 };
+
+}  // namespace platformer

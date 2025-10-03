@@ -15,7 +15,7 @@ constexpr double kSlideVelX = 10;
 constexpr double kGravity = 50.0;
 constexpr double kGroundFriction = 50.0;
 constexpr double kAirFriction = 1.0;
-constexpr double kSlideFriction = 5.0;  // For backdodge
+constexpr double kSlideFriction = 7.0;  // For backdodge
 
 namespace platformer {
 

@@ -7,7 +7,7 @@
 #include <optional>
 #include <vector>
 
-#include "utils/game_clock.h"
+#include "utils/chrono_helpers.h"
 
 namespace platformer {
 
