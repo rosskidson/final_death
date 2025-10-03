@@ -18,6 +18,7 @@ class AnimatedSprite {
       bool loops,
       int start_frame_idx = 0,
       int end_frame_idx = -1,  // Includes this frame idx, i.e. 0 to 4 means 5 frames.
+      int intro_frames = -1,
       bool forwards_backwards = false);
 
   void StartAnimation();
@@ -46,6 +47,7 @@ class AnimatedSprite {
 
   bool loops_;
   bool forwards_backwards_;
+  int intro_frames_;
   std::vector<std::unique_ptr<olc::Sprite>> frames_;
   std::vector<int> frame_timing_;
   std::vector<int> frame_timing_lookup_;

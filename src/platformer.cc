@@ -44,6 +44,7 @@ struct AnimationInfo {
   bool loops;
   int start_frame_idx;
   int end_frame_idx;
+  int intro_frames;
   bool forwards_backwards;
   PlayerState action;
 };
@@ -85,36 +86,38 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
   constexpr int kWidth = 80;
   std::vector<AnimationInfo> animations = {
       // path, loops, start_frame_idx, end_frame_idx, forwards/backwards, player state
-      {player_path / "player_idle_standing.png", true, 0, -1, false, PlayerState::Idle},
-      {player_path / "player_walk.png", true, 0, -1, false, PlayerState::Walk},
-      {player_path / "player_fire_standing.png", false, 1, -1, false, PlayerState::Shoot},
-      {player_path / "player_fire_jumping.png", false, 0, -1, false, PlayerState::InAirShot},
-      {player_path / "player_fire_crouch.png", false, 0, -1, false, PlayerState::CrouchShot},
-      {player_path / "player_fire_jumping_downshot.png", false, 0, -1, false,
+      {player_path / "player_idle_standing.png", true, 0, -1, -1, false, PlayerState::Idle},
+      {player_path / "player_walk.png", true, 0, -1, -1, false, PlayerState::Walk},
+      {player_path / "player_fire_standing.png", false, 1, -1, -1, false, PlayerState::Shoot},
+      {player_path / "player_fire_jumping.png", false, 0, -1, -1, false, PlayerState::InAirShot},
+      {player_path / "player_fire_crouch.png", false, 0, -1, -1, false, PlayerState::CrouchShot},
+      {player_path / "player_fire_jumping_downshot.png", false, 0, -1, -1, false,
        PlayerState::InAirDownShot},
-      {player_path / "player_idle_crouch.png", true, 0, -1, false, PlayerState::Crouch},
+      {player_path / "player_idle_crouch.png", true, 0, -1, -1, false, PlayerState::Crouch},
       // TODO:: The first frame of aim up has been deleted as there is special logic missing to only
       // play it the on the transition from idle to up.
-      {player_path / "player_idle_up.png", true, 1, -1, false, PlayerState::AimUp},
-      {player_path / "player_fire_upwards.png", false, 2, -1, false, PlayerState::UpShot},
-      {player_path / "player_roll.png", false, 1, 6, false, PlayerState::PreRoll},
-      {player_path / "player_roll.png", true, 7, 10, false, PlayerState::Roll},
-      {player_path / "player_roll.png", false, 11, 15, false, PlayerState::PostRoll},
-      {player_path / "player_jump.png", false, 1, 1, false, PlayerState::PreJump},
-      {player_path / "player_jump_dust_h.png", false, 0, -1, false, PlayerState::HardLanding},
-      {player_path / "player_jump_dust_l.png", false, 0, -1, false, PlayerState::SoftLanding},
-      {player_path / "player_jump.png", true, 2, 4, true, PlayerState::InAir},
-      {player_path / "player_fire_killself_count.png", false, 0, -1, false,
+      {player_path / "player_idle_up.png", true, 0, -1, 0, false, PlayerState::AimUp},
+      {player_path / "player_fire_upwards.png", false, 2, -1, -1, false, PlayerState::UpShot},
+      {player_path / "player_roll.png", false, 1, 6, -1, false, PlayerState::PreRoll},
+      {player_path / "player_roll.png", true, 7, 10, -1, false, PlayerState::Roll},
+      {player_path / "player_roll.png", false, 11, 15, -1, false, PlayerState::PostRoll},
+      {player_path / "player_jump.png", false, 1, 1, -1, false, PlayerState::PreJump},
+      {player_path / "player_jump_dust_h.png", false, 0, -1, -1, false, PlayerState::HardLanding},
+      {player_path / "player_jump_dust_l.png", false, 0, -1, -1, false, PlayerState::SoftLanding},
+      {player_path / "player_jump.png", true, 2, 4, -1, true, PlayerState::InAir},
+      {player_path / "player_fire_killself_count.png", false, 0, -1, -1, false,
        PlayerState::PreSuicide},
-      {player_path / "player_fire_killself_fire.png", false, 0, -1, false, PlayerState::Suicide},
-      {player_path / "player_fire_backshot.png", false, 0, -1, false, PlayerState::BackShot},
-      {player_path / "player_fire_backdodge.png", false, 0, -1, false, PlayerState::BackDodgeShot},
+      {player_path / "player_fire_killself_fire.png", false, 0, -1, -1, false,
+       PlayerState::Suicide},
+      {player_path / "player_fire_backshot.png", false, 0, -1, -1, false, PlayerState::BackShot},
+      {player_path / "player_fire_backdodge.png", false, 0, -1, -1, false,
+       PlayerState::BackDodgeShot},
   };
 
   for (const auto& animation : animations) {
     auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
         animation.sprite_path, animation.loops, animation.start_frame_idx, animation.end_frame_idx,
-        animation.forwards_backwards);
+        animation.intro_frames, animation.forwards_backwards);
     if (!animated_sprite.has_value()) {
       return false;
     }
@@ -194,8 +197,6 @@ void Platformer::SetAnimationCallbacks() {
     player_.velocity.x = player_.cached_velocity.x;
     player_.cached_velocity.x = 0;
   });
-
-
 }
 
 std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
@@ -262,7 +263,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   // Control
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
   // profiler_.LogEvent("00_control");
-  
+
   // Model
   UpdateState(*parameter_server_, *physics_engine_, player_);
   UpdatePlayerFromState(*parameter_server_, player_);

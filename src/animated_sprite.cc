@@ -36,6 +36,7 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     bool loops,
     int start_frame_idx,
     int end_frame_idx,
+    int intro_frames,
     bool forwards_backwards) try {
   // Check both spritesheet and metadata files are preset.
   if (!fs::exists(sprite_sheet_path)) {
@@ -64,6 +65,7 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
   AnimatedSprite animated_sprite{};
   animated_sprite.loops_ = loops;
   animated_sprite.forwards_backwards_ = forwards_backwards;
+  animated_sprite.intro_frames_ = intro_frames;
   int frame_count = static_cast<int>(sprite_meta["frames"].size());
   if (frame_count < 1) {
     LOG_ERROR("Sprite has zero frames.");
@@ -187,7 +189,17 @@ int AnimatedSprite::GetCurrentFrameIdx() const {
     return -1;
   }
 
-  time_elapsed = time_elapsed % frame_timing_lookup_.back();
+  // Intro frames are frames that only play the first time through
+  // After one iteration of animation, skip them.
+  const auto& total_time = frame_timing_lookup_.back();
+  if (intro_frames_ > -1 && time_elapsed > total_time) {
+    time_elapsed -= total_time;
+    const auto intro_time = frame_timing_lookup_.at(intro_frames_);
+    const auto looping_duration = total_time - intro_time;
+    time_elapsed = intro_time + (time_elapsed % looping_duration);
+  } else {
+    time_elapsed = time_elapsed % frame_timing_lookup_.back();
+  }
 
   const auto itr =
       std::upper_bound(frame_timing_lookup_.begin(), frame_timing_lookup_.end(), time_elapsed);
