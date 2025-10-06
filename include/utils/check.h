@@ -1,13 +1,15 @@
 #pragma once
 
-#include <stdexcept>
 #include <sstream>
+#include <stdexcept>
 
 // I (rossk) typically have only worked on codebases where throwing exceptions were banned. The use
 // here is not intended for error handling; rather, as a reliable replacement for asserts
 // (not dependent on build type)
+// 
+// The prefix are random letters to not make it clash with the unit testing macros.
 
-#define CHECK(cond)                                                                             \
+#define RB_CHECK(cond)                                                                          \
   do {                                                                                          \
     if ((cond)) {                                                                               \
       /* Using !(cond) triggers the DeMorgan's theorem clang check */                           \

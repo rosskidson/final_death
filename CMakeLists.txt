@@ -7,6 +7,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(OpenGL_GL_PREFERENCE GLVND)
 
 include(FetchContent)
+set(FETCHCONTENT_QUIET OFF)
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
@@ -20,15 +21,24 @@ INCLUDE_DIRECTORIES(include)
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}")
 configure_file(config.h.in config.h)
 
+# Miniaudio is used for sound and music.
 FetchContent_Declare(
     miniaudio
     GIT_REPOSITORY https://github.com/mackron/miniaudio.git
     GIT_TAG 0.11.23   # or latest stable tag
 )
-
 FetchContent_MakeAvailable(miniaudio)
 
+# doctest is the unit testing framework used by this project.
+FetchContent_Declare(
+  doctest
+  GIT_REPOSITORY https://github.com/doctest/doctest.git
+  GIT_TAG v2.4.11   # latest stable as of now
+)
+FetchContent_MakeAvailable(doctest)
+
 if(WIN32)
+    # In linux, nholmann json can be retrieved by a packet manager.
     FetchContent_Declare(
        json
        URL https://github.com/nlohmann/json/releases/download/v3.11.3/json.tar.xz
@@ -36,8 +46,7 @@ if(WIN32)
     FetchContent_MakeAvailable(json)
 
     cmake_policy(SET CMP0015 NEW)
- 
-    
+
 else()
     FIND_PACKAGE(PNG REQUIRED)
     FIND_PACKAGE(OpenGL REQUIRED)
@@ -55,33 +64,41 @@ else()
         stdc++fs
         ${OPENGL_LIBRARIES}
         )
-endif()
 
+endif()
 
 add_library(olc src/olc/olcPixelGameEngine.cc)
 target_link_libraries(olc ${OLC_LIBS})
 
-add_executable(platformer
+add_library(platformer_lib
   src/animated_sprite.cc
   src/animation_manager.cc
   src/developer_console.cc
   src/input_capture.cc
   src/input_processor.cc
   src/load_game_configuration.cc
-  src/main.cc
   src/physics_engine.cc
   src/platformer.cc
-  #src/player.cc
+  src/registry.cc
   src/rendering_engine.cc
   src/sound.cc
   src/tileset.cc
   src/update_player_state.cc
 )
 
-target_include_directories(platformer PRIVATE ${CMAKE_BINARY_DIR} ${miniaudio_SOURCE_DIR})
+target_include_directories(platformer_lib
+  PUBLIC 
+  ${CMAKE_BINARY_DIR} 
+  ${miniaudio_SOURCE_DIR}
+)
 
-
-target_link_libraries(platformer
+target_link_libraries(platformer_lib
   olc
   nlohmann_json::nlohmann_json
 )
+
+add_executable(platformer src/main.cc)
+target_link_libraries(platformer platformer_lib)
+
+add_executable(test_test test/test_main.cc)
+target_link_libraries(test_test PRIVATE doctest::doctest platformer_lib)

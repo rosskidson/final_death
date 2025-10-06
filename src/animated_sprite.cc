@@ -225,7 +225,7 @@ void AnimatedSprite::TriggerCallbacks() {
 
   expire_callback_triggered_ = false;
 
-  CHECK(frame_idx >= 0 && frame_idx < frames_.size());
+  RB_CHECK(frame_idx >= 0 && frame_idx < frames_.size());
 
   // Clear all callback triggered other than this frame.
   for (int i = 0; i < callback_triggered_.size(); ++i) {
@@ -249,7 +249,7 @@ void AnimatedSprite::TriggerCallbacks() {
 }
 
 void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {
-  CHECK(frame_idx >= 0 && frame_idx < callbacks_.size());
+  RB_CHECK(frame_idx >= 0 && frame_idx < callbacks_.size());
   callbacks_[frame_idx].push_back(std::move(callback));
 }
 
