@@ -1,10 +1,11 @@
 #pragma once
 
+#include <set>
+
+#include "animation_manager.h"
 #include "basic_types.h"
 #include "player_state.h"
 #include "utils/chrono_helpers.h"
-#include "animation_manager.h"
-#include <set>
 
 namespace platformer {
 
@@ -36,7 +37,7 @@ struct CollisionBox {
   int collision_height_px{};
 };
 
-struct Collisions {
+struct Collision {
   bool left, right, top, bottom;
   bool left_changed, right_changed, top_changed, bottom_changed;
 };
@@ -50,7 +51,7 @@ struct State {
 struct PlayerComponent {
   Vector2d cached_velocity{};
   double distance_fallen{};
-//   TimePoint roll_start_time{};
+  //   TimePoint roll_start_time{};
   AnimationManager animation_manager;
 };
 

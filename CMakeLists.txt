@@ -54,7 +54,7 @@ else()
     INCLUDE_DIRECTORIES(${SDL_INCLUDE_DIR} ${SDL_MIXER_INCLUDE_DIRS})
 
     #LINUX
-    #sudo apt install nlohmann-json3-dev
+    #sudo apt install nlohmann-json3-dev libpng-dev libgl1-mesa-dev libglu1-mesa-dev
 
     MESSAGE("Building for linux...")
     SET(OLC_LIBS

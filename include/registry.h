@@ -78,18 +78,30 @@ class Registry {
   template <typename T, typename... Args>
   std::vector<EntityId> GetView() const;
 
+  template <typename T>
+  std::unordered_map<EntityId, T>& GetMap();
+
   std::unordered_map<EntityId, Position>& Positions() { return positions_; }
   std::unordered_map<EntityId, Velocity>& Velocities() { return velocities_; }
   std::unordered_map<EntityId, Acceleration>& Accelerations() { return accelerations_; }
   std::unordered_map<EntityId, CollisionBox>& CollisionBoxes() { return collision_boxes_; }
-  // std::unordered_map<EntityId, Collisions>& Collisions() { return collisions_; }
+  std::unordered_map<EntityId, Collision>& Collisions() { return collisions_; }
 
  private:
   std::unordered_map<EntityId, Position> positions_;
   std::unordered_map<EntityId, Velocity> velocities_;
   std::unordered_map<EntityId, Acceleration> accelerations_;
   std::unordered_map<EntityId, CollisionBox> collision_boxes_;
-  std::unordered_map<EntityId, Collisions> collisions_;
+  std::unordered_map<EntityId, Collision> collisions_;
 };
+
+// TODO:: Move to .cpp along with expilcit instanciation.
+
+template <>
+std::unordered_map<EntityId, Position>& Registry::GetMap<Position>();
+
+template <>
+std::unordered_map<EntityId, Velocity>& Registry::GetMap<Velocity>();
+
 
 }  // namespace platformer
