@@ -1,35 +1,12 @@
-#include <unordered_map>
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+#include <unordered_map>
+
+#include "components.h"
 #include "registry.h"
 
 int add(int a, int b) { return a + b; }
-
-TEST_CASE("Get all indices") {
-  platformer::Registry r{};
-  r.Accelerations()[0] = {};
-  r.Accelerations()[3] = {};
-  r.Velocities()[0] = {};
-  r.Positions()[3] = {};
-  r.Positions()[2] = {};
-  r.Positions()[1] = {};
-  r.Positions()[1] = {};
-
-  const auto all_indices =
-      platformer::internal::GetIndices(r.Positions(), r.Velocities(), r.Accelerations());
-
-  REQUIRE_EQ(all_indices.size(), 3);
-  REQUIRE_EQ(all_indices[0].size(), 2);
-  CHECK(all_indices[0].count(0));
-  CHECK(all_indices[0].count(3));
-  REQUIRE_EQ(all_indices[1].size(), 1);
-  CHECK(all_indices[0].count(0));
-  REQUIRE_EQ(all_indices[2].size(), 3);
-  CHECK(all_indices[2].count(1));
-  CHECK(all_indices[2].count(2));
-  CHECK(all_indices[2].count(3));
-}
 
 TEST_CASE("all maps contain key") {
   std::unordered_set<platformer::EntityId> set_a{0, 1, 2, 3, 5, 6};
@@ -52,5 +29,37 @@ TEST_CASE("GetIntersection") {
   REQUIRE_EQ(intersection.size(), 2);
   CHECK_EQ(intersection[0], 0);
   CHECK_EQ(intersection[1], 4);
+}
 
+TEST_CASE("GetView") {
+  using platformer::Acceleration;
+  using platformer::Position;
+  using platformer::Velocity;
+  platformer::Registry r{};
+  r.GetMap<Acceleration>()[0] = {};
+  r.GetMap<Acceleration>()[1] = {};
+  r.GetMap<Acceleration>()[3] = {};
+  r.GetMap<Velocity>()[0] = {};
+  r.GetMap<Velocity>()[3] = {};
+  r.GetMap<Position>()[0] = {};
+  r.GetMap<Position>()[1] = {};
+  r.GetMap<Position>()[2] = {};
+  r.GetMap<Position>()[3] = {};
+  r.GetMap<Position>()[4] = {};
+
+  const auto indices = r.GetView<Position, Velocity, Acceleration>();
+
+  REQUIRE_EQ(indices.size(), 2);
+  CHECK_EQ(indices[0], 0);
+  CHECK_EQ(indices[1], 3);
+}
+
+TEST_CASE("HasComponent") {
+  using platformer::Acceleration;
+  using platformer::Position;
+  using platformer::Velocity;
+  platformer::Registry r{};
+  r.GetMap<Acceleration>()[0] = {};
+  CHECK(r.HasComponent<Acceleration>(0));
+  CHECK_FALSE(r.HasComponent<Acceleration>(2));
 }
