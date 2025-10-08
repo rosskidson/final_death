@@ -1,5 +1,6 @@
 #pragma once
 
+#include <tuple>
 #include <unordered_map>
 
 #include "components.h"
@@ -12,34 +13,64 @@ class Registry {
  public:
   Registry() = default;
 
-  template <typename T, typename... Args>
+  // Usage:
+  // for(auto id : registry.GetView<Postion, Velocity, Acceleration>()) {
+  //     ...
+  // }
+  template <typename... Args>
   std::vector<EntityId> GetView() const {
-    return std::apply(
-        [&](const auto&... maps) {
-          return internal::GetIntersection(internal::GetByType<T>(maps_tuple_),
-                                           internal::GetByType<Args>(maps_tuple_)...);
-        },
-        maps_tuple_);
+    return internal::GetIntersection(internal::GetByType<Args>(maps_tuple_)...);
   }
 
-  template <typename T>
-  std::unordered_map<EntityId, T>& GetMap() {
-    return internal::GetByType<T>(maps_tuple_);
+  template <typename Component>
+  std::unordered_map<EntityId, Component>& GetMap() {
+    return internal::GetByType<Component>(maps_tuple_);
   }
 
-  template <typename T>
-  const std::unordered_map<EntityId, T>& GetMap() const {
-    return internal::GetByType<T>(maps_tuple_);
+  template <typename Component>
+  const std::unordered_map<EntityId, Component>& GetMap() const {
+    return internal::GetByType<Component>(maps_tuple_);
   }
 
-  template <typename T>
+  template <typename Component>
   bool HasComponent(EntityId id) const {
-    const auto& map = GetMap<T>();
+    const auto& map = GetMap<Component>();
     return map.count(id) != 0;
   }
 
+  // Usage:
+  // auto id = registry.AddComponent(Position{1., 2.},
+  //                                 Velocity{10., 0.},
+  //                                 Acceleration{0.5, 0.7});
+  template <typename... Args>
+  EntityId AddComponent(Args&&... args) {
+    EntityId id = next_id_++;
+    ((internal::GetByType<std::decay_t<Args>>(maps_tuple_)[id] = std::forward<Args>(args)), ...);
+    return id;
+  }
+
+  // Usage:
+  // auto [pos, vel, acc] = registry.GetComponents<Position, Velocity, Acceleration>(id);
+  // These are still references even though the auto is without an ampersand.
+  // Note: There is no safety on the types you pass in.
+  //       If the component doesn't exist, it will be default initialized.
+  template <typename... Components>
+  auto GetComponents(EntityId id) {
+    return std::tie(GetMap<Components>()[id]...);
+  }
+
+  // Removes the id from all component maps.
+  void RemoveComponent(EntityId id) {
+    std::apply([&](auto&&... args) { RemoveComponentImpl(id, args...); }, maps_tuple_);
+  }
+
  private:
-  uint64_t next_id_{};
+  template <typename... Args>
+  void RemoveComponentImpl(EntityId id, Args&&... args) {
+    ((args.erase(id)), ...);
+  }
+
+  EntityId next_id_{};
   std::tuple<std::unordered_map<EntityId, Position>,
              std::unordered_map<EntityId, Velocity>,
              std::unordered_map<EntityId, Acceleration>,

@@ -54,6 +54,21 @@ TEST_CASE("GetView") {
   CHECK_EQ(indices[1], 3);
 }
 
+TEST_CASE("AddEntity") {
+  using platformer::Acceleration;
+  using platformer::Position;
+  using platformer::Velocity;
+  platformer::Registry r{};
+  auto entity_id = r.AddComponent(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
+  REQUIRE(r.GetMap<Position>().count(entity_id));
+  CHECK_EQ(r.GetMap<Position>()[entity_id].x, 1.);
+  CHECK_EQ(r.GetMap<Position>()[entity_id].y, 2.);
+  CHECK_EQ(r.GetMap<Velocity>()[entity_id].x, 10.);
+  CHECK_EQ(r.GetMap<Velocity>()[entity_id].y, 0.);
+  CHECK_EQ(r.GetMap<Acceleration>()[entity_id].x, 0.5);
+  CHECK_EQ(r.GetMap<Acceleration>()[entity_id].y, 0.7);
+}
+
 TEST_CASE("HasComponent") {
   using platformer::Acceleration;
   using platformer::Position;
@@ -62,4 +77,43 @@ TEST_CASE("HasComponent") {
   r.GetMap<Acceleration>()[0] = {};
   CHECK(r.HasComponent<Acceleration>(0));
   CHECK_FALSE(r.HasComponent<Acceleration>(2));
+}
+
+TEST_CASE("GetComponent") {
+  using platformer::Acceleration;
+  using platformer::Position;
+  using platformer::Velocity;
+  platformer::Registry r{};
+  auto id_1 = r.AddComponent(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
+
+  auto [pos, vel, acc] = r.GetComponents<Position, Velocity, Acceleration>(id_1);
+  CHECK_EQ(pos.x, 1.);
+  CHECK_EQ(pos.y, 2.);
+  CHECK_EQ(vel.x, 10.);
+  CHECK_EQ(vel.y, 0.);
+  CHECK_EQ(acc.x, 0.5);
+  CHECK_EQ(acc.y, 0.7);
+
+  r.GetMap<Acceleration>()[id_1].x = 0.2;
+
+  CHECK_EQ(acc.x, 0.2);
+
+}
+
+TEST_CASE("RemoveComponent") {
+  using platformer::Acceleration;
+  using platformer::Position;
+  using platformer::Velocity;
+  platformer::Registry r{};
+  auto id_1 = r.AddComponent(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
+  auto id_2 = r.AddComponent(Position{0., 1.}, Velocity{20., 0.});
+
+  r.RemoveComponent(id_1);
+  REQUIRE(r.GetMap<Position>().count(id_2));
+  REQUIRE(r.GetMap<Velocity>().count(id_2));
+  CHECK_EQ(r.GetMap<Position>()[id_2].x, 0.);
+  CHECK_EQ(r.GetMap<Position>()[id_2].y, 1.);
+  CHECK_EQ(r.GetMap<Velocity>()[id_2].x, 20.);
+  CHECK_EQ(r.GetMap<Velocity>()[id_2].y, 0.);
+
 }

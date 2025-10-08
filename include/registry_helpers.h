@@ -34,9 +34,9 @@ std::vector<EntityId> GetIntersection(const T& map, const Args&... args) {
   return intersection;
 }
 
-template <typename T, typename Tuple>
+template <typename Component, typename Tuple>
 decltype(auto) GetByType(Tuple& t) {
-  return std::get<std::unordered_map<EntityId, T>>(t);
+  return std::get<std::unordered_map<EntityId, Component>>(t);
 }
 
 }  // namespace internal
