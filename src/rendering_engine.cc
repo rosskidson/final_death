@@ -5,10 +5,10 @@
 
 #include "animated_sprite.h"
 #include "basic_types.h"
+#include "components.h"
 #include "config.h"
 #include "game_configuration.h"
 #include "global_defs.h"
-#include "player.h"
 #include "tileset.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
@@ -22,10 +22,12 @@ constexpr double kDrawPlayerCollisions = 0.0;  // TODO::Bool
 
 RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
                                  Level level,
-                                 std::shared_ptr<ParameterServer> parameter_server)
+                                 std::shared_ptr<ParameterServer> parameter_server,
+                                 std::shared_ptr<Registry> registry)
     : engine_ptr_{engine_ptr},
       level_{std::move(level)},
-      parameter_server_{std::move(parameter_server)} {
+      parameter_server_{std::move(parameter_server)},
+      registry_{std::move(registry)} {
   parameter_server_->AddParameter(
       "rendering/follow.player.screen.ratio.x", kFollowPlayerScreenRatioX,
       "How far the player can walk towards the side of the screen before the camera follows, as a "
@@ -72,18 +74,20 @@ Vector2d RenderingEngine::GetCameraPosition() const {
 }
 
 // TODO split ratio to x and y
-void RenderingEngine::KeepPlayerInFrame(const Player& player) {
+void RenderingEngine::KeepPlayerInFrame(const EntityId player_id) {
+  auto [position, collision_box] = registry_->GetComponents<Position, CollisionBox>(player_id);
   const auto screen_ratio_x =
       parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.x");
   const auto screen_ratio_y =
       parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.y");
-  const auto position = GetCameraPosition();
+  // const auto position = GetCameraPosition();
   const auto convert_to_px = [&](double val) -> int { return static_cast<int>(val * tile_size_); };
-  const Vector2i player_pos_px{convert_to_px(player.position.x), convert_to_px(player.position.y)};
+  const Vector2i player_pos_px{convert_to_px(position.x), convert_to_px(position.y)};
   // Note: The y is kept to the bottom of the sprite.  Using the center causes the camera to jerk in
   // state transtions if moving up or down in the air.
   const Vector2i middle_of_player_px{
-      player_pos_px.x + player.x_offset_px + player.collision_width_px / 2, player_pos_px.y};
+      player_pos_px.x + collision_box.x_offset_px + collision_box.collision_width_px / 2,
+      player_pos_px.y};
   const int x_max_px = middle_of_player_px.x - convert_to_px(viewport_width_ * screen_ratio_x);
   const int x_min_px =
       middle_of_player_px.x - convert_to_px(viewport_width_ * (1 - screen_ratio_x));
@@ -230,42 +234,57 @@ void RenderingEngine::RenderTiles() {
   }
 }
 
-void RenderingEngine::RenderPlayer(Player& player) {
-  const auto position_in_screen = player.position - GetCameraPosition();
+void RenderingEngine::RenderEntities() {
+  for (auto id : registry_->GetView<Position, PlayerComponent, FacingDirection>()) {
+    auto [position, player, facing] =
+        registry_->GetComponents<Position, PlayerComponent, FacingDirection>(id);
+    const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
 
-  // The player position is bottom left, but the rendering engine requires top left.
-  // This conversion is done here.
-  const olc::Sprite* sprite = player.animation_manager.GetSprite();
-  const int player_top_left_px_x = static_cast<int>(position_in_screen.x * tile_size_);
-  const int player_top_left_px_y =
-      kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;
-  const bool flip = player.facing == Direction::LEFT;
-  engine_ptr_->DrawSprite(player_top_left_px_x, player_top_left_px_y,
-                          const_cast<olc::Sprite*>(sprite), 1, static_cast<uint8_t>(flip));
+    // The player position is bottom left, but the rendering engine requires top left.
+    // This conversion is done here.
+    const olc::Sprite* sprite = player.animation_manager.GetSprite();
+    const int player_top_left_px_x = static_cast<int>(position_in_screen.x * tile_size_);
+    const int player_top_left_px_y =
+        kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;
+    const bool flip = facing.facing == Direction::LEFT;
+    engine_ptr_->DrawSprite(player_top_left_px_x, player_top_left_px_y,
+                            const_cast<olc::Sprite*>(sprite), 1, static_cast<uint8_t>(flip));
 
-  const bool draw_bounding_box =
-      parameter_server_->GetParameter<double>("viz/draw.player.collisions") == 1.;
-  if (draw_bounding_box) {
-    const auto& bb_width = player.collision_width_px;
-    const auto& bb_height = player.collision_height_px;
-    const auto bb_bottom_left_x = player_top_left_px_x + player.x_offset_px;
-    const auto bb_bottom_left_y = player_top_left_px_y + sprite->height + player.y_offset_px;
-    auto color = player.collisions.bottom ? olc::WHITE : olc::BLACK;
-    engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y, bb_bottom_left_x + bb_width,
-                          bb_bottom_left_y, color);
-
-    color = player.collisions.top ? olc::WHITE : olc::BLACK;
-    engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y - bb_height,
-                          bb_bottom_left_x + bb_width, bb_bottom_left_y - bb_height, color);
-
-    color = player.collisions.left ? olc::WHITE : olc::BLACK;
-    engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y, bb_bottom_left_x,
-                          bb_bottom_left_y - bb_height, color);
-
-    color = player.collisions.right ? olc::WHITE : olc::BLACK;
-    engine_ptr_->DrawLine(bb_bottom_left_x + bb_width, bb_bottom_left_y,
-                          bb_bottom_left_x + bb_width, bb_bottom_left_y - bb_height, color);
+    const bool draw_bounding_box =
+        parameter_server_->GetParameter<double>("viz/draw.player.collisions") == 1.;
+    if (draw_bounding_box) {
+      RenderEntityCollisionBox(player_top_left_px_x, player_top_left_px_y, sprite->height, id);
+    }
   }
+}
+void RenderingEngine::RenderEntityCollisionBox(int entity_top_left_px_x,
+                                               int entity_top_left_px_y,
+                                               int sprite_height_px,
+                                               EntityId entity_id) {
+  if (!registry_->HasComponent<CollisionBox>(entity_id) ||
+      !registry_->HasComponent<Collision>(entity_id)) {  //
+    return;
+  }
+  auto [collision_box, collisions] = registry_->GetComponents<CollisionBox, Collision>(entity_id);
+  const auto& bb_width = collision_box.collision_width_px;
+  const auto& bb_height = collision_box.collision_height_px;
+  const auto bb_bottom_left_x = entity_top_left_px_x + collision_box.x_offset_px;
+  const auto bb_bottom_left_y = entity_top_left_px_y + sprite_height_px + collision_box.y_offset_px;
+  auto color = collisions.bottom ? olc::WHITE : olc::BLACK;
+  engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y, bb_bottom_left_x + bb_width,
+                        bb_bottom_left_y, color);
+
+  color = collisions.top ? olc::WHITE : olc::BLACK;
+  engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y - bb_height, bb_bottom_left_x + bb_width,
+                        bb_bottom_left_y - bb_height, color);
+
+  color = collisions.left ? olc::WHITE : olc::BLACK;
+  engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y, bb_bottom_left_x,
+                        bb_bottom_left_y - bb_height, color);
+
+  color = collisions.right ? olc::WHITE : olc::BLACK;
+  engine_ptr_->DrawLine(bb_bottom_left_x + bb_width, bb_bottom_left_y, bb_bottom_left_x + bb_width,
+                        bb_bottom_left_y - bb_height, color);
 }
 
 void RenderingEngine::KeepCameraInBounds() {

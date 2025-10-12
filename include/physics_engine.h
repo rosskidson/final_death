@@ -5,7 +5,6 @@
 #include "basic_types.h"
 #include "components.h"
 #include "game_configuration.h"
-#include "player.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/parameter_server.h"

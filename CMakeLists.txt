@@ -79,7 +79,6 @@ add_library(platformer_lib
   src/load_game_configuration.cc
   src/physics_engine.cc
   src/platformer.cc
-  src/registry.cc
   src/rendering_engine.cc
   src/sound.cc
   src/tileset.cc

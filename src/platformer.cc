@@ -1,5 +1,6 @@
 #include "platformer.h"
 
+#include <chrono>
 #include <filesystem>
 #include <memory>
 #include <thread>
@@ -7,17 +8,20 @@
 #include "animated_sprite.h"
 #include "animation_manager.h"
 #include "basic_types.h"
+#include "components.h"
 #include "config.h"
 #include "game_configuration.h"
 #include "global_defs.h"
 #include "input_processor.h"
 #include "load_game_configuration.h"
-#include "player.h"
 #include "player_state.h"
+#include "registry.h"
+#include "registry_helpers.h"
 #include "rendering_engine.h"
 #include "sound.h"
 #include "update_player_state.h"
 #include "utils/developer_console.h"
+#include "utils/game_clock.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
 
@@ -49,19 +53,17 @@ struct AnimationInfo {
   PlayerState action;
 };
 
-Player InitializePlayer() {
-  Player player;
-  player.position = {2, 10};
-  player.velocity = {0, 0};
-  player.state = PlayerState::Idle;
-
-  // TODO:: Configure this a bit better.
-  player.x_offset_px = 30;
-  player.y_offset_px = 0;
-  player.collision_width_px = 18;
-  player.collision_height_px = 48;
-
-  return player;
+EntityId InitializePlayer(Registry& registry) {
+  auto id = registry.AddComponents(Position{2, 10},                                       //
+                                   Velocity{0, 0},                                        //
+                                   Acceleration{0, 0},                                    //
+                                   FacingDirection{Direction::RIGHT},                     //
+                                   CollisionBox{30, 0, 18, 48},                           //
+                                   Collision{},                                           //
+                                   State{PlayerState::Idle, GameClock::NowGlobal(), {}},  //
+                                   DistanceFallen{0},                                     //
+                                   PlayerComponent{});                                    //
+  return id;
 }
 
 std::shared_ptr<ParameterServer> CreateParameterServer() {
@@ -81,7 +83,10 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
   return parameter_server;
 }
 
-bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, Player& player) {
+bool InitializePlayerAnimationManager(const ParameterServer& parameter_server,
+                                      EntityId player_id,
+                                      Registry& registry) {
+  auto [player] = registry.GetComponents<PlayerComponent>(player_id);
   const auto player_path = std::filesystem::path(SOURCE_DIR) / "assets" / "player";
   constexpr int kWidth = 80;
   std::vector<AnimationInfo> animations = {
@@ -127,76 +132,80 @@ bool InitializePlayerAnimationManager(const ParameterServer& parameter_server, P
   return true;
 }
 
-void Platformer::SetAnimationCallbacks() {
-  player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(0, [&]() {
-    sound_player_->PlaySample("shotgun_fire", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(5, [&]() {
-    sound_player_->PlaySample("shotgun_reload", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::InAirShot).AddCallback(0, [&]() {
-    sound_player_->PlaySample("shotgun_fire", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::InAirShot).AddCallback(5, [&]() {
-    sound_player_->PlaySample("shotgun_reload", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::CrouchShot).AddCallback(0, [&]() {
-    sound_player_->PlaySample("shotgun_fire", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::CrouchShot).AddCallback(5, [&]() {
-    sound_player_->PlaySample("shotgun_reload", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::PreSuicide).AddCallback(0, [&]() {
-    sound_player_->PlaySample("shotgun_reload", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::Suicide).AddCallback(0, [&]() {
-    sound_player_->PlaySample("shotgun_fire", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(0, [&]() {
-    sound_player_->PlaySample("shotgun_fire", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(5, [&]() {
-    sound_player_->PlaySample("shotgun_reload", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::BackShot).AddCallback(1, [&]() {
-    sound_player_->PlaySample("shotgun_fire", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::BackShot).AddCallback(6, [&]() {
-    sound_player_->PlaySample("shotgun_reload", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(6, [&]() {
-    sound_player_->PlaySample("shotgun_fire", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(9, [&]() {
-    sound_player_->PlaySample("shotgun_reload", false);
-  });
-  player_.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(0, [&]() {
-    player_.velocity.x = (player_.facing == Direction::LEFT) ? 100 : -100;
-  });
+void SetAnimationCallbacks(EntityId id,
+                           std::shared_ptr<SoundPlayer> sound_player,
+                           Registry& registry) {
+  auto [player] = registry.GetComponents<PlayerComponent>(id);
 
-  const auto shoot_down_upward_vel =
-      parameter_server_->GetParameter<double>("physics/shoot.down.upward.vel");
-  player_.animation_manager.GetAnimation(PlayerState::InAirDownShot)
-      .AddCallback(0, [&, shoot_down_upward_vel]() {
-        sound_player_->PlaySample("shotgun_fire", false);
-        player_.velocity.y += shoot_down_upward_vel;
-      });
-  player_.animation_manager.GetAnimation(PlayerState::InAirDownShot).AddCallback(5, [&]() {
-    sound_player_->PlaySample("shotgun_reload", false);
+  player.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(0, [=]() {
+    sound_player->PlaySample("shotgun_fire", false);
   });
-
-  const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
-  player_.animation_manager.GetAnimation(PlayerState::PreJump)
-      .AddExpireCallback([&, jump_velocity]() {
-        if (player_.collisions.bottom) {
-          player_.velocity.y = jump_velocity;
-        }
-      });
-
-  player_.animation_manager.GetAnimation(PlayerState::PreJump).AddExpireCallback([&]() {
-    player_.velocity.x = player_.cached_velocity.x;
-    player_.cached_velocity.x = 0;
+  player.animation_manager.GetAnimation(PlayerState::Shoot).AddCallback(5, [=]() {
+    sound_player->PlaySample("shotgun_reload", false);
   });
+  player.animation_manager.GetAnimation(PlayerState::InAirShot).AddCallback(0, [=]() {
+    sound_player->PlaySample("shotgun_fire", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::InAirShot).AddCallback(5, [=]() {
+    sound_player->PlaySample("shotgun_reload", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::CrouchShot).AddCallback(0, [=]() {
+    sound_player->PlaySample("shotgun_fire", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::CrouchShot).AddCallback(5, [=]() {
+    sound_player->PlaySample("shotgun_reload", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::PreSuicide).AddCallback(0, [=]() {
+    sound_player->PlaySample("shotgun_reload", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::Suicide).AddCallback(0, [=]() {
+    sound_player->PlaySample("shotgun_fire", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(0, [=]() {
+    sound_player->PlaySample("shotgun_fire", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::UpShot).AddCallback(5, [=]() {
+    sound_player->PlaySample("shotgun_reload", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::BackShot).AddCallback(1, [=]() {
+    sound_player->PlaySample("shotgun_fire", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::BackShot).AddCallback(6, [=]() {
+    sound_player->PlaySample("shotgun_reload", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(6, [=]() {
+    sound_player->PlaySample("shotgun_fire", false);
+  });
+  player.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(9, [=]() {
+    sound_player->PlaySample("shotgun_reload", false);
+  });
+  // player.animation_manager.GetAnimation(PlayerState::BackDodgeShot).AddCallback(0, [&]() {
+  //   player.velocity.x = (player_.facing == Direction::LEFT) ? 100 : -100;
+  // });
+
+  // const auto shoot_down_upward_vel =
+  //     parameter_server_->GetParameter<double>("physics/shoot.down.upward.vel");
+  // player_.animation_manager.GetAnimation(PlayerState::InAirDownShot)
+  //     .AddCallback(0, [&, shoot_down_upward_vel]() {
+  //       sound_player_->PlaySample("shotgun_fire", false);
+  //       player_.velocity.y += shoot_down_upward_vel;
+  //     });
+  // player_.animation_manager.GetAnimation(PlayerState::InAirDownShot).AddCallback(5, [&]() {
+  //   sound_player_->PlaySample("shotgun_reload", false);
+  // });
+
+  // const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
+  // player_.animation_manager.GetAnimation(PlayerState::PreJump)
+  //     .AddExpireCallback([&, jump_velocity]() {
+  //       if (player_.collisions.bottom) {
+  //         player_.velocity.y = jump_velocity;
+  //       }
+  //     });
+
+  // player_.animation_manager.GetAnimation(PlayerState::PreJump).AddExpireCallback([&]() {
+  //   player_.velocity.x = player_.cached_velocity.x;
+  //   player_.cached_velocity.x = 0;
+  // });
 }
 
 std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
@@ -233,7 +242,8 @@ bool Platformer::OnUserCreate() {
   registry_ = std::make_shared<Registry>();
 
   LOG_SIMPLE("Loading backgrounds...");
-  rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel(), parameter_server_);
+  rendering_engine_ =
+      std::make_unique<RenderingEngine>(this, GetCurrentLevel(), parameter_server_, registry_);
   const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
   RETURN_FALSE_IF_FAILED(
       rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4));
@@ -243,13 +253,16 @@ bool Platformer::OnUserCreate() {
   RETURN_FALSE_IF_FAILED(sound_player_);
   // sound_player_->PlaySample("music", true, 0.2);
 
-  physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_, registry_);
-  input_processor_ = std::make_unique<InputProcessor>(parameter_server_, sound_player_, this);
+  physics_engine_ =
+      std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_, registry_);
+  input_processor_ =
+      std::make_unique<InputProcessor>(parameter_server_, sound_player_, registry_, this);
 
-  player_ = InitializePlayer();
+  player_id_ = InitializePlayer(*registry_);
 
-  RETURN_FALSE_IF_FAILED(InitializePlayerAnimationManager(*parameter_server_, player_));
-  SetAnimationCallbacks();
+  RETURN_FALSE_IF_FAILED(
+      InitializePlayerAnimationManager(*parameter_server_, player_id_, *registry_));
+  SetAnimationCallbacks(player_id_, sound_player_, *registry_);
 
   LOG_SIMPLE("Initialization successful.");
   rate_.Reset();
@@ -257,25 +270,29 @@ bool Platformer::OnUserCreate() {
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
-  const auto dt = rate_.GetFrameDuration();
+  // TODO:: Actual dt, not just 1 / frequency
+  const double delta_t = std::chrono::duration<double>(rate_.GetFrameDuration()).count();
 
   // profiler_.Reset();
   // Control
-  RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
+  RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_id_));
   // profiler_.LogEvent("00_control");
 
   // Model
-  UpdateState(*parameter_server_, *physics_engine_, player_);
-  UpdatePlayerFromState(*parameter_server_, player_);
-  player_.animation_manager.Update(player_.state);
-  physics_engine_->PhysicsStep(player_);
+  UpdateState(*parameter_server_, player_id_, *registry_);
+  // UpdatePlayerFromState(*parameter_server_, player_);
+  auto [player, state] = registry_->GetComponents<PlayerComponent, State>(player_id_);
+  player.animation_manager.Update(state.state);
+  physics_engine_->GravitySystem();
+  physics_engine_->FrictionSystem(delta_t);
+  physics_engine_->PhysicsStep(delta_t);
   // profiler_.LogEvent("01_update_player_state");
 
   // View
-  rendering_engine_->KeepPlayerInFrame(player_);
+  rendering_engine_->KeepPlayerInFrame(player_id_);
   rendering_engine_->RenderBackground();
   rendering_engine_->RenderTiles();
-  rendering_engine_->RenderPlayer(player_);
+  rendering_engine_->RenderEntities();
   rendering_engine_->RenderForeground();
   // profiler_.LogEvent("02_render");
 

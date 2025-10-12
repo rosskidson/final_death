@@ -4,6 +4,7 @@
 #include <unordered_map>
 
 #include "components.h"
+#include "player_state.h"
 #include "registry_helpers.h"
 
 namespace platformer {
@@ -43,7 +44,7 @@ class Registry {
   //                                 Velocity{10., 0.},
   //                                 Acceleration{0.5, 0.7});
   template <typename... Args>
-  EntityId AddComponent(Args&&... args) {
+  EntityId AddComponents(Args&&... args) {
     EntityId id = next_id_++;
     ((internal::GetByType<std::decay_t<Args>>(maps_tuple_)[id] = std::forward<Args>(args)), ...);
     return id;
@@ -54,9 +55,22 @@ class Registry {
   // These are still references even though the auto is without an ampersand.
   // Note: There is no safety on the types you pass in.
   //       If the component doesn't exist, it will be default initialized.
+  //
+  // TODO:: Add saftey
+  // TODO:: Add const version
   template <typename... Components>
   auto GetComponents(EntityId id) {
     return std::tie(GetMap<Components>()[id]...);
+  }
+
+  // As above, but just one component.
+  // Also as above, no safety on the type you pass in.
+  //
+  // TODO:: Add saftey
+  // TODO:: Add const version
+  template <typename T>
+  auto& GetComponent(EntityId id) {
+    return GetMap<T>()[id];
   }
 
   // Removes the id from all component maps.
@@ -75,7 +89,11 @@ class Registry {
              std::unordered_map<EntityId, Velocity>,
              std::unordered_map<EntityId, Acceleration>,
              std::unordered_map<EntityId, CollisionBox>,
-             std::unordered_map<EntityId, Collision>>
+             std::unordered_map<EntityId, Collision>,
+             std::unordered_map<EntityId, FacingDirection>,
+             std::unordered_map<EntityId, State>,
+             std::unordered_map<EntityId, DistanceFallen>,
+             std::unordered_map<EntityId, PlayerComponent>>
       maps_tuple_;
 };
 

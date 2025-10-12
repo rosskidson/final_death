@@ -2,10 +2,12 @@
 
 #include <chrono>
 
+#include "components.h"
 #include "input_capture.h"
 #include "physics_engine.h"
-#include "player.h"
 #include "player_state.h"
+#include "registry.h"
+#include "registry_helpers.h"
 #include "utils/chrono_helpers.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
@@ -13,19 +15,19 @@
 
 namespace platformer {
 
-#define TRY_SET_STATE(player, STATE)              \
-  do {                                            \
-    if ((player).requested_states.count(STATE)) { \
-      (player).state = (STATE);                   \
-      return;                                     \
-    }                                             \
+#define TRY_SET_STATE(state, STATE)              \
+  do {                                           \
+    if ((state).requested_states.count(STATE)) { \
+      (state).state = (STATE);                   \
+      return;                                    \
+    }                                            \
   } while (0)
 
-#define LATCH_STATE(player, STATE)                                                                 \
-  do {                                                                                             \
-    if ((player).state == (STATE) && !(player).animation_manager.GetActiveAnimation().Expired()) { \
-      return;                                                                                      \
-    }                                                                                              \
+#define LATCH_STATE(state, STATE)                                                                \
+  do {                                                                                           \
+    if ((state).state == (STATE) && !(state).animation_manager.GetActiveAnimation().Expired()) { \
+      return;                                                                                    \
+    }                                                                                            \
   } while (0)
 
 namespace {
@@ -72,50 +74,55 @@ bool Squish(const AxisCollisions& collisions) {
   return collisions.lower_collision && collisions.upper_collision;
 }
 
-PlayerState GetShootState(const Player& player) {
-  if (player.state == PlayerState::PreSuicide) {
+PlayerState GetShootState(const State& state, const Collision& collisions) {
+  if (state.state == PlayerState::PreSuicide) {
     return PlayerState::Suicide;
   }
-  if (!player.collisions.bottom) {
-    if (player.requested_states.count(PlayerState::Crouch)) {
+  if (!collisions.bottom) {
+    if (state.requested_states.count(PlayerState::Crouch)) {
       return PlayerState::InAirDownShot;
     }
     return PlayerState::InAirShot;
   }
-  if (player.state == PlayerState::AimUp || player.state == PlayerState::UpShot) {
+  if (state.state == PlayerState::AimUp || state.state == PlayerState::UpShot) {
     return PlayerState::UpShot;
   }
-  if (player.requested_states.count(PlayerState::Crouch)) {
+  if (state.requested_states.count(PlayerState::Crouch)) {
     return PlayerState::CrouchShot;
   }
   return PlayerState::Shoot;
 }
 
-bool SetHardLandingState(const ParameterServer& parameter_server, Player& player) {
-  const auto hard_fall_distance =
-      parameter_server.GetParameter<double>("physics/hard.fall.distance");
-  if (player.collisions.bottom) {
-    if (player.distance_fallen > hard_fall_distance) {
-      player.distance_fallen = 0;
-      player.state = PlayerState::HardLanding;
-      return true;
-    }
-  }
-  if (player.velocity.y > 0) {
-    player.distance_fallen = 0;
-    return false;
-  }
-  return false;
-}
+// bool SetHardLandingState(const ParameterServer& parameter_server,
+//                          EntityId player_id,
+//                          Registry& registry) {
+//   auto [velocity, collisions, state, distance_fallen] =
+//       registry.GetComponents<Velocity, Collision, State, DistanceFallen>(player_id);
+//   const auto hard_fall_distance =
+//       parameter_server.GetParameter<double>("physics/hard.fall.distance");
+//   if (collisions.bottom) {
+//     if (distance_fallen.distance_fallen > hard_fall_distance) {
+//       distance_fallen.distance_fallen = 0;
+//       state.state = PlayerState::HardLanding;
+//       return true;
+//     }
+//   }
+//   if (velocity.y > 0) {
+//     distance_fallen.distance_fallen = 0;
+//     return false;
+//   }
+//   return false;
+// }
 
 void UpdateStateImpl(const ParameterServer& parameter_server,
-                     const PhysicsEngine& physics,
-                     Player& player) {
+                     EntityId player_id,
+                     Registry& registry) {
   // There is one thing that can interrupt non interuptable actions: Hard falling.
-  if (SetHardLandingState(parameter_server, player)) {
-    return;
-  }
+  // if (SetHardLandingState(parameter_server, player_id, registry)) {
+  //   return;
+  // }
 
+  /*
   // Now check for non interruptable actions.
   if (!player.animation_manager.GetActiveAnimation().Expired() &&
       !IsInterruptibleState(player.state)) {
@@ -213,77 +220,94 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
     return;
   }
   LATCH_STATE(player, PlayerState::SoftLanding);
+  */
+  auto& state = registry.GetComponent<State>(player_id);
 
-  player.state = PlayerState::Idle;
+  for (int i = 0; i < static_cast<int>(PlayerState::Dead) + 1; ++i) {
+    const auto set_state = static_cast<PlayerState>(i);
+    if(IsInterruptibleState(set_state)) {
+      continue;
+    }
+    TRY_SET_STATE(state, set_state);
+  }
+  for (int i = 0; i < static_cast<int>(PlayerState::Dead) + 1; ++i) {
+    const auto set_state = static_cast<PlayerState>(i);
+    if(!IsInterruptibleState(set_state)) {
+      continue;
+    }
+    TRY_SET_STATE(state, set_state);
+  }
+
 }
 
 }  // namespace
 
-void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& player) {
-  // Disallow movement for certain states.
-  if ((MovementDisallowed(player.state)) &&
-      !player.animation_manager.GetActiveAnimation().Expired()) {
-    player.velocity.x = 0;
-    player.acceleration.x = 0;
-  }
+// void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& player) {
+//   // Disallow movement for certain states.
+//   if ((MovementDisallowed(player.state)) &&
+//       !player.animation_manager.GetActiveAnimation().Expired()) {
+//     player.velocity.x = 0;
+//     player.acceleration.x = 0;
+//   }
 
-  // Disallow movement during crouch, except changing direction.
-  if (player.state == PlayerState::Crouch) {
-    if (player.facing == Direction::LEFT && player.acceleration.x > 0) {
-      player.velocity.x = 1;
-    } else if (player.facing == Direction::RIGHT && player.acceleration.x < 0) {
-      player.velocity.x = -1;
-    } else {
-      player.velocity.x = 0;
-    }
-    player.acceleration.x = 0;
-  }
+//   // Disallow movement during crouch, except changing direction.
+//   if (player.state == PlayerState::Crouch) {
+//     if (player.facing == Direction::LEFT && player.acceleration.x > 0) {
+//       player.velocity.x = 1;
+//     } else if (player.facing == Direction::RIGHT && player.acceleration.x < 0) {
+//       player.velocity.x = -1;
+//     } else {
+//       player.velocity.x = 0;
+//     }
+//     player.acceleration.x = 0;
+//   }
 
-  if (player.state == PlayerState::PreJump) {
-    if (player.velocity.x != 0) {
-      player.cached_velocity.x = player.velocity.x;
-    }
-    player.velocity.x = 0;
-    player.acceleration.x = 0;
-  }
+//   if (player.state == PlayerState::PreJump) {
+//     if (player.velocity.x != 0) {
+//       player.cached_velocity.x = player.velocity.x;
+//     }
+//     player.velocity.x = 0;
+//     player.acceleration.x = 0;
+//   }
 
-  // Roll
-  const auto roll_vel = parameter_server.GetParameter<double>("physics/roll.x.vel");
-  if (player.state == PlayerState::Roll) {
-    player.acceleration.x = 0;
-    if (player.facing == Direction::LEFT) {
-      player.velocity.x = -roll_vel;
-    } else {
-      player.velocity.x = roll_vel;
-    }
-    if ((player.collisions.left && player.acceleration.x > 0) ||
-        (player.collisions.right && player.acceleration.x < 0)) {
-      player.velocity.x *= -1;
-    }
+//   // Roll
+//   const auto roll_vel = parameter_server.GetParameter<double>("physics/roll.x.vel");
+//   if (player.state == PlayerState::Roll) {
+//     player.acceleration.x = 0;
+//     if (player.facing == Direction::LEFT) {
+//       player.velocity.x = -roll_vel;
+//     } else {
+//       player.velocity.x = roll_vel;
+//     }
+//     if ((player.collisions.left && player.acceleration.x > 0) ||
+//         (player.collisions.right && player.acceleration.x < 0)) {
+//       player.velocity.x *= -1;
+//     }
 
-    // TODO:: This is hacky and should be configured better.
-    player.x_offset_px = 32;
-    player.y_offset_px = 0;
-    player.collision_width_px = 16;
-    player.collision_height_px = 16;
-  } else if (player.state == PlayerState::BackDodgeShot) {
-    player.x_offset_px = 20;
-    player.y_offset_px = 0;
-    player.collision_width_px = 30;
-    player.collision_height_px = 16;
-  } else {
-    player.x_offset_px = 30;
-    player.y_offset_px = 0;
-    player.collision_width_px = 18;
-    player.collision_height_px = 48;
-  }
-}
+//     // TODO:: This is hacky and should be configured better.
+//     player.x_offset_px = 32;
+//     player.y_offset_px = 0;
+//     player.collision_width_px = 16;
+//     player.collision_height_px = 16;
+//   } else if (player.state == PlayerState::BackDodgeShot) {
+//     player.x_offset_px = 20;
+//     player.y_offset_px = 0;
+//     player.collision_width_px = 30;
+//     player.collision_height_px = 16;
+//   } else {
+//     player.x_offset_px = 30;
+//     player.y_offset_px = 0;
+//     player.collision_width_px = 18;
+//     player.collision_height_px = 48;
+//   }
+// }
 
 void UpdateState(const ParameterServer& parameter_server,
-                 const PhysicsEngine& physics,
-                 Player& player) {
-  UpdateStateImpl(parameter_server, physics, player);
-  player.requested_states.clear();
+                 EntityId player_id,
+                 Registry& registry) {
+  UpdateStateImpl(parameter_server, player_id, registry);
+  auto [state] = registry.GetComponents<State>(player_id);
+  state.requested_states.clear();
 }
 
 }  // namespace platformer

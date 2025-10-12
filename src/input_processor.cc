@@ -2,11 +2,15 @@
 
 #include "input_processor.h"
 
+#include <memory>
+
 #include "basic_types.h"
+#include "components.h"
 #include "input_capture.h"
-#include "player.h"
 #include "player_state.h"
+#include "registry_helpers.h"
 #include "sound.h"
+#include "utils/check.h"
 #include "utils/developer_console.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
@@ -17,73 +21,75 @@ namespace platformer {
 constexpr double kAcceleration = 50.0;
 constexpr double kJumpVel = 21.0;
 
-bool IsPlayerShooting(const Player& player) { return player.state == PlayerState::Shoot; }
-
-bool IsPlayerShootingOnGround(const Player& player) {
-  return player.collisions.bottom && player.state == PlayerState::Shoot;
-}
-
 InputProcessor::InputProcessor(std::shared_ptr<ParameterServer> parameter_server,
                                std::shared_ptr<const SoundPlayer> sound_player,
+                               std::shared_ptr<Registry> registry,
                                olc::PixelGameEngine* engine_ptr)
     : input_{engine_ptr},
       parameter_server_{std::move(parameter_server)},
       sound_player_{std::move(sound_player)},
+      registry_{std::move(registry)},
       engine_ptr_{engine_ptr} {
   parameter_server_->AddParameter("physics/player.acceleration", kAcceleration,
-                                 "Horizontal acceleration of the player, unit: tile/s²");
-  parameter_server_->AddParameter("physics/jump.velocity", kJumpVel,
-                                 "The instantaneous vertical velocity when you jump, unit: tile/s");
+                                  "Horizontal acceleration of the player, unit: tile/s²");
+  parameter_server_->AddParameter(
+      "physics/jump.velocity", kJumpVel,
+      "The instantaneous vertical velocity when you jump, unit: tile/s");
 }
 
-bool InputProcessor::ProcessInputs(Player& player) {
+bool InputProcessor::ProcessInputs(EntityId player_id) {
   if (engine_ptr_->IsConsoleShowing()) {
     return true;
   }
 
+  RB_CHECK(registry_->HasComponent<Acceleration>(player_id));
+  RB_CHECK(registry_->HasComponent<State>(player_id));
+  auto [acceleration, state] = registry_->GetComponents<Acceleration, State>(player_id);
+
   input_.Capture();
 
-  const auto acceleration = parameter_server_->GetParameter<double>("physics/player.acceleration");
+  const auto walking_acceleration =
+      parameter_server_->GetParameter<double>("physics/player.acceleration");
   const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
 
   if (input_.GetKey(InputAction::Left).held || input_.GetKey(InputAction::Right).held) {
-    player.requested_states.insert(PlayerState::Walk);
+    state.requested_states.insert(PlayerState::Walk);
   }
 
   if (input_.GetKey(InputAction::Left).held) {
-    player.acceleration.x = -acceleration;
+    acceleration.x = -walking_acceleration;
   } else if (input_.GetKey(InputAction::Right).held) {
-    player.acceleration.x = +acceleration;
+    acceleration.x = +walking_acceleration;
   } else {
-    player.acceleration.x = 0;
+    acceleration.x = 0;
   }
 
   if (input_.GetKey(InputAction::Up).held) {
-    player.requested_states.insert(PlayerState::AimUp);
+    state.requested_states.insert(PlayerState::AimUp);
   }
 
   if (input_.GetKey(InputAction::Down).held) {
-    player.requested_states.insert(PlayerState::Crouch);
+    state.requested_states.insert(PlayerState::Crouch);
   }
 
   if (input_.GetKey(InputAction::Roll).pressed) {
-    player.requested_states.insert(PlayerState::PreRoll);
+    state.requested_states.insert(PlayerState::PreRoll);
   }
 
   if (input_.GetKey(InputAction::Jump).pressed) {
-    player.requested_states.insert(PlayerState::PreJump);
+    state.requested_states.insert(PlayerState::PreJump);
   }
 
   if (input_.GetKey(InputAction::Shoot).held) {
-    player.requested_states.insert(PlayerState::Shoot);
+    state.requested_states.insert(PlayerState::Shoot);
   }
 
   if (input_.GetKey(InputAction::Backshot).held) {
-    player.requested_states.insert(PlayerState::BackShot);
+    state.requested_states.insert(PlayerState::BackShot);
   }
 
   if (input_.GetKey(InputAction::Suicide).pressed) {
-    player.requested_states.insert(PlayerState::PreSuicide);
+    state.requested_states.insert(PlayerState::PreSuicide);
   }
 
   if (input_.GetKey(InputAction::Console).pressed) {

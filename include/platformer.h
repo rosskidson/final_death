@@ -8,8 +8,8 @@
 #include "input_processor.h"
 #include "olcPixelGameEngine.h"
 #include "physics_engine.h"
-#include "player.h"
 #include "registry.h"
+#include "registry_helpers.h"
 #include "rendering_engine.h"
 #include "sound.h"
 #include "utils/parameter_server.h"
@@ -28,7 +28,6 @@ class Platformer : public olc::PixelGameEngine {
   bool OnConsoleCommand(const std::string& sCommand) override;
 
  private:
-  void SetAnimationCallbacks();
   bool Keyboard();
   Level& GetCurrentLevel() { return config_.levels.at(level_idx_); };
 
@@ -44,13 +43,10 @@ class Platformer : public olc::PixelGameEngine {
   std::unique_ptr<InputProcessor> input_processor_;
   std::shared_ptr<SoundPlayer> sound_player_;
 
-  Player player_{};
-
-  // TODO:: You will need to rethink this one.
-  std::map<std::string, olc::Sprite> sprite_storage_;
-
   RateTimer rate_;
   SimpleProfiler profiler_;
+
+  EntityId player_id_;
 
   #ifdef _WIN32
   WindowsHighResTimer high_res_timer_{1};

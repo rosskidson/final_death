@@ -20,17 +20,13 @@ struct Velocity {
   double x{};
   double y{};
 
-  double max_x{100}; // TODO:: fix this 
-  double max_y{100}; // TODO:: fix this 
+  double max_x{100};  // TODO:: fix this
+  double max_y{100};  // TODO:: fix this
 };
 
 struct Acceleration {
   double x{};
   double y{};
-};
-
-struct FacingDirection {
-  Direction facing{Direction::RIGHT};
 };
 
 struct CollisionBox {
@@ -45,6 +41,10 @@ struct Collision {
   bool left_changed, right_changed, top_changed, bottom_changed;
 };
 
+struct FacingDirection {
+  Direction facing{Direction::RIGHT};
+};
+
 struct State {
   PlayerState state;
   TimePoint state_set_at;
@@ -55,10 +55,12 @@ struct DistanceFallen {
   double distance_fallen{};
 };
 
+// TODO:: Remove this component
 struct PlayerComponent {
   Vector2d cached_velocity{};
-  double distance_fallen{};
-  //   TimePoint roll_start_time{};
+  // TODO:: Think about animation manager in the context of ECS pattern.
+  // Should it be a separate system?
+  // Or just its own component?
   AnimationManager animation_manager;
 };
 

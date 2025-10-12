@@ -11,21 +11,21 @@ using EntityId = uint64_t;
 
 namespace internal {
 
-template <typename T, typename... Args>
+template <typename T>
 bool AllMapsContainKey(const EntityId id, const T& map) {
   return map.count(id) != 0;
 }
 
 template <typename T, typename... Args>
 bool AllMapsContainKey(const EntityId id, const T& map, const Args&... args) {
-  return AllMapsContainKey(id, map) && AllMapsContainKey(id, args...);
+  return map.count(id) != 0 && AllMapsContainKey(id, args...);
 }
 
 template <typename T, typename... Args>
 std::vector<EntityId> GetIntersection(const T& map, const Args&... args) {
   std::vector<EntityId> intersection;
   for (const auto& [idx, _] : map) {
-    if (AllMapsContainKey(idx, args...)) {
+    if (((args.count(idx) != 0) && ...)) {
       intersection.push_back(idx);
     }
   }

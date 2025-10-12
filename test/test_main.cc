@@ -20,6 +20,18 @@ TEST_CASE("all maps contain key") {
   CHECK_FALSE(platformer::internal::AllMapsContainKey(9, set_a, set_b, set_c));
 }
 
+TEST_CASE("GetIntersectionOneMap") {
+  std::unordered_map<platformer::EntityId, int> map_a{{0, 0}, {2, 0}, {4, 0}, {6, 0}, {8, 0}};
+
+  const auto intersection = platformer::internal::GetIntersection(map_a);
+  REQUIRE_EQ(intersection.size(), 5);
+  CHECK_EQ(intersection[0], 0);
+  CHECK_EQ(intersection[1], 2);
+  CHECK_EQ(intersection[2], 4);
+  CHECK_EQ(intersection[3], 6);
+  CHECK_EQ(intersection[4], 8);
+}
+
 TEST_CASE("GetIntersection") {
   std::unordered_map<platformer::EntityId, int> map_a{{0, 0}, {2, 0}, {4, 0}, {6, 0}, {8, 0}};
   std::unordered_map<platformer::EntityId, int> map_b{{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}};
@@ -54,12 +66,12 @@ TEST_CASE("GetView") {
   CHECK_EQ(indices[1], 3);
 }
 
-TEST_CASE("AddEntity") {
+TEST_CASE("AddComponents") {
   using platformer::Acceleration;
   using platformer::Position;
   using platformer::Velocity;
   platformer::Registry r{};
-  auto entity_id = r.AddComponent(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
+  auto entity_id = r.AddComponents(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
   REQUIRE(r.GetMap<Position>().count(entity_id));
   CHECK_EQ(r.GetMap<Position>()[entity_id].x, 1.);
   CHECK_EQ(r.GetMap<Position>()[entity_id].y, 2.);
@@ -84,7 +96,7 @@ TEST_CASE("GetComponent") {
   using platformer::Position;
   using platformer::Velocity;
   platformer::Registry r{};
-  auto id_1 = r.AddComponent(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
+  auto id_1 = r.AddComponents(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
 
   auto [pos, vel, acc] = r.GetComponents<Position, Velocity, Acceleration>(id_1);
   CHECK_EQ(pos.x, 1.);
@@ -105,8 +117,8 @@ TEST_CASE("RemoveComponent") {
   using platformer::Position;
   using platformer::Velocity;
   platformer::Registry r{};
-  auto id_1 = r.AddComponent(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
-  auto id_2 = r.AddComponent(Position{0., 1.}, Velocity{20., 0.});
+  auto id_1 = r.AddComponents(Position{1., 2.}, Velocity{10., 0.}, Acceleration{0.5, 0.7});
+  auto id_2 = r.AddComponents(Position{0., 1.}, Velocity{20., 0.});
 
   r.RemoveComponent(id_1);
   REQUIRE(r.GetMap<Position>().count(id_2));
@@ -116,4 +128,11 @@ TEST_CASE("RemoveComponent") {
   CHECK_EQ(r.GetMap<Velocity>()[id_2].x, 20.);
   CHECK_EQ(r.GetMap<Velocity>()[id_2].y, 0.);
 
+}
+
+TEST_CASE("player component") {
+  using platformer::PlayerComponent;
+  platformer::Registry r{};
+  auto id_1 = r.AddComponents(PlayerComponent{});
+  REQUIRE(r.GetMap<PlayerComponent>().count(id_1));
 }

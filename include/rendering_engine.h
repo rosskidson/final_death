@@ -6,7 +6,8 @@
 #include "animated_sprite.h"
 #include "basic_types.h"
 #include "game_configuration.h"
-#include "player.h"
+#include "registry.h"
+#include "registry_helpers.h"
 #include "utils/parameter_server.h"
 #include "utils/simple_profiler.h"
 
@@ -20,7 +21,8 @@ class RenderingEngine {
   // result in having the rug pulled from its feet.
   RenderingEngine(olc::PixelGameEngine* engine_ptr,
                   Level level,
-                  std::shared_ptr<ParameterServer> parameter_server);
+                  std::shared_ptr<ParameterServer> parameter_server,
+                  std::shared_ptr<Registry> registry);
 
   [[nodiscard]] Vector2d GetCameraPosition() const;
   void SetCameraPosition(const Vector2d& absolute_vec);
@@ -29,12 +31,12 @@ class RenderingEngine {
   // Move the camera to keep it focused on the player.
   // The screen ratio is how much of a buffer from the player to the side of the screen
   // as a fraction of the screen size.
-  void KeepPlayerInFrame(const Player& player);
+  void KeepPlayerInFrame(const EntityId player_id);
 
   void RenderBackground();
   void RenderForeground();
   void RenderTiles();
-  void RenderPlayer(Player& player);
+  void RenderEntities();
 
   // Add a background layer to render.
   // Backgrounds will be rendered in the order that they are added.
@@ -61,10 +63,15 @@ class RenderingEngine {
 
   void KeepCameraInBounds();
   void RenderBackgroundLayer(const BackgroundLayer& background_layer);
+  void RenderEntityCollisionBox(int entity_top_left_px_x,
+                                int entity_top_left_px_y,
+                                int sprite_height_px,
+                                EntityId entity_id);
 
   olc::PixelGameEngine* engine_ptr_;
 
   std::shared_ptr<ParameterServer> parameter_server_;
+  std::shared_ptr<Registry> registry_; // TODO:: Should be const
 
   // std::unique_ptr<olc::Sprite> background_;
   std::vector<BackgroundLayer> background_layers_;

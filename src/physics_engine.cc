@@ -4,7 +4,6 @@
 
 #include "basic_types.h"
 #include "components.h"
-#include "player.h"
 #include "player_state.h"
 #include "registry.h"
 #include "registry_helpers.h"
@@ -61,19 +60,19 @@ bool IsCollision(const Grid<int>& collision_grid, double x, double y) {
   return collision_grid.GetTile(int_x, int_y) == 1;
 }
 
-std::pair<double, double> GetMaxVelocity(const Player& player,
-                                         const ParameterServer& parameter_server) {
-  if (player.state == PlayerState::BackDodgeShot) {
-    return {parameter_server.GetParameter<double>("physics/slide.x.vel"),
-            parameter_server.GetParameter<double>("physics/max.y.vel")};
-  }
-  if (player.state == PlayerState::Roll) {
-    return {parameter_server.GetParameter<double>("physics/roll.x.vel"),
-            parameter_server.GetParameter<double>("physics/max.y.vel")};
-  }
-  return {parameter_server.GetParameter<double>("physics/max.x.vel"),
-          parameter_server.GetParameter<double>("physics/max.y.vel")};
-}
+// std::pair<double, double> GetMaxVelocity(const Player& player,
+//                                          const ParameterServer& parameter_server) {
+//   if (player.state == PlayerState::BackDodgeShot) {
+//     return {parameter_server.GetParameter<double>("physics/slide.x.vel"),
+//             parameter_server.GetParameter<double>("physics/max.y.vel")};
+//   }
+//   if (player.state == PlayerState::Roll) {
+//     return {parameter_server.GetParameter<double>("physics/roll.x.vel"),
+//             parameter_server.GetParameter<double>("physics/max.y.vel")};
+//   }
+//   return {parameter_server.GetParameter<double>("physics/max.x.vel"),
+//           parameter_server.GetParameter<double>("physics/max.y.vel")};
+// }
 
 AxisCollisions PhysicsEngine::CheckAxisCollision(const Position& position,
                                                  const CollisionBox& bounding_box,
@@ -164,27 +163,27 @@ void PhysicsEngine::ResolveCollisions(EntityId id,
 }
 
 // TODO:: Remove
-void ApplyFriction(const ParameterServer& parameter_server, const double delta_t, Player& player) {
-  if (player.acceleration.x != 0) {
-    return;
-  }
-  if (!player.collisions.bottom) {
-    // Air drag: resistance is proportional to velocity.
-    const auto air_friction = parameter_server.GetParameter<double>("physics/air.friction");
-    player.velocity.x -= player.velocity.x * air_friction * delta_t;
-    return;
-  }
-  const std::string ground_friction_key = player.state == PlayerState::BackDodgeShot
-                                              ? "physics/slide.friction"
-                                              : "physics/ground.friction";
-  const auto ground_friction = parameter_server.GetParameter<double>(ground_friction_key);
-  if (std::abs(player.velocity.x) < ground_friction * delta_t) {
-    player.velocity.x = 0;
-    return;
-  }
-  // Coulomb friction: Resistance is relative to normal force, independent of velocity.
-  player.velocity.x -= ground_friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
-}
+// void ApplyFriction(const ParameterServer& parameter_server, const double delta_t, Player& player) {
+//   if (player.acceleration.x != 0) {
+//     return;
+//   }
+//   if (!player.collisions.bottom) {
+//     // Air drag: resistance is proportional to velocity.
+//     const auto air_friction = parameter_server.GetParameter<double>("physics/air.friction");
+//     player.velocity.x -= player.velocity.x * air_friction * delta_t;
+//     return;
+//   }
+//   const std::string ground_friction_key = player.state == PlayerState::BackDodgeShot
+//                                               ? "physics/slide.friction"
+//                                               : "physics/ground.friction";
+//   const auto ground_friction = parameter_server.GetParameter<double>(ground_friction_key);
+//   if (std::abs(player.velocity.x) < ground_friction * delta_t) {
+//     player.velocity.x = 0;
+//     return;
+//   }
+//   // Coulomb friction: Resistance is relative to normal force, independent of velocity.
+//   player.velocity.x -= ground_friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
+// }
 
 PhysicsEngine::PhysicsEngine(const Level& level,
                              std::shared_ptr<ParameterServer> parameter_server,
