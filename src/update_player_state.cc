@@ -141,8 +141,8 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
       player.y_offset_px = 0;
       player.collision_width_px = 18;
       player.collision_height_px = 48;
-      AxisCollisions collisions_x = physics.CheckPlayerAxisCollision(player, Axis::X);
-      AxisCollisions collisions_y = physics.CheckPlayerAxisCollision(player, Axis::Y);
+      AxisCollisions collisions_x = physics.CheckAxisCollision(player, Axis::X);
+      AxisCollisions collisions_y = physics.CheckAxisCollision(player, Axis::Y);
       if (!Squish(collisions_x) && !Squish(collisions_y)) {
         player.state = PlayerState::PostRoll;
       }

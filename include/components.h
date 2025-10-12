@@ -19,6 +19,9 @@ struct Position {
 struct Velocity {
   double x{};
   double y{};
+
+  double max_x{100}; // TODO:: fix this 
+  double max_y{100}; // TODO:: fix this 
 };
 
 struct Acceleration {
@@ -46,6 +49,10 @@ struct State {
   PlayerState state;
   TimePoint state_set_at;
   std::set<PlayerState> requested_states;
+};
+
+struct DistanceFallen {
+  double distance_fallen{};
 };
 
 struct PlayerComponent {

@@ -23,8 +23,6 @@ class RateTimer {
     if (now > frame_end_) {
       if (debug) {
         std::cerr << "Frame timer has overrun. " << std::endl;
-      }
-      if (debug) {
         std::cout << "Now (us):          " << ToUs(now) << std::endl;
         std::cout << "End of frame (us): " << ToUs(frame_end_) << std::endl;
         std::cout << "Time overrun (us): " << ToUs(now - frame_end_) << std::endl;
@@ -37,6 +35,9 @@ class RateTimer {
     std::this_thread::sleep_until(frame_end_);
     frame_end_ += single_frame_;
   }
+
+  // TODO:: This could be improved upon: keep track of how much the timer overruns, if at all.
+  [[nodiscard]] Duration GetFrameDuration() const { return single_frame_; }
 
  private:
   TimePoint frame_end_;

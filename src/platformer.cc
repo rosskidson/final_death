@@ -230,6 +230,8 @@ bool Platformer::OnUserCreate() {
   level_idx_ = 0;
   const auto& tile_grid = GetCurrentLevel().tile_grid;
 
+  registry_ = std::make_shared<Registry>();
+
   LOG_SIMPLE("Loading backgrounds...");
   rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel(), parameter_server_);
   const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
@@ -241,7 +243,7 @@ bool Platformer::OnUserCreate() {
   RETURN_FALSE_IF_FAILED(sound_player_);
   // sound_player_->PlaySample("music", true, 0.2);
 
-  physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_);
+  physics_engine_ = std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_, registry_);
   input_processor_ = std::make_unique<InputProcessor>(parameter_server_, sound_player_, this);
 
   player_ = InitializePlayer();
@@ -255,6 +257,8 @@ bool Platformer::OnUserCreate() {
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
+  const auto dt = rate_.GetFrameDuration();
+
   // profiler_.Reset();
   // Control
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_));
