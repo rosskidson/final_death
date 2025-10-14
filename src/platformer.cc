@@ -280,12 +280,17 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
   // Model
   UpdateState(*parameter_server_, player_id_, *registry_);
-  // UpdatePlayerFromState(*parameter_server_, player_);
+  UpdateComponentsFromState(*parameter_server_, *registry_);
+
   auto [player, state] = registry_->GetComponents<PlayerComponent, State>(player_id_);
   player.animation_manager.Update(state.state);
+
   physics_engine_->GravitySystem();
   physics_engine_->FrictionSystem(delta_t);
-  physics_engine_->PhysicsStep(delta_t);
+  physics_engine_->PhysicsSystem(delta_t);
+  physics_engine_->SetFacingDirectionSystem();
+  physics_engine_->SetDistanceFallen(delta_t);
+
   // profiler_.LogEvent("01_update_player_state");
 
   // View

@@ -25,15 +25,15 @@ class PhysicsEngine {
                 std::shared_ptr<ParameterServer> parameter_server,
                 std::shared_ptr<Registry> registry);
 
-  // void PhysicsStep(Player& player);
-  void PhysicsStep(double delta_t);
+  void PhysicsSystem(double delta_t);
+  void GravitySystem();
+  void FrictionSystem(double delta_t);
+  void SetFacingDirectionSystem();
+  void SetDistanceFallen(double delta_t);
 
   [[nodiscard]] AxisCollisions CheckAxisCollision(const Position& position,
                                                   const CollisionBox& bounding_box,
                                                   Axis axis) const;
-  void GravitySystem();
-  void FrictionSystem(const double& delta_t);
-  void PhysicsSystem(const double& delta_t);
 
  private:
   // void PhysicsStep(const double delta_t, Player& player);

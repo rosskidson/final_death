@@ -242,7 +242,29 @@ void UpdateStateImpl(const ParameterServer& parameter_server,
 
 }  // namespace
 
-// void UpdatePlayerFromState(const ParameterServer& parameter_server, Player& player) {
+void UpdateMaxVelocity(const ParameterServer& parameter_server, Registry& registry) {
+  const double walk_x = parameter_server.GetParameter<double>("physics/max.x.vel");
+  const double walk_y = parameter_server.GetParameter<double>("physics/max.y.vel");
+  const double slide_x = parameter_server.GetParameter<double>("physics/slide.x.vel");
+  const double roll_x = parameter_server.GetParameter<double>("physics/roll.x.vel");
+  for(auto id: registry.GetView<Velocity, State>()) {
+    auto [velocity, state] = registry.GetComponents<Velocity, State>(id);
+    if(state.state == PlayerState::Roll) {
+      velocity.max_x = roll_x;
+    } else if(state.state == PlayerState::BackDodgeShot) {
+      velocity.max_x = slide_x;
+    } else {
+      velocity.max_x = walk_x;
+    }
+    velocity.max_y = walk_y;
+  }
+}
+
+void UpdateComponentsFromState(const ParameterServer& parameter_server, Registry& registry){
+  UpdateMaxVelocity(parameter_server, registry);
+
+
+}
 //   // Disallow movement for certain states.
 //   if ((MovementDisallowed(player.state)) &&
 //       !player.animation_manager.GetActiveAnimation().Expired()) {

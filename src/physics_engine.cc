@@ -29,15 +29,6 @@ void UpdateCollisionsChanged(Collision& collisions, const Collision& old_collisi
   collisions.bottom_changed = collisions.bottom != old_collisions.bottom;
 }
 
-// BoundingBox GetPlayerCollisionBox(const Player& player, int tile_size) {
-//   const double x_offset = static_cast<double>(player.x_offset_px) / tile_size;
-//   const double y_offset = static_cast<double>(player.y_offset_px) / tile_size;
-//   const double collision_width = static_cast<double>(player.collision_width_px) / tile_size;
-//   const double collision_height = static_cast<double>(player.collision_height_px) / tile_size;
-//   return {player.position.x + x_offset, player.position.x + x_offset + collision_width,
-//           player.position.y + y_offset, player.position.y + y_offset + collision_height};
-// }
-
 BoundingBox GetCollisionBoxInGlobalCoordinates(const Position& position,
                                                const CollisionBox& collision_box,
                                                int tile_size) {
@@ -59,20 +50,6 @@ bool IsCollision(const Grid<int>& collision_grid, double x, double y) {
   }
   return collision_grid.GetTile(int_x, int_y) == 1;
 }
-
-// std::pair<double, double> GetMaxVelocity(const Player& player,
-//                                          const ParameterServer& parameter_server) {
-//   if (player.state == PlayerState::BackDodgeShot) {
-//     return {parameter_server.GetParameter<double>("physics/slide.x.vel"),
-//             parameter_server.GetParameter<double>("physics/max.y.vel")};
-//   }
-//   if (player.state == PlayerState::Roll) {
-//     return {parameter_server.GetParameter<double>("physics/roll.x.vel"),
-//             parameter_server.GetParameter<double>("physics/max.y.vel")};
-//   }
-//   return {parameter_server.GetParameter<double>("physics/max.x.vel"),
-//           parameter_server.GetParameter<double>("physics/max.y.vel")};
-// }
 
 AxisCollisions PhysicsEngine::CheckAxisCollision(const Position& position,
                                                  const CollisionBox& bounding_box,
@@ -162,29 +139,6 @@ void PhysicsEngine::ResolveCollisions(EntityId id,
   }
 }
 
-// TODO:: Remove
-// void ApplyFriction(const ParameterServer& parameter_server, const double delta_t, Player& player) {
-//   if (player.acceleration.x != 0) {
-//     return;
-//   }
-//   if (!player.collisions.bottom) {
-//     // Air drag: resistance is proportional to velocity.
-//     const auto air_friction = parameter_server.GetParameter<double>("physics/air.friction");
-//     player.velocity.x -= player.velocity.x * air_friction * delta_t;
-//     return;
-//   }
-//   const std::string ground_friction_key = player.state == PlayerState::BackDodgeShot
-//                                               ? "physics/slide.friction"
-//                                               : "physics/ground.friction";
-//   const auto ground_friction = parameter_server.GetParameter<double>(ground_friction_key);
-//   if (std::abs(player.velocity.x) < ground_friction * delta_t) {
-//     player.velocity.x = 0;
-//     return;
-//   }
-//   // Coulomb friction: Resistance is relative to normal force, independent of velocity.
-//   player.velocity.x -= ground_friction * delta_t * (player.velocity.x > 0 ? 1 : -1);
-// }
-
 PhysicsEngine::PhysicsEngine(const Level& level,
                              std::shared_ptr<ParameterServer> parameter_server,
                              std::shared_ptr<Registry> registry)
@@ -209,7 +163,7 @@ PhysicsEngine::PhysicsEngine(const Level& level,
                                   "Controls deceleration in the air.");
 }
 
-void PhysicsEngine::PhysicsStep(const double delta_t) {
+void PhysicsEngine::PhysicsSystem(const double delta_t) {
   for (auto id : registry_->GetView<Acceleration, Velocity, Position, CollisionBox, Collision>()) {
     auto [acceleration, velocity, position, collision_box, collisions] =
         registry_->GetComponents<Acceleration, Velocity, Position, CollisionBox, Collision>(id);
@@ -231,16 +185,6 @@ void PhysicsEngine::PhysicsStep(const double delta_t) {
 
     UpdateCollisionsChanged(collisions, old_collisions);
   }
-
-  // Put in separate system
-  // if (player.acceleration.x != 0) {
-  //   player.facing = player.acceleration.x < 0 ? Direction::LEFT : Direction::RIGHT;
-  // }
-
-  // Put in separate system
-  // if (player.velocity.y < 0) {
-  //   player.distance_fallen += -1 * player.velocity.y * delta_t;
-  // }
 }
 
 void PhysicsEngine::GravitySystem() {
@@ -251,7 +195,7 @@ void PhysicsEngine::GravitySystem() {
   }
 }
 
-void PhysicsEngine::FrictionSystem(const double& delta_t) {
+void PhysicsEngine::FrictionSystem(const double delta_t) {
   for (auto id : registry_->GetView<Acceleration, Velocity, Position, Collision, State>()) {
     auto [acceleration, velocity, position, collisions, state] =
         registry_->GetComponents<Acceleration, Velocity, Position, Collision, State>(id);
@@ -274,6 +218,24 @@ void PhysicsEngine::FrictionSystem(const double& delta_t) {
     }
     // Coulomb friction: Resistance is relative to normal force, independent of velocity.
     velocity.x -= ground_friction * delta_t * (velocity.x > 0 ? 1 : -1);
+  }
+}
+
+void PhysicsEngine::SetFacingDirectionSystem() {
+  for(const auto id: registry_->GetView<Acceleration, FacingDirection>()) {
+    const auto [acceleration, facing] = registry_->GetComponents<Acceleration, FacingDirection>(id);
+    if (acceleration.x != 0) {
+      facing.facing = acceleration.x < 0 ? Direction::LEFT : Direction::RIGHT;
+    }
+  }
+}
+
+void PhysicsEngine::SetDistanceFallen(const double delta_t) {
+  for(const auto id: registry_->GetView<Velocity, DistanceFallen>()) {
+    auto [velocity, distance_fallen] = registry_->GetComponents<Velocity, DistanceFallen>(id);
+    if (velocity.y < 0) {
+      distance_fallen.distance_fallen += -1 * velocity.y * delta_t;
+    }
   }
 }
 
