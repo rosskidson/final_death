@@ -34,12 +34,12 @@ class AnimatedSprite {
   void StartAnimation();
   void StartAnimation(const TimePoint& start_time);
 
-  [[nodiscard]] TimePoint GetStartTime() const { return start_time_; }
+  // [[nodiscard]] TimePoint GetStartTime() const { return start_time_; }
 
   // Returns true if it is a non looping sprite and there are no frames left.
-  [[nodiscard]] bool Expired() const;
+  // [[nodiscard]] bool Expired() const;
 
-  [[nodiscard]] const olc::Sprite* GetFrame() const;
+  [[nodiscard]] const olc::Sprite* GetFrame(TimePoint start_time) const;
 
   void TriggerCallbacks();
 
@@ -49,7 +49,7 @@ class AnimatedSprite {
   void AddCallback(int frame_idx, std::function<void()> callback);
 
   // Add a callback to be triggered when the animation expires (only for non-looping animations).
-  void AddExpireCallback(std::function<void()> callback);
+  // void AddExpireCallback(std::function<void()> callback);
 
   [[nodiscard]] int GetTotalAnimationTimeMs() const;
 
@@ -63,7 +63,7 @@ class AnimatedSprite {
   std::vector<std::unique_ptr<olc::Sprite>> frames_;
   std::vector<int> frame_timing_;
   std::vector<int> frame_timing_lookup_;
-  TimePoint start_time_;
+  // TimePoint start_time_;
 
   std::vector<std::vector<std::function<void()>>> callbacks_;
   std::vector<bool> callback_triggered_;
