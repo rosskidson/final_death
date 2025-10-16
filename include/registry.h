@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "components.h"
-#include "player_state.h"
 #include "registry_helpers.h"
 
 namespace platformer {

@@ -2,9 +2,9 @@
 
 #include <set>
 
-#include "animation_manager.h"
+// #include "animation_manager.h"
 #include "basic_types.h"
-#include "player_state.h"
+#include "state.h"
 #include "utils/chrono_helpers.h"
 
 namespace platformer {
@@ -45,23 +45,27 @@ struct FacingDirection {
   Direction facing{Direction::RIGHT};
 };
 
-struct State {
-  PlayerState state;
-  TimePoint state_set_at;
+struct CommonState {
+  Actor actor_type;
+  std::shared_ptr<StateInterface> state;
+  // TODO:: TimePoint should only be updated when state is set and new state is different
+  // This makes it an invariant. Ask Mr. GPT about this one.
+  TimePoint state_set_at; 
+};
+
+struct PlayerState {
   std::set<PlayerState> requested_states;
+  std::shared_ptr<PlayerStateAccess> state;
+  Vector2d cached_velocity{};
 };
 
 struct DistanceFallen {
   double distance_fallen{};
 };
 
-// TODO:: Remove this component
-struct PlayerComponent {
-  Vector2d cached_velocity{};
-  // TODO:: Think about animation manager in the context of ECS pattern.
-  // Should it be a separate system?
-  // Or just its own component?
-  AnimationManager animation_manager;
-};
+// struct Animation {
+//   TimePoint start_time;
+//   SpriteKey current_animation;
+// };
 
 }  // namespace platformer

@@ -1,33 +1,29 @@
 #include "animation_manager.h"
 
 #include "animated_sprite.h"
-#include "player_state.h"
+#include "state.h"
 #include "registry_helpers.h"
 #include "utils/logging.h"
 
 namespace platformer {
 
-void AnimationManager::AddAnimation(AnimatedSprite sprite, const Actor actor, const PlayerState state) {
-  animated_sprites_.try_emplace(SpriteKey{actor, state}, std::move(sprite));
-}
+// void AnimationManager::Update(EntityId id) {
+//   if (animated_sprites_.count(new_action) == 0) {
+//     LOG_ERROR("No animation available for '" << ToString(new_action) << "'");
+//     return;
+//   }
 
-void AnimationManager::Update(const PlayerState new_action) {
-  if (animated_sprites_.count(new_action) == 0) {
-    LOG_ERROR("No animation available for '" << ToString(new_action) << "'");
-    return;
-  }
-
-  // Trigger callbacks before changing away from an expired animation.
-  GetActiveAnimation().TriggerCallbacks();
-  if (new_action != active_action_ || GetActiveAnimation().Expired()) {
-    // LOG_INFO("old action: " << ToString(active_action_)
-    //                         << ", new action: " << ToString(new_action)
-    //                         << ", expired: " << GetActiveAnimation().Expired());
-    active_action_ = new_action;
-    GetActiveAnimation().StartAnimation();
-    GetActiveAnimation().TriggerCallbacks();
-  }
-}
+//   // Trigger callbacks before changing away from an expired animation.
+//   GetActiveAnimation().TriggerCallbacks();
+//   if (new_action != active_action_ || GetActiveAnimation().Expired()) {
+//     // LOG_INFO("old action: " << ToString(active_action_)
+//     //                         << ", new action: " << ToString(new_action)
+//     //                         << ", expired: " << GetActiveAnimation().Expired());
+//     active_action_ = new_action;
+//     GetActiveAnimation().StartAnimation();
+//     GetActiveAnimation().TriggerCallbacks();
+//   }
+// }
 
 // void AnimationManager::SwapAnimation(PlayerState action) {
 //   if (animated_sprites_.count(action) == 0) {
@@ -51,9 +47,10 @@ void AnimationManager::Update(const PlayerState new_action) {
 // }
 
 const olc::Sprite* AnimationManager::GetSprite(EntityId id) const { 
-  RB_CHECK(registry_->HasComponent<PlayerState>(id));
-
-  return GetActiveAnimation().GetFrame(); 
+  RB_CHECK(registry_->HasComponent<CommonState>(id));
+  const auto& state = registry_->GetComponent<CommonState>(id);
+  return animated_sprites_.at(
+    SpriteKey{state.actor_type, state.state->GetTypeErasedState()}).GetFrame();
 }
 
 }  // namespace platformer
