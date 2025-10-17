@@ -45,15 +45,14 @@ struct FacingDirection {
   Direction facing{Direction::RIGHT};
 };
 
-struct CommonState {
+struct State {
   Actor actor_type;
   std::shared_ptr<StateInterface> state;
   // TODO:: TimePoint should only be updated when state is set and new state is different
   // This makes it an invariant. Ask Mr. GPT about this one.
-  TimePoint state_set_at; 
 };
 
-struct PlayerState {
+struct PlayerComponent {
   std::set<PlayerState> requested_states;
   std::shared_ptr<PlayerStateAccess> state;
   Vector2d cached_velocity{};
@@ -62,10 +61,5 @@ struct PlayerState {
 struct DistanceFallen {
   double distance_fallen{};
 };
-
-// struct Animation {
-//   TimePoint start_time;
-//   SpriteKey current_animation;
-// };
 
 }  // namespace platformer

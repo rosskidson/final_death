@@ -134,8 +134,8 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     animated_sprite.frame_timing_lookup_.push_back(animated_sprite.frame_timing_[i] +
                                                    animated_sprite.frame_timing_lookup_[i - 1]);
   }
-  animated_sprite.callbacks_.resize(animated_sprite.frames_.size());
-  animated_sprite.callback_triggered_.resize(animated_sprite.frames_.size());
+  animated_sprite.signals_to_emit_.resize(animated_sprite.frames_.size());
+  animated_sprite.signals_emitted_.resize(animated_sprite.frames_.size());
   return animated_sprite;
 } catch (const json::parse_error& e) {
   LOG_ERROR("Failed parsing json metadata for sprite sheet '" << sprite_sheet_path
@@ -151,28 +151,28 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
   return std::nullopt;
 }
 
-void AnimatedSprite::StartAnimation() {
-  start_time_ = GameClock::NowGlobal();
-  for (int i = 0; i < callback_triggered_.size(); ++i) {
-    callback_triggered_[i] = false;
-  }
-  expire_callback_triggered_ = false;
-}
+// void AnimatedSprite::StartAnimation() {
+//   start_time_ = GameClock::NowGlobal();
+//   for (int i = 0; i < callback_triggered_.size(); ++i) {
+//     callback_triggered_[i] = false;
+//   }
+//   expire_callback_triggered_ = false;
+// }
 
-void AnimatedSprite::StartAnimation(const TimePoint& start_time) {
-  start_time_ = start_time;
-  for (int i = 0; i < callback_triggered_.size(); ++i) {
-    callback_triggered_[i] = false;
-  }
-  expire_callback_triggered_ = false;
-}
+// void AnimatedSprite::StartAnimation(const TimePoint& start_time) {
+//   start_time_ = start_time;
+//   for (int i = 0; i < callback_triggered_.size(); ++i) {
+//     callback_triggered_[i] = false;
+//   }
+//   expire_callback_triggered_ = false;
+// }
 
 // Only use GetCurrentFrameIdx to check if it is expired, rather than making another call to the
 // clock. This ensures timing consistency.
-bool AnimatedSprite::Expired() const { return GetCurrentFrameIdx() == -1; }
+// bool AnimatedSprite::Expired() const { return GetCurrentFrameIdx() == -1; }
 
-const olc::Sprite* AnimatedSprite::GetFrame() const {
-  const auto current_frame_idx = GetCurrentFrameIdx();
+const olc::Sprite* AnimatedSprite::GetFrame(const TimePoint start_time) const {
+  const auto current_frame_idx = GetCurrentFrameIdx(start_time);
   if (current_frame_idx == -1) {
     return frames_.back().get();
   }
@@ -181,8 +181,8 @@ const olc::Sprite* AnimatedSprite::GetFrame() const {
 
 int AnimatedSprite::GetTotalAnimationTimeMs() const { return frame_timing_lookup_.back(); }
 
-int AnimatedSprite::GetCurrentFrameIdx() const {
-  auto time_elapsed = ToMs(GameClock::NowGlobal() - start_time_);
+int AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
+  auto time_elapsed = ToMs(GameClock::NowGlobal() - start_time);
 
   // Check if it has expired first.
   if (!loops_ && time_elapsed >= frame_timing_lookup_.back()) {
@@ -211,50 +211,50 @@ int AnimatedSprite::GetCurrentFrameIdx() const {
 }
 
 void AnimatedSprite::TriggerCallbacks() {
-  const int frame_idx = GetCurrentFrameIdx();
-  if (frame_idx == -1) {
-    if (expire_callback_triggered_) {
-      return;
-    }
-    for (const auto& callback : expire_callbacks_) {
-      callback();
-    }
-    expire_callback_triggered_ = true;
-    return;
-  }
-
-  expire_callback_triggered_ = false;
-
-  RB_CHECK(frame_idx >= 0 && frame_idx < frames_.size());
-
-  // Clear all callback triggered other than this frame.
-  for (int i = 0; i < callback_triggered_.size(); ++i) {
-    if (i != frame_idx) {
-      callback_triggered_[i] = false;
-    }
-  }
-  if (callback_triggered_[frame_idx]) {
-    return;
-  }
-  for (const auto& callback : callbacks_[frame_idx]) {
-    callback();
-  }
-  callback_triggered_[frame_idx] = true;
-
-  // Print callback_triggered_
-  // for (int i = 0; i < callback_triggered_.size(); ++i) {
-  //   std::cout << callback_triggered_[i] << " ";
+  // const int frame_idx = GetCurrentFrameIdx();
+  // if (frame_idx == -1) {
+  //   if (expire_callback_triggered_) {
+  //     return;
+  //   }
+  //   for (const auto& callback : expire_callbacks_) {
+  //     callback();
+  //   }
+  //   expire_callback_triggered_ = true;
+  //   return;
   // }
-  // std::cout << std::endl;
+
+  // expire_callback_triggered_ = false;
+
+  // RB_CHECK(frame_idx >= 0 && frame_idx < frames_.size());
+
+  // // Clear all callback triggered other than this frame.
+  // for (int i = 0; i < callback_triggered_.size(); ++i) {
+  //   if (i != frame_idx) {
+  //     callback_triggered_[i] = false;
+  //   }
+  // }
+  // if (callback_triggered_[frame_idx]) {
+  //   return;
+  // }
+  // for (const auto& callback : callbacks_[frame_idx]) {
+  //   callback();
+  // }
+  // callback_triggered_[frame_idx] = true;
+
+  // // Print callback_triggered_
+  // // for (int i = 0; i < callback_triggered_.size(); ++i) {
+  // //   std::cout << callback_triggered_[i] << " ";
+  // // }
+  // // std::cout << std::endl;
 }
 
-void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {
-  RB_CHECK(frame_idx >= 0 && frame_idx < callbacks_.size());
-  callbacks_[frame_idx].push_back(std::move(callback));
+void AnimatedSprite::AddEventSignal(const int frame_idx, const std::string& event_name){
+
 }
 
-void AnimatedSprite::AddExpireCallback(std::function<void()> callback) {
-  expire_callbacks_.push_back(std::move(callback));
-}
+// void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {
+//   RB_CHECK(frame_idx >= 0 && frame_idx < callbacks_.size());
+//   callbacks_[frame_idx].push_back(std::move(callback));
+// }
 
 }  // namespace platformer

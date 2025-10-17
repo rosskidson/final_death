@@ -4,6 +4,7 @@
 #include "state.h"
 #include "registry_helpers.h"
 #include "utils/logging.h"
+#include "utils/check.h"
 
 namespace platformer {
 
@@ -47,10 +48,11 @@ namespace platformer {
 // }
 
 const olc::Sprite* AnimationManager::GetSprite(EntityId id) const { 
-  RB_CHECK(registry_->HasComponent<CommonState>(id));
-  const auto& state = registry_->GetComponent<CommonState>(id);
-  return animated_sprites_.at(
-    SpriteKey{state.actor_type, state.state->GetTypeErasedState()}).GetFrame();
+  RB_CHECK(registry_->HasComponent<State>(id));
+  const auto& state = registry_->GetComponent<State>(id);
+  const auto& animated_sprite = animated_sprites_.at(
+    SpriteKey{state.actor_type, state.state->GetTypeErasedState()});
+  return animated_sprite.GetFrame(state.state->GetStateSetAt());
 }
 
 }  // namespace platformer

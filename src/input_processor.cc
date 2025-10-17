@@ -7,7 +7,7 @@
 #include "basic_types.h"
 #include "components.h"
 #include "input_capture.h"
-#include "player_state.h"
+#include "state.h"
 #include "registry_helpers.h"
 #include "sound.h"
 #include "utils/check.h"
@@ -43,8 +43,8 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
   }
 
   RB_CHECK(registry_->HasComponent<Acceleration>(player_id));
-  RB_CHECK(registry_->HasComponent<State>(player_id));
-  auto [acceleration, state] = registry_->GetComponents<Acceleration, State>(player_id);
+  RB_CHECK(registry_->HasComponent<PlayerComponent>(player_id));
+  auto [acceleration, state] = registry_->GetComponents<Acceleration, PlayerComponent>(player_id);
 
   input_.Capture();
 

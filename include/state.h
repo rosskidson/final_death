@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include "utils/game_clock.h"
 
 namespace platformer {
 
@@ -111,17 +112,38 @@ class StateInterface {
  public:
   virtual ~StateInterface() = default;
   [[nodiscard]] CommonState GetCommonState() const { 
-    if(state_ >= CommonState::SpecializedState) {
+    if(static_cast<CommonState>(state_) >= CommonState::SpecializedState) {
       return CommonState::SpecializedState;
     }
-    return state_; 
+    return static_cast<CommonState>(state_); 
   }
-  void SetCommonState(CommonState state) { state_ = state; }
+  void SetCommonState(CommonState state) { 
+    SetState(static_cast<uint8_t>(state));
+  }
+
+  void SetState(uint8_t state) {
+    if(state_ == state) {
+      return;
+    }
+    state_set_at_ = GameClock::NowGlobal();
+    last_animation_frame_idx = -1;
+    state_ = state; 
+  }
+
+  TimePoint GetStateSetAt() const { return state_set_at_; }
+
+  int GetLastAnimationFrame() const { return last_animation_frame_idx; }
 
   [[nodiscard]] uint8_t GetTypeErasedState() { return state_; }
 
  protected:
   uint8_t state_{static_cast<uint8_t>(CommonState::Idle)};
+  TimePoint state_set_at_; 
+
+  // I know this is not excellent that this is in here, but it needs to be reset on state changes
+  // This could be fixed by creating an animation state component that contains it's 
+  // own state, but then it needs to be explicitly updated once per game loop.
+  int last_animation_frame_idx{-1};
 };
 
 class PlayerStateAccess : public StateInterface {
@@ -129,8 +151,10 @@ class PlayerStateAccess : public StateInterface {
   PlayerStateAccess() = default;
   ~PlayerStateAccess() override = default;
 
-  [[nodiscard]] PlayerState GetState() const { return state_; }
-  void SetState(PlayerState state) { this->state_ = static_cast<uint8_t>(state); }
+  using StateInterface::SetState;
+
+  [[nodiscard]] PlayerState GetState() const { return static_cast<PlayerState>(this->state_); }
+  void SetState(PlayerState state) { this->SetState(static_cast<uint8_t>(state)); }
 };
 
 }

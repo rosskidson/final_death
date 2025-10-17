@@ -16,7 +16,7 @@ class SpriteKey {
   SpriteKey(Actor actor, uint8_t state) : actor_{actor}, state_{state} {}
 
   template <typename StateEnum>
-  SpriteKey(Actor actor, StateEnum state) : actor_{actor}, state_{static_cast<uint8_t>(state)}
+  SpriteKey(Actor actor, StateEnum state) : actor_{actor}, state_{static_cast<uint8_t>(state)} {}
 
   bool operator<(const SpriteKey& other) const {
     if (actor_ != other.actor_) {

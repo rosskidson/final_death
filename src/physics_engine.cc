@@ -4,7 +4,7 @@
 
 #include "basic_types.h"
 #include "components.h"
-#include "player_state.h"
+#include "state.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/game_clock.h"
@@ -208,9 +208,13 @@ void PhysicsEngine::FrictionSystem(const double delta_t) {
       velocity.x -= velocity.x * air_friction * delta_t;
       continue;
     }
-    const std::string ground_friction_key = state.state == PlayerState::BackDodgeShot
-                                                ? "physics/slide.friction"
-                                                : "physics/ground.friction";
+    std::string ground_friction_key = "physics/ground.friction";
+    if(registry_->HasComponent<PlayerComponent>(id)) {
+      const auto& player_state = registry_->GetComponent<PlayerComponent>(id).state->GetState();
+      if(player_state == PlayerState::BackDodgeShot){
+        ground_friction_key = "physics/slide.friction";
+      }
+    }
     const auto ground_friction = parameter_server_->GetParameter<double>(ground_friction_key);
     if (std::abs(velocity.x) < ground_friction * delta_t) {
       velocity.x = 0;

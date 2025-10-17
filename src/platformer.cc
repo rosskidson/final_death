@@ -14,7 +14,7 @@
 #include "global_defs.h"
 #include "input_processor.h"
 #include "load_game_configuration.h"
-#include "player_state.h"
+#include "state.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "rendering_engine.h"
