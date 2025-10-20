@@ -52,8 +52,8 @@ struct AnimationInfo {
   State state;
 };
 
-EntityId InitializePlayer(std::shared_ptr<Registry>& registry) {
-  auto id = registry->AddComponents(Position{2, 10},                               //
+EntityId InitializePlayer(Registry& registry) {
+  auto id = registry.AddComponents(Position{2, 10},                               //
                                    Velocity{0, 0},                                //
                                    Acceleration{0, 0},                            //
                                    FacingDirection{Direction::RIGHT},             //
@@ -210,7 +210,7 @@ bool Platformer::OnUserCreate() {
   const auto& tile_grid = GetCurrentLevel().tile_grid;
 
   registry_ = std::make_shared<Registry>();
-  player_id_ = InitializePlayer(registry_);
+  player_id_ = InitializePlayer(*registry_);
 
   LOG_SIMPLE("Loading sprites...");
   animation_manager_ = InitializeAnimationManager(*parameter_server_, player_id_, registry_);

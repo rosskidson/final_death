@@ -19,8 +19,8 @@ struct Velocity {
   double x{};
   double y{};
 
-  double max_x{100};  // TODO:: fix this
-  double max_y{100};  // TODO:: fix this
+  double max_x{};
+  double max_y{};
 };
 
 struct Acceleration {

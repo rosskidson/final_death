@@ -20,6 +20,15 @@ constexpr double kFollowPlayerScreenRatioY = 0.5;
 
 constexpr double kDrawPlayerCollisions = 0.0;  // TODO::Bool
 
+namespace {
+bool GetFlip(EntityId id, Registry& registry) {  // TODO:: const registry
+  if (!registry.HasComponent<FacingDirection>(id)) {
+    return false;
+  }
+  return registry.GetComponent<FacingDirection>(id).facing == Direction::LEFT;
+}
+}  // namespace
+
 RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
                                  Level level,
                                  std::shared_ptr<ParameterServer> parameter_server,
@@ -237,9 +246,8 @@ void RenderingEngine::RenderTiles() {
 }
 
 void RenderingEngine::RenderEntities() {
-  for (auto id : registry_->GetView<Position, PlayerComponent, FacingDirection>()) {
-    auto [position, player, facing] =
-        registry_->GetComponents<Position, PlayerComponent, FacingDirection>(id);
+  for (auto id : registry_->GetView<Position>()) {
+    auto [position] = registry_->GetComponents<Position>(id);
     const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
 
     // The player position is bottom left, but the rendering engine requires top left.
@@ -248,7 +256,8 @@ void RenderingEngine::RenderEntities() {
     const int player_top_left_px_x = static_cast<int>(position_in_screen.x * tile_size_);
     const int player_top_left_px_y =
         kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;
-    const bool flip = facing.facing == Direction::LEFT;
+
+    const auto flip = GetFlip(id, *registry_);
     engine_ptr_->DrawSprite(player_top_left_px_x, player_top_left_px_y,
                             const_cast<olc::Sprite*>(sprite), 1, static_cast<uint8_t>(flip));
 
