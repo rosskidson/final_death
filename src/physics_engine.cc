@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
+#include "actor_state.h"
 #include "basic_types.h"
 #include "components.h"
-#include "state.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/game_clock.h"
@@ -196,9 +196,10 @@ void PhysicsEngine::GravitySystem() {
 }
 
 void PhysicsEngine::FrictionSystem(const double delta_t) {
-  for (auto id : registry_->GetView<Acceleration, Velocity, Position, Collision, State>()) {
+  for (auto id :
+       registry_->GetView<Acceleration, Velocity, Position, Collision, StateComponent>()) {
     auto [acceleration, velocity, position, collisions, state] =
-        registry_->GetComponents<Acceleration, Velocity, Position, Collision, State>(id);
+        registry_->GetComponents<Acceleration, Velocity, Position, Collision, StateComponent>(id);
     if (acceleration.x != 0) {
       continue;
     }
@@ -209,11 +210,8 @@ void PhysicsEngine::FrictionSystem(const double delta_t) {
       continue;
     }
     std::string ground_friction_key = "physics/ground.friction";
-    if(registry_->HasComponent<PlayerComponent>(id)) {
-      const auto& player_state = registry_->GetComponent<PlayerComponent>(id).state->GetState();
-      if(player_state == PlayerState::BackDodgeShot){
-        ground_friction_key = "physics/slide.friction";
-      }
+    if (state.state.GetState() == State::BackDodgeShot) {
+      ground_friction_key = "physics/slide.friction";
     }
     const auto ground_friction = parameter_server_->GetParameter<double>(ground_friction_key);
     if (std::abs(velocity.x) < ground_friction * delta_t) {
@@ -226,7 +224,7 @@ void PhysicsEngine::FrictionSystem(const double delta_t) {
 }
 
 void PhysicsEngine::SetFacingDirectionSystem() {
-  for(const auto id: registry_->GetView<Acceleration, FacingDirection>()) {
+  for (const auto id : registry_->GetView<Acceleration, FacingDirection>()) {
     const auto [acceleration, facing] = registry_->GetComponents<Acceleration, FacingDirection>(id);
     if (acceleration.x != 0) {
       facing.facing = acceleration.x < 0 ? Direction::LEFT : Direction::RIGHT;
@@ -235,7 +233,7 @@ void PhysicsEngine::SetFacingDirectionSystem() {
 }
 
 void PhysicsEngine::SetDistanceFallen(const double delta_t) {
-  for(const auto id: registry_->GetView<Velocity, DistanceFallen>()) {
+  for (const auto id : registry_->GetView<Velocity, DistanceFallen>()) {
     auto [velocity, distance_fallen] = registry_->GetComponents<Velocity, DistanceFallen>(id);
     if (velocity.y < 0) {
       distance_fallen.distance_fallen += -1 * velocity.y * delta_t;

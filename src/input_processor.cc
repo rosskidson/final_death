@@ -7,7 +7,7 @@
 #include "basic_types.h"
 #include "components.h"
 #include "input_capture.h"
-#include "state.h"
+#include "actor_state.h"
 #include "registry_helpers.h"
 #include "sound.h"
 #include "utils/check.h"
@@ -53,7 +53,7 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
   const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
 
   if (input_.GetKey(InputAction::Left).held || input_.GetKey(InputAction::Right).held) {
-    state.requested_states.insert(PlayerState::Walk);
+    state.requested_states.insert(State::Walk);
   }
 
   if (input_.GetKey(InputAction::Left).held) {
@@ -65,31 +65,31 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
   }
 
   if (input_.GetKey(InputAction::Up).held) {
-    state.requested_states.insert(PlayerState::AimUp);
+    state.requested_states.insert(State::AimUp);
   }
 
   if (input_.GetKey(InputAction::Down).held) {
-    state.requested_states.insert(PlayerState::Crouch);
+    state.requested_states.insert(State::Crouch);
   }
 
   if (input_.GetKey(InputAction::Roll).pressed) {
-    state.requested_states.insert(PlayerState::PreRoll);
+    state.requested_states.insert(State::PreRoll);
   }
 
   if (input_.GetKey(InputAction::Jump).pressed) {
-    state.requested_states.insert(PlayerState::PreJump);
+    state.requested_states.insert(State::PreJump);
   }
 
   if (input_.GetKey(InputAction::Shoot).held) {
-    state.requested_states.insert(PlayerState::Shoot);
+    state.requested_states.insert(State::Shoot);
   }
 
   if (input_.GetKey(InputAction::Backshot).held) {
-    state.requested_states.insert(PlayerState::BackShot);
+    state.requested_states.insert(State::BackShot);
   }
 
   if (input_.GetKey(InputAction::Suicide).pressed) {
-    state.requested_states.insert(PlayerState::PreSuicide);
+    state.requested_states.insert(State::PreSuicide);
   }
 
   if (input_.GetKey(InputAction::Console).pressed) {

@@ -4,8 +4,7 @@
 
 // #include "animation_manager.h"
 #include "basic_types.h"
-#include "state.h"
-#include "utils/chrono_helpers.h"
+#include "actor_state.h"
 
 namespace platformer {
 
@@ -45,16 +44,13 @@ struct FacingDirection {
   Direction facing{Direction::RIGHT};
 };
 
-struct State {
+struct StateComponent {
   Actor actor_type;
-  std::shared_ptr<StateInterface> state;
-  // TODO:: TimePoint should only be updated when state is set and new state is different
-  // This makes it an invariant. Ask Mr. GPT about this one.
+  StateAccess state;
 };
 
 struct PlayerComponent {
-  std::set<PlayerState> requested_states;
-  std::shared_ptr<PlayerStateAccess> state;
+  std::set<State> requested_states;
   Vector2d cached_velocity{};
 };
 

@@ -23,10 +23,12 @@ constexpr double kDrawPlayerCollisions = 0.0;  // TODO::Bool
 RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
                                  Level level,
                                  std::shared_ptr<ParameterServer> parameter_server,
+                                 std::shared_ptr<AnimationManager> animation_manager,
                                  std::shared_ptr<Registry> registry)
     : engine_ptr_{engine_ptr},
       level_{std::move(level)},
       parameter_server_{std::move(parameter_server)},
+      animation_manager_{std::move(animation_manager)},
       registry_{std::move(registry)} {
   parameter_server_->AddParameter(
       "rendering/follow.player.screen.ratio.x", kFollowPlayerScreenRatioX,
@@ -242,7 +244,7 @@ void RenderingEngine::RenderEntities() {
 
     // The player position is bottom left, but the rendering engine requires top left.
     // This conversion is done here.
-    const olc::Sprite* sprite = player.animation_manager.GetSprite();
+    const olc::Sprite* sprite = animation_manager_->GetSprite(id);
     const int player_top_left_px_x = static_cast<int>(position_in_screen.x * tile_size_);
     const int player_top_left_px_y =
         kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_) - sprite->height;

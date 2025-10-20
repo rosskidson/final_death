@@ -3,6 +3,7 @@
 #include <tuple>
 #include <unordered_map>
 
+#include "actor_state.h"
 #include "components.h"
 #include "registry_helpers.h"
 
@@ -90,9 +91,9 @@ class Registry {
              std::unordered_map<EntityId, CollisionBox>,
              std::unordered_map<EntityId, Collision>,
              std::unordered_map<EntityId, FacingDirection>,
-             std::unordered_map<EntityId, State>,
-             std::unordered_map<EntityId, DistanceFallen>,
-             std::unordered_map<EntityId, PlayerComponent>>
+             std::unordered_map<EntityId, StateComponent>,
+             std::unordered_map<EntityId, PlayerComponent>,
+             std::unordered_map<EntityId, DistanceFallen>>
       maps_tuple_;
 };
 

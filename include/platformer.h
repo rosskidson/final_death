@@ -3,6 +3,7 @@
 #include <map>
 #include <string>
 
+#include "animation_manager.h"
 #include "basic_types.h"
 #include "game_configuration.h"
 #include "input_processor.h"
@@ -42,6 +43,7 @@ class Platformer : public olc::PixelGameEngine {
   std::shared_ptr<ParameterServer> parameter_server_;
   std::unique_ptr<InputProcessor> input_processor_;
   std::shared_ptr<SoundPlayer> sound_player_;
+  std::shared_ptr<AnimationManager> animation_manager_;
 
   RateTimer rate_;
   SimpleProfiler profiler_;

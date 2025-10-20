@@ -1,7 +1,7 @@
 #include "animation_manager.h"
 
 #include "animated_sprite.h"
-#include "state.h"
+#include "actor_state.h"
 #include "registry_helpers.h"
 #include "utils/logging.h"
 #include "utils/check.h"
@@ -48,11 +48,11 @@ namespace platformer {
 // }
 
 const olc::Sprite* AnimationManager::GetSprite(EntityId id) const { 
-  RB_CHECK(registry_->HasComponent<State>(id));
-  const auto& state = registry_->GetComponent<State>(id);
+  RB_CHECK(registry_->HasComponent<StateComponent>(id));
+  const auto& state = registry_->GetComponent<StateComponent>(id);
   const auto& animated_sprite = animated_sprites_.at(
-    SpriteKey{state.actor_type, state.state->GetTypeErasedState()});
-  return animated_sprite.GetFrame(state.state->GetStateSetAt());
+    SpriteKey{state.actor_type, state.state.GetState()});
+  return animated_sprite.GetFrame(state.state.GetStateSetAt());
 }
 
 }  // namespace platformer

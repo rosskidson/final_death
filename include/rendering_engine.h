@@ -4,6 +4,7 @@
 #include <optional>
 
 #include "animated_sprite.h"
+#include "animation_manager.h"
 #include "basic_types.h"
 #include "game_configuration.h"
 #include "registry.h"
@@ -22,6 +23,7 @@ class RenderingEngine {
   RenderingEngine(olc::PixelGameEngine* engine_ptr,
                   Level level,
                   std::shared_ptr<ParameterServer> parameter_server,
+                  std::shared_ptr<AnimationManager> animation_manager,
                   std::shared_ptr<Registry> registry);
 
   [[nodiscard]] Vector2d GetCameraPosition() const;
@@ -71,6 +73,7 @@ class RenderingEngine {
   olc::PixelGameEngine* engine_ptr_;
 
   std::shared_ptr<ParameterServer> parameter_server_;
+  std::shared_ptr<AnimationManager> animation_manager_;
   std::shared_ptr<Registry> registry_; // TODO:: Should be const
 
   // std::unique_ptr<olc::Sprite> background_;
