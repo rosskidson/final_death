@@ -29,6 +29,7 @@ constexpr double kShootDelayMs = 1000;
 constexpr double kRollDurationMs = 250;
 constexpr double kShootDownUpwardVel = 10;
 constexpr double kHardFallDistance = 10;
+constexpr double kJumpVel = 21.0;
 
 namespace platformer {
 
@@ -78,6 +79,10 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
 
   parameter_server->AddParameter("physics/hard.fall.distance", kHardFallDistance,
                                  "Distance to trigger a hard fall (crouch + delay for recovery)");
+
+  parameter_server->AddParameter(
+      "physics/jump.velocity", kJumpVel,
+      "The instantaneous vertical velocity when you jump, unit: tile/s");
 
   return parameter_server;
 }
@@ -242,6 +247,25 @@ bool Platformer::OnUserCreate() {
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   // TODO:: Actual dt, not just 1 / frequency
   const double delta_t = std::chrono::duration<double>(rate_.GetFrameDuration()).count();
+
+  const auto& player_state = registry_->GetComponent<StateComponent>(player_id_).state;
+
+  const auto events = animation_manager_->GetAnimationEvents();
+
+  // Sound system (move elsewhere)
+  for (const auto& event : events) {
+    if (event.event_name == "ShootShotgun") {
+      sound_player_->PlaySample("shotgun_fire", false);
+    } else if (event.event_name == "ReloadShotgun") {
+      sound_player_->PlaySample("shotgun_reload", false);
+    }
+    if (event.event_name == "AnimationEnded" && event.animation_state == State::PreJump) {
+      const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
+      registry_->GetComponent<Velocity>(player_id_).y = jump_velocity;
+      registry_->GetComponent<StateComponent>(player_id_).state.SetState(State::InAir);
+    }
+    LOG_INFO(event.entity_id << ": " << event.event_name);
+  }
 
   // profiler_.Reset();
   // Control

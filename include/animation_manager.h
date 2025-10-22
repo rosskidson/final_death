@@ -10,6 +10,12 @@
 
 namespace platformer {
 
+struct AnimationEvent {
+  EntityId entity_id;
+  State animation_state;
+  std::string event_name;
+};
+
 struct SpriteKey {
   SpriteKey() = default;
   SpriteKey(Actor actor, State state) : actor{actor}, state{state} {}
@@ -33,13 +39,15 @@ class AnimationManager {
     animated_sprites_.try_emplace(SpriteKey{actor, state}, std::move(sprite));
   }
 
-  AnimatedSprite& GetAnimation(Actor actor, State state) {
+  [[nodiscard]] AnimatedSprite& GetAnimation(Actor actor, State state) {
     return animated_sprites_.at(SpriteKey{actor, state});
   }
 
-  const AnimatedSprite& GetAnimation(Actor actor, State state) const {
+  [[nodiscard]] const AnimatedSprite& GetAnimation(Actor actor, State state) const {
     return animated_sprites_.at(SpriteKey{actor, state});
   }
+
+  [[nodiscard]] std::vector<AnimationEvent> GetAnimationEvents() const;
 
   // void SwapAnimation(PlayerState action);
 

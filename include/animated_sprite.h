@@ -31,18 +31,8 @@ class AnimatedSprite {
       int intro_frames = -1,
       bool forwards_backwards = false);
 
-  // void StartAnimation();
-  // void StartAnimation(const TimePoint& start_time);
-
-  // [[nodiscard]] TimePoint GetStartTime() const { return start_time_; }
-
-  // Returns true if it is a non looping sprite and there are no frames left.
-  // [[nodiscard]] bool Expired() const;
-
   // If the animation has ended and it is not looping, the last frame will be returned.
   [[nodiscard]] const olc::Sprite* GetFrame(TimePoint start_time) const;
-
-  void TriggerCallbacks();
 
   // Add an event to be triggered and emitted when a certain frame is reached.
   // The event may be specified as a free form string.
@@ -52,13 +42,18 @@ class AnimatedSprite {
   // An event "AnimationEnded" will always be emitted when a non looping animation has finished.
   void AddEventSignal(int frame_idx, const std::string& event_name);
 
-  // Add a callback to be triggered when the animation expires (only for non-looping animations).
-  // void AddExpireCallback(std::function<void()> callback);
+  // As above, but trigger after a non looping animation has finished.
+  void AddExpiredEventSignal(const std::string& event_name);
+
+  [[nodiscard]] std::vector<std::string> GetAnimationEvents(TimePoint start_time,
+                                                            int& last_animation_frame) const;
 
   [[nodiscard]] int GetTotalAnimationTimeMs() const;
 
  private:
   AnimatedSprite() = default;
+
+  // Returns -1 if it is non loop and the animation has ended.
   [[nodiscard]] int GetCurrentFrameIdx(TimePoint start_time) const;
 
   bool loops_;
@@ -67,12 +62,9 @@ class AnimatedSprite {
   std::vector<std::unique_ptr<olc::Sprite>> frames_;
   std::vector<int> frame_timing_;
   std::vector<int> frame_timing_lookup_;
-  // TimePoint start_time_;
 
   std::vector<std::vector<std::string>> signals_to_emit_;
-  std::vector<bool> signals_emitted_;
-  // std::vector<std::function<void()>> expire_callbacks_;
-  // bool expire_callback_triggered_{false};
+  std::vector<std::string> signals_to_emit_on_expiration_;
 };
 
 }  // namespace platformer

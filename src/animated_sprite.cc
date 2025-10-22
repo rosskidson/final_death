@@ -17,6 +17,8 @@ namespace platformer {
 namespace fs = std::filesystem;
 using json = nlohmann::json;
 
+namespace {
+
 // The metadata format uses an index instead of just a list of frames, ¯\_(ツ)_/¯
 std::vector<std::string> GenerateIndexLookup(const std::string& sprite_base_name,
                                              const int size,
@@ -30,6 +32,17 @@ std::vector<std::string> GenerateIndexLookup(const std::string& sprite_base_name
   }
   return index;
 }
+
+std::vector<std::string> GetAnimationEventsFromVec(const std::vector<std::string>& events_to_emit) {
+  std::vector<std::string> events;
+  events.reserve(events_to_emit.size());
+  for (const auto& event_name : events_to_emit) {
+    events.push_back(event_name);
+  }
+  return events;
+}
+
+}  // namespace
 
 std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     const std::filesystem::path& sprite_sheet_path,
@@ -135,7 +148,8 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
                                                    animated_sprite.frame_timing_lookup_[i - 1]);
   }
   animated_sprite.signals_to_emit_.resize(animated_sprite.frames_.size());
-  animated_sprite.signals_emitted_.resize(animated_sprite.frames_.size());
+  animated_sprite.signals_to_emit_on_expiration_.emplace_back("AnimationEnded");
+
   return animated_sprite;
 } catch (const json::parse_error& e) {
   LOG_ERROR("Failed parsing json metadata for sprite sheet '" << sprite_sheet_path
@@ -150,26 +164,6 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
                                             << "'. Unknown error: " << e.what());
   return std::nullopt;
 }
-
-// void AnimatedSprite::StartAnimation() {
-//   start_time_ = GameClock::NowGlobal();
-//   for (int i = 0; i < callback_triggered_.size(); ++i) {
-//     callback_triggered_[i] = false;
-//   }
-//   expire_callback_triggered_ = false;
-// }
-
-// void AnimatedSprite::StartAnimation(const TimePoint& start_time) {
-//   start_time_ = start_time;
-//   for (int i = 0; i < callback_triggered_.size(); ++i) {
-//     callback_triggered_[i] = false;
-//   }
-//   expire_callback_triggered_ = false;
-// }
-
-// Only use GetCurrentFrameIdx to check if it is expired, rather than making another call to the
-// clock. This ensures timing consistency.
-// bool AnimatedSprite::Expired() const { return GetCurrentFrameIdx() == -1; }
 
 const olc::Sprite* AnimatedSprite::GetFrame(const TimePoint start_time) const {
   const auto current_frame_idx = GetCurrentFrameIdx(start_time);
@@ -210,51 +204,26 @@ int AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
   return static_cast<int>(std::distance(frame_timing_lookup_.begin(), itr));
 }
 
-void AnimatedSprite::TriggerCallbacks() {
-  // const int frame_idx = GetCurrentFrameIdx();
-  // if (frame_idx == -1) {
-  //   if (expire_callback_triggered_) {
-  //     return;
-  //   }
-  //   for (const auto& callback : expire_callbacks_) {
-  //     callback();
-  //   }
-  //   expire_callback_triggered_ = true;
-  //   return;
-  // }
-
-  // expire_callback_triggered_ = false;
-
-  // RB_CHECK(frame_idx >= 0 && frame_idx < frames_.size());
-
-  // // Clear all callback triggered other than this frame.
-  // for (int i = 0; i < callback_triggered_.size(); ++i) {
-  //   if (i != frame_idx) {
-  //     callback_triggered_[i] = false;
-  //   }
-  // }
-  // if (callback_triggered_[frame_idx]) {
-  //   return;
-  // }
-  // for (const auto& callback : callbacks_[frame_idx]) {
-  //   callback();
-  // }
-  // callback_triggered_[frame_idx] = true;
-
-  // // Print callback_triggered_
-  // // for (int i = 0; i < callback_triggered_.size(); ++i) {
-  // //   std::cout << callback_triggered_[i] << " ";
-  // // }
-  // // std::cout << std::endl;
+std::vector<std::string> AnimatedSprite::GetAnimationEvents(const TimePoint start_time,
+                                                            int& last_animation_frame) const {
+  const int frame_idx = GetCurrentFrameIdx(start_time);
+  if (frame_idx == last_animation_frame) {
+    return {};
+  }
+  last_animation_frame = frame_idx;
+  if (frame_idx == -1) {
+    return GetAnimationEventsFromVec(signals_to_emit_on_expiration_);
+  }
+  return GetAnimationEventsFromVec(signals_to_emit_.at(frame_idx));
 }
 
-void AnimatedSprite::AddEventSignal(const int frame_idx, const std::string& event_name){
-
+void AnimatedSprite::AddEventSignal(const int frame_idx, const std::string& event_name) {
+  RB_CHECK(frame_idx >= 0 && frame_idx < signals_to_emit_.size());
+  signals_to_emit_[frame_idx].push_back(event_name);
 }
 
-// void AnimatedSprite::AddCallback(int frame_idx, std::function<void()> callback) {
-//   RB_CHECK(frame_idx >= 0 && frame_idx < callbacks_.size());
-//   callbacks_[frame_idx].push_back(std::move(callback));
-// }
+void AnimatedSprite::AddExpiredEventSignal(const std::string& event_name) {
+  signals_to_emit_on_expiration_.push_back(event_name);
+}
 
 }  // namespace platformer

@@ -19,7 +19,6 @@
 namespace platformer {
 
 constexpr double kAcceleration = 50.0;
-constexpr double kJumpVel = 21.0;
 
 InputProcessor::InputProcessor(std::shared_ptr<ParameterServer> parameter_server,
                                std::shared_ptr<const SoundPlayer> sound_player,
@@ -32,9 +31,6 @@ InputProcessor::InputProcessor(std::shared_ptr<ParameterServer> parameter_server
       engine_ptr_{engine_ptr} {
   parameter_server_->AddParameter("physics/player.acceleration", kAcceleration,
                                   "Horizontal acceleration of the player, unit: tile/s²");
-  parameter_server_->AddParameter(
-      "physics/jump.velocity", kJumpVel,
-      "The instantaneous vertical velocity when you jump, unit: tile/s");
 }
 
 bool InputProcessor::ProcessInputs(EntityId player_id) {
@@ -50,7 +46,6 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
 
   const auto walking_acceleration =
       parameter_server_->GetParameter<double>("physics/player.acceleration");
-  const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
 
   if (input_.GetKey(InputAction::Left).held || input_.GetKey(InputAction::Right).held) {
     state.requested_states.insert(State::Walk);

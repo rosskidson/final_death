@@ -96,13 +96,16 @@ class StateAccess {
       return;
     }
     state_set_at_ = GameClock::NowGlobal();
-    last_animation_frame_idx = -1;
+    last_animation_frame_idx_ = -1;
     state_ = state;
   }
 
-  TimePoint GetStateSetAt() const { return state_set_at_; }
+  [[nodiscard]] TimePoint GetStateSetAt() const { return state_set_at_; }
 
-  int GetLastAnimationFrame() const { return last_animation_frame_idx; }
+  [[nodiscard]] int GetLastAnimationFrameIdx() const { return last_animation_frame_idx_; }
+  void SetLastAnimationFrameIdx(int last_animation_frame_idx) {
+    last_animation_frame_idx_ = last_animation_frame_idx;
+  }
 
  private:
   State state_{State::Idle};
@@ -111,7 +114,7 @@ class StateAccess {
   // I know this is not excellent that this is in here, but it needs to be reset on state changes
   // This could be fixed by creating an animation state component that contains it's
   // own state, but then it needs to be explicitly updated once per game loop.
-  int last_animation_frame_idx{-1};
+  int last_animation_frame_idx_{-1};
 };
 
 }  // namespace platformer

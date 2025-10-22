@@ -45,7 +45,7 @@ struct FacingDirection {
 };
 
 struct StateComponent {
-  Actor actor_type;
+  Actor actor_type;  // Consider adding Components for each actor type instead.
   StateAccess state;
 };
 
