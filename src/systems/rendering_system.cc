@@ -1,4 +1,4 @@
-#include "systems/rendering_system.h"
+#include "rendering_system.h"
 
 #include <algorithm>
 #include <memory>

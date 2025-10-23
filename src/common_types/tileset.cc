@@ -1,4 +1,4 @@
-#include "common_types/tileset.h"
+#include "tileset.h"
 
 #include "utils/check.h"
 

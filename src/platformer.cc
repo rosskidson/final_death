@@ -4,22 +4,22 @@
 #include <filesystem>
 #include <memory>
 
-#include "common_types/actor_state.h"
 #include "animation/animated_sprite.h"
 #include "animation/animation_manager.h"
+#include "common_types/actor_state.h"
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
-#include "config.h"
 #include "common_types/game_configuration.h"
+#include "config.h"
 #include "global_defs.h"
 #include "input/input_processor.h"
 #include "load_game_configuration.h"
 #include "registry.h"
 #include "registry_helpers.h"
-#include "systems/rendering_system.h"
-#include "sound/sound_processor.h"
 #include "sound/sound_player.h"
+#include "sound/sound_processor.h"
 #include "systems/player_logic_system.h"
+#include "systems/rendering_system.h"
 #include "utils/check.h"
 #include "utils/developer_console.h"
 #include "utils/logging.h"
@@ -81,9 +81,8 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
   parameter_server->AddParameter("physics/hard.fall.distance", kHardFallDistance,
                                  "Distance to trigger a hard fall (crouch + delay for recovery)");
 
-  parameter_server->AddParameter(
-      "physics/jump.velocity", kJumpVel,
-      "The instantaneous vertical velocity when you jump, unit: tile/s");
+  parameter_server->AddParameter("physics/jump.velocity", kJumpVel,
+                                 "The instantaneous vertical velocity when you jump, unit: tile/s");
 
   return parameter_server;
 }
@@ -238,8 +237,7 @@ bool Platformer::OnUserCreate() {
 
   physics_system_ =
       std::make_unique<PhysicsSystem>(GetCurrentLevel(), parameter_server_, registry_);
-  input_processor_ =
-      std::make_unique<InputProcessor>(parameter_server_, registry_, this);
+  input_processor_ = std::make_unique<InputProcessor>(parameter_server_, registry_, this);
 
   LOG_SIMPLE("Initialization successful.");
   rate_.Reset();
@@ -262,7 +260,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
       registry_->GetComponent<Velocity>(player_id_).y = jump_velocity;
       registry_->GetComponent<StateComponent>(player_id_).state.SetState(State::InAir);
     }
-    LOG_INFO(event.entity_id << ": " << event.event_name);
+    // LOG_INFO(event.entity_id << ": " << event.event_name);
   }
 
   // profiler_.Reset();

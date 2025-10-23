@@ -1,11 +1,11 @@
-#include "utils/developer_console.h"
+#include "developer_console.h"
 
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "utils/parameter_server.h"
+#include "parameter_server.h"
 
 namespace platformer {
 

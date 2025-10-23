@@ -16,7 +16,7 @@ endif(MSVC)
 set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 INCLUDE_DIRECTORIES(olcPixelGameEngine)
-INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(src)
 
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}")
 configure_file(config.h.in config.h)

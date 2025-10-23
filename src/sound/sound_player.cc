@@ -1,9 +1,8 @@
-#include "sound/sound_player.h"
+#include "sound_player.h"
 
 #define MINIAUDIO_IMPLEMENTATION
 #include <filesystem>
 #include <mutex>
-#include <stdexcept>
 
 #include "miniaudio.h"
 #include "utils/logging.h"

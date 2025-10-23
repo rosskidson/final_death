@@ -1,5 +1,4 @@
-
-#include "animation/animated_sprite.h"
+#include "animated_sprite.h"
 
 #include <utils/check.h>
 #include <utils/game_clock.h>

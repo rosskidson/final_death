@@ -1,6 +1,4 @@
-
-
-#include "input/input_processor.h"
+#include "input_processor.h"
 
 #include <memory>
 

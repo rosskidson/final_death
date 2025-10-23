@@ -1,7 +1,7 @@
-#include "sound/sound_processor.h"
+#include "sound_processor.h"
 
 namespace platformer {
-  
+
 void SoundProcessor::ProcessAnimationEvents(const std::vector<AnimationEvent>& events) const {
   for (const auto& event : events) {
     if (event.event_name == "ShootShotgun") {
@@ -12,5 +12,4 @@ void SoundProcessor::ProcessAnimationEvents(const std::vector<AnimationEvent>& e
   }
 }
 
-
-}
+}  // namespace platformer
