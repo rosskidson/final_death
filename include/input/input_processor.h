@@ -7,7 +7,6 @@
 #include "olcPixelGameEngine.h"
 #include "registry.h"
 #include "registry_helpers.h"
-#include "sound_player.h"
 #include "utils/parameter_server.h"
 
 namespace platformer {
@@ -15,7 +14,6 @@ namespace platformer {
 class InputProcessor {
  public:
   InputProcessor(std::shared_ptr<ParameterServer> parameter_server,
-                 std::shared_ptr<const SoundPlayer> sound_player,
                  std::shared_ptr<Registry> registry,
                  olc::PixelGameEngine* engine_ptr);
 
@@ -25,7 +23,6 @@ class InputProcessor {
   olc::PixelGameEngine* engine_ptr_;
   InputCapture input_;
   std::shared_ptr<ParameterServer> parameter_server_;
-  std::shared_ptr<const SoundPlayer> sound_player_;
   std::shared_ptr<Registry> registry_;
 };
 

@@ -17,7 +17,8 @@
 #include "registry.h"
 #include "registry_helpers.h"
 #include "systems/rendering_system.h"
-#include "sound_player.h"
+#include "sound/sound_processor.h"
+#include "sound/sound_player.h"
 #include "systems/player_logic_system.h"
 #include "utils/check.h"
 #include "utils/developer_console.h"
@@ -232,12 +233,13 @@ bool Platformer::OnUserCreate() {
   LOG_SIMPLE("Loading sounds/music...");
   sound_player_ = CreateSoundPlayer();
   RETURN_FALSE_IF_FAILED(sound_player_);
+  sound_processor_ = std::make_shared<SoundProcessor>(sound_player_);
   // sound_player_->PlaySample("music", true, 0.2);
 
   physics_system_ =
       std::make_unique<PhysicsSystem>(GetCurrentLevel(), parameter_server_, registry_);
   input_processor_ =
-      std::make_unique<InputProcessor>(parameter_server_, sound_player_, registry_, this);
+      std::make_unique<InputProcessor>(parameter_server_, registry_, this);
 
   LOG_SIMPLE("Initialization successful.");
   rate_.Reset();
@@ -252,13 +254,9 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
   const auto events = animation_manager_->GetAnimationEvents();
 
-  // Sound system (move elsewhere)
+  sound_processor_->ProcessAnimationEvents(events);
+
   for (const auto& event : events) {
-    if (event.event_name == "ShootShotgun") {
-      sound_player_->PlaySample("shotgun_fire", false);
-    } else if (event.event_name == "ReloadShotgun") {
-      sound_player_->PlaySample("shotgun_reload", false);
-    }
     if (event.event_name == "AnimationEnded" && event.animation_state == State::PreJump) {
       const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
       registry_->GetComponent<Velocity>(player_id_).y = jump_velocity;

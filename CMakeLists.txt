@@ -79,16 +79,17 @@ add_library(platformer_lib
   src/input/input_capture.cc
   src/input/input_processor.cc
 
+  src/sound/sound_player.cc
+  src/sound/sound_processor.cc
+
   src/systems/physics_system.cc
   src/systems/player_logic_system.cc
   src/systems/rendering_system.cc
-  src/systems/sound_system.cc
 
   src/utils/developer_console.cc
 
   src/load_game_configuration.cc
   src/platformer.cc
-  src/sound_player.cc
 )
 
 target_include_directories(platformer_lib

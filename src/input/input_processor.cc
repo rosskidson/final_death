@@ -9,7 +9,6 @@
 #include "common_types/components.h"
 #include "input/input_capture.h"
 #include "registry_helpers.h"
-#include "sound_player.h"
 #include "utils/check.h"
 #include "utils/developer_console.h"
 #include "utils/game_clock.h"
@@ -21,12 +20,10 @@ namespace platformer {
 constexpr double kAcceleration = 50.0;
 
 InputProcessor::InputProcessor(std::shared_ptr<ParameterServer> parameter_server,
-                               std::shared_ptr<const SoundPlayer> sound_player,
                                std::shared_ptr<Registry> registry,
                                olc::PixelGameEngine* engine_ptr)
     : input_{engine_ptr},
       parameter_server_{std::move(parameter_server)},
-      sound_player_{std::move(sound_player)},
       registry_{std::move(registry)},
       engine_ptr_{engine_ptr} {
   parameter_server_->AddParameter("physics/player.acceleration", kAcceleration,
