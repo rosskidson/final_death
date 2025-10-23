@@ -5,6 +5,7 @@
 
 #include "common_types/components.h"
 #include "registry_helpers.h"
+#include "utils/check.h"
 
 namespace platformer {
 
@@ -63,13 +64,18 @@ class Registry {
   }
 
   // As above, but just one component.
-  // Also as above, no safety on the type you pass in.
-  //
-  // TODO:: Add saftey
-  // TODO:: Add const version
   template <typename T>
   auto& GetComponent(EntityId id) {
-    return GetMap<T>()[id];
+    auto& map = GetMap<T>();
+    RB_CHECK(map.count(id));
+    return map[id];
+  }
+
+  template <typename T>
+  const auto& GetComponent(EntityId id) const {
+    auto& map = GetMap<T>();
+    RB_CHECK(map.count(id));
+    return map.at(id);
   }
 
   // Removes the id from all component maps.

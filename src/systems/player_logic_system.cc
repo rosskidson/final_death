@@ -1,13 +1,13 @@
 #include "player_logic_system.h"
 
+#include <algorithm>
 #include <chrono>
 
+#include "animation/animation_event.h"
 #include "common_types/actor_state.h"
 #include "common_types/components.h"
-#include "input/input_capture.h"
-#include "systems/physics_system.h"
 #include "registry.h"
-#include "registry_helpers.h"
+#include "systems/physics_system.h"
 #include "utils/chrono_helpers.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
@@ -74,9 +74,9 @@ bool Squish(const AxisCollisions& collisions) {
 }
 
 State GetShootState(const std::set<State>& requested_states,
-                    const StateAccess& state,
+                    const State& state,
                     const Collision& collisions) {
-  if (state.GetState() == State::PreSuicide) {
+  if (state == State::PreSuicide) {
     return State::Suicide;
   }
   if (!collisions.bottom) {
@@ -85,7 +85,7 @@ State GetShootState(const std::set<State>& requested_states,
     }
     return State::InAirShot;
   }
-  if (state.GetState() == State::AimUp || state.GetState() == State::UpShot) {
+  if (state == State::AimUp || state == State::UpShot) {
     return State::UpShot;
   }
   if (requested_states.count(State::Crouch) != 0) {
@@ -115,132 +115,143 @@ State GetShootState(const std::set<State>& requested_states,
 //   return false;
 // }
 
-void UpdateStateImpl(const ParameterServer& parameter_server,
-                     EntityId player_id,
-                     Registry& registry) {
+bool AnimationExpired(const State state, const std::vector<AnimationEvent>& animation_events) {
+  return std::any_of(
+      animation_events.begin(), animation_events.end(), [&](const AnimationEvent& event) {
+        return event.event_name == "AnimationEnded" && event.animation_state == state;
+      });
+}
+
+}  // namespace
+
+void UpdateState(const ParameterServer& parameter_server,
+                 const std::vector<AnimationEvent>& animation_events,
+                 const PhysicsSystem& physics_system,
+                 EntityId player_id,
+                 Registry& registry) {
+  auto& state_component = registry.GetComponent<StateComponent>(player_id);
+  const auto& state = state_component.state.GetState();
+  const auto& collisions = registry.GetComponent<Collision>(player_id);
+  const auto& requested_states = registry.GetComponent<PlayerComponent>(player_id).requested_states;
+  const bool animation_expired = AnimationExpired(state, animation_events);
+
   // There is one thing that can interrupt non interuptable actions: Hard falling.
   // if (SetHardLandingState(parameter_server, player_id, registry)) {
   //   return;
   // }
 
-  /*
   // Now check for non interruptable actions.
-  if (!player.animation_manager.GetActiveAnimation().Expired() &&
-      !IsInterruptibleState(player.state)) {
+  if (!animation_expired && !IsInterruptibleState(state)) {
     // If the player is shooting in the air and lands, transition the animation to the standing
     // pose.  Only do this after the first few frame to avoid double fire.
-    if ((player.state == State::InAirShot || player.state == State::InAirDownShot) &&
-        player.collisions.bottom &&
-        (ToMs(GameClock::NowGlobal() -
-              player.animation_manager.GetActiveAnimation().GetStartTime()) > 300)) {
-      player.animation_manager.SwapAnimation(State::Shoot);
-      player.state = State::Shoot;
+    if ((state == State::InAirShot || state == State::InAirDownShot) && collisions.bottom &&
+        (ToMs(GameClock::NowGlobal() - state_component.state.GetStateSetAt()) > 300)) {
+      // player.animation_manager.SwapAnimation(State::Shoot);
+      // TODO:: set setstarttime
+      state_component.state.SetState(State::Shoot);
+      return;
     }
 
     // Transition from Roll to PostRoll
     // TODO:: ints in parameter server
     const int roll_duration_ms =
         static_cast<int>(parameter_server.GetParameter<double>("timing/roll.duration.ms"));
-    if (player.state == State::Roll && GameClock::NowGlobal() - player.roll_start_time >
-                                                 std::chrono::milliseconds(roll_duration_ms)) {
-      // HACK: set the collisions back to full size dude to check for squishing.
-      // TODO:: less hacky, copy the player, or supply a custom bounding box.
-      player.x_offset_px = 30;
-      player.y_offset_px = 0;
-      player.collision_width_px = 18;
-      player.collision_height_px = 48;
-      AxisCollisions collisions_x = physics.CheckAxisCollision(player, Axis::X);
-      AxisCollisions collisions_y = physics.CheckAxisCollision(player, Axis::Y);
+    if (state == State::Roll && GameClock::NowGlobal() - state_component.state.GetStateSetAt() >
+                                    std::chrono::milliseconds(roll_duration_ms)) {
+      const auto& position = registry.GetComponent<Position>(player_id);
+      auto collision_box = registry.GetComponent<CollisionBox>(player_id);
+      collision_box.x_offset_px = 30;
+      collision_box.y_offset_px = 0;
+      collision_box.collision_width_px = 18;
+      collision_box.collision_height_px = 48;
+      AxisCollisions collisions_x =
+          physics_system.CheckAxisCollision(position, collision_box, Axis::X);
+      AxisCollisions collisions_y =
+          physics_system.CheckAxisCollision(position, collision_box, Axis::Y);
       if (!Squish(collisions_x) && !Squish(collisions_y)) {
-        player.state = State::PostRoll;
+        state_component.state.SetState(State::PostRoll);
       }
+      return;
     }
 
-    if (player.state == State::Roll && player.requested_states.count(State::BackShot)) {
-      player.facing = player.facing == Direction::LEFT ? Direction::RIGHT : Direction::LEFT;
-      player.state = State::BackDodgeShot;
+    if (state == State::Roll && requested_states.count(State::BackShot)) {
+      auto& facing = registry.GetComponent<FacingDirection>(player_id).facing;
+      facing = facing == Direction::LEFT ? Direction::RIGHT : Direction::LEFT;
+      state_component.state.SetState(State::BackDodgeShot);
       return;
     }
     return;
   }
-  if (player.requested_states.count(State::Shoot)) {
-    player.state = GetShootState(player);
+  if (requested_states.count(State::Shoot)) {
+    state_component.state.SetState(GetShootState(requested_states, state, collisions),
+                                   animation_expired);
     return;
   }
 
-  // Shoot backwards only when standing or walking.
-  if (player.requested_states.count(State::BackShot) &&
-      (player.state == State::Walk || player.state == State::Idle)) {
-    player.state = State::BackShot;
-    return;
+  /*
+    // Shoot backwards only when standing or walking.
+    if (player.requested_states.count(State::BackShot) &&
+        (player.state == State::Walk || player.state == State::Idle)) {
+      player.state = State::BackShot;
+      return;
+    }
+
+    // BackDodgeShot only from crouching state.
+    if ((player.state == State::Crouch || player.state == State::CrouchShot) &&
+        player.requested_states.count(State::Crouch) &&
+        player.requested_states.count(State::BackShot)) {
+      player.state = State::BackDodgeShot;
+      return;
+    }
+
+    // Transition from PreRoll to Roll
+    if (player.state == State::PreRoll &&
+        player.animation_manager.GetActiveAnimation().Expired()) {
+      player.roll_start_time = GameClock::NowGlobal();
+      player.state = State::Roll;
+      return;
+    }
+
+    // Remaining non-interruptable states
+    TRY_SET_STATE(player, State::PreRoll);
+
+    // Next is to latch some non interruptable states.
+    LATCH_STATE(player, State::PostRoll);
+    LATCH_STATE(player, State::PreSuicide);
+    */
+
+  // Jump: Move to update from state!
+  if (animation_expired && state == State::PreJump) {
+    const auto jump_velocity = parameter_server.GetParameter<double>("physics/jump.velocity");
+    registry.GetComponent<Velocity>(player_id).y = jump_velocity;
   }
-
-  // BackDodgeShot only from crouching state.
-  if ((player.state == State::Crouch || player.state == State::CrouchShot) &&
-      player.requested_states.count(State::Crouch) &&
-      player.requested_states.count(State::BackShot)) {
-    player.state = State::BackDodgeShot;
-    return;
-  }
-
-  // Transition from PreRoll to Roll
-  if (player.state == State::PreRoll &&
-      player.animation_manager.GetActiveAnimation().Expired()) {
-    player.roll_start_time = GameClock::NowGlobal();
-    player.state = State::Roll;
-    return;
-  }
-
-  // Remaining non-interruptable states
-  TRY_SET_STATE(player, State::PreRoll);
-
-  // Next is to latch some non interruptable states.
-  LATCH_STATE(player, State::PostRoll);
-  LATCH_STATE(player, State::PreSuicide);
 
   // InAir has priority over other states.
-  if (!player.collisions.bottom) {
-    if (player.requested_states.count(State::InAirDownShot)) {
-      player.state = State::InAirDownShot;
+  if (!collisions.bottom) {
+    if (requested_states.count(State::InAirDownShot)) {
+      state_component.state.SetState(State::InAirDownShot);
     } else {
-      player.state = State::InAir;
+      state_component.state.SetState(State::InAir);
     }
     return;
   }
 
   // Lower priority interruptable states.
-  TRY_SET_STATE(player, State::PreJump);
-  TRY_SET_STATE(player, State::Crouch);
-  TRY_SET_STATE(player, State::AimUp);
-  TRY_SET_STATE(player, State::PreSuicide);
-  TRY_SET_STATE(player, State::Walk);
+  TRY_SET_STATE(requested_states, state_component, State::PreJump);
+  TRY_SET_STATE(requested_states, state_component, State::Crouch);
+  TRY_SET_STATE(requested_states, state_component, State::AimUp);
+  TRY_SET_STATE(requested_states, state_component, State::PreSuicide);
+  TRY_SET_STATE(requested_states, state_component, State::Walk);
 
   // Soft landing may be interrupted by anything : lowest priority.
-  if (player.collisions.bottom && player.collisions.bottom_changed) {
-    player.state = State::SoftLanding;
-    return;
-  }
-  LATCH_STATE(player, State::SoftLanding);
-  */
-  auto [player, state] = registry.GetComponents<PlayerComponent, StateComponent>(player_id);
+  // if (player.collisions.bottom && player.collisions.bottom_changed) {
+  //   player.state = State::SoftLanding;
+  //   return;
+  // }
+  // LATCH_STATE(player, State::SoftLanding);
 
-  for (int i = 0; i < static_cast<int>(State::Dead) + 1; ++i) {
-    const auto set_state = static_cast<State>(i);
-    if (IsInterruptibleState(set_state)) {
-      continue;
-    }
-    TRY_SET_STATE(player.requested_states, state, set_state);
-  }
-  for (int i = 0; i < static_cast<int>(State::Dead) + 1; ++i) {
-    const auto set_state = static_cast<State>(i);
-    if (!IsInterruptibleState(set_state)) {
-      continue;
-    }
-    TRY_SET_STATE(player.requested_states, state, set_state);
-  }
+  state_component.state.SetState(State::Idle);
 }
-
-}  // namespace
 
 void UpdateMaxVelocity(const ParameterServer& parameter_server, Registry& registry) {
   const double walk_x = parameter_server.GetParameter<double>("physics/max.x.vel");
@@ -322,10 +333,11 @@ void UpdateComponentsFromState(const ParameterServer& parameter_server, Registry
 //   }
 // }
 
-void UpdateState(const ParameterServer& parameter_server, EntityId player_id, Registry& registry) {
-  UpdateStateImpl(parameter_server, player_id, registry);
-  auto [state] = registry.GetComponents<PlayerComponent>(player_id);
-  state.requested_states.clear();
-}
+// void UpdateState(const ParameterServer& parameter_server, EntityId player_id, Registry& registry)
+// {
+//   UpdateStateImpl(parameter_server, player_id, registry);
+//   auto [state] = registry.GetComponents<PlayerComponent>(player_id);
+//   state.requested_states.clear();
+// }
 
 }  // namespace platformer

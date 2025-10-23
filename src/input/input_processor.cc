@@ -6,7 +6,6 @@
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
 #include "input/input_capture.h"
-#include "registry_helpers.h"
 #include "utils/check.h"
 #include "utils/developer_console.h"
 #include "utils/game_clock.h"
@@ -36,6 +35,7 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
   RB_CHECK(registry_->HasComponent<Acceleration>(player_id));
   RB_CHECK(registry_->HasComponent<PlayerComponent>(player_id));
   auto [acceleration, state] = registry_->GetComponents<Acceleration, PlayerComponent>(player_id);
+  state.requested_states.clear();
 
   input_.Capture();
 

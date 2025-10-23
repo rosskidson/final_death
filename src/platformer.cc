@@ -254,14 +254,15 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
   sound_processor_->ProcessAnimationEvents(events);
 
-  for (const auto& event : events) {
-    if (event.event_name == "AnimationEnded" && event.animation_state == State::PreJump) {
-      const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
-      registry_->GetComponent<Velocity>(player_id_).y = jump_velocity;
-      registry_->GetComponent<StateComponent>(player_id_).state.SetState(State::InAir);
-    }
-    // LOG_INFO(event.entity_id << ": " << event.event_name);
-  }
+  // for (const auto& event : events) {
+  //   if (event.event_name == "AnimationEnded" && event.animation_state == State::PreJump) {
+  //     const auto jump_velocity =
+  //     parameter_server_->GetParameter<double>("physics/jump.velocity");
+  //     registry_->GetComponent<Velocity>(player_id_).y = jump_velocity;
+  //     registry_->GetComponent<StateComponent>(player_id_).state.SetState(State::InAir);
+  //   }
+  //   // LOG_INFO(event.entity_id << ": " << event.event_name);
+  // }
 
   // profiler_.Reset();
   // Control
@@ -269,7 +270,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   // profiler_.LogEvent("00_control");
 
   // Model
-  UpdateState(*parameter_server_, player_id_, *registry_);
+  UpdateState(*parameter_server_, events, *physics_system_, player_id_, *registry_);
   UpdateComponentsFromState(*parameter_server_, *registry_);
 
   physics_system_->ApplyGravity();

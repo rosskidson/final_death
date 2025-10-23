@@ -91,8 +91,8 @@ class StateAccess {
   StateAccess() = default;
   StateAccess(State state) : state_{state} {}
   [[nodiscard]] State GetState() const { return state_; }
-  void SetState(State state) {
-    if (state_ == state) {
+  void SetState(State state, bool reset = false) {
+    if (state_ == state && !reset) {
       return;
     }
     state_set_at_ = GameClock::NowGlobal();
