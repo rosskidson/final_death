@@ -2,9 +2,8 @@
 
 #include <set>
 
-// #include "animation_manager.h"
-#include "basic_types.h"
-#include "actor_state.h"
+#include "common_types/actor_state.h"
+#include "common_types/basic_types.h"
 
 namespace platformer {
 

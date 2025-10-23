@@ -3,8 +3,7 @@
 #include <tuple>
 #include <unordered_map>
 
-#include "actor_state.h"
-#include "components.h"
+#include "common_types/components.h"
 #include "registry_helpers.h"
 
 namespace platformer {

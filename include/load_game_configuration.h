@@ -2,7 +2,7 @@
 
 #include <optional>
 
-#include "game_configuration.h"
+#include "common_types/game_configuration.h"
 
 namespace platformer {
 

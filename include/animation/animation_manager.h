@@ -3,18 +3,13 @@
 #include <map>
 #include <memory>
 
-#include "animated_sprite.h"
-#include "actor_state.h"
+#include "animation/animation_event.h"
+#include "animation/animated_sprite.h"
+#include "common_types/actor_state.h"
 #include "registry.h"
 #include "registry_helpers.h"
 
 namespace platformer {
-
-struct AnimationEvent {
-  EntityId entity_id;
-  State animation_state;
-  std::string event_name;
-};
 
 struct SpriteKey {
   SpriteKey() = default;

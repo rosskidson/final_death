@@ -22,15 +22,14 @@ class SoundPlayer {
   private:
   struct MaSoundDeleter {
     void operator()(ma_sound* s) const noexcept {
-        if (s) {
-            ma_sound_uninit(s);
-            delete s;
-        }
+      if (s) {
+        ma_sound_uninit(s);
+        delete s;
+      }
     }
-};
+  };
 
   using SoundUniquePtr = std::unique_ptr<ma_sound, MaSoundDeleter>;
-
   
   ma_engine engine_;
   mutable std::unordered_map<std::string, SoundUniquePtr> samples_;

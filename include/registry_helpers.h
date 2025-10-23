@@ -1,13 +1,13 @@
 #pragma once
 
+#include "common_types/entity.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <unordered_map>
 #include <vector>
 
 namespace platformer {
-
-using EntityId = uint64_t;
 
 namespace internal {
 

@@ -2,12 +2,12 @@
 
 #include <memory>
 
-#include "basic_types.h"
-#include "input_capture.h"
+#include "common_types/basic_types.h"
+#include "input/input_capture.h"
 #include "olcPixelGameEngine.h"
 #include "registry.h"
 #include "registry_helpers.h"
-#include "sound.h"
+#include "sound_player.h"
 #include "utils/parameter_server.h"
 
 namespace platformer {

@@ -1,15 +1,15 @@
-#include "rendering_engine.h"
+#include "systems/rendering_system.h"
 
 #include <algorithm>
 #include <memory>
 
-#include "animated_sprite.h"
-#include "basic_types.h"
-#include "components.h"
+#include "animation/animated_sprite.h"
+#include "common_types/basic_types.h"
+#include "common_types/components.h"
+#include "common_types/game_configuration.h"
+#include "common_types/tileset.h"
 #include "config.h"
-#include "game_configuration.h"
 #include "global_defs.h"
-#include "tileset.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
 
@@ -29,7 +29,7 @@ bool GetFlip(EntityId id, Registry& registry) {  // TODO:: const registry
 }
 }  // namespace
 
-RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
+RenderingSystem::RenderingSystem(olc::PixelGameEngine* engine_ptr,
                                  Level level,
                                  std::shared_ptr<ParameterServer> parameter_server,
                                  std::shared_ptr<AnimationManager> animation_manager,
@@ -67,25 +67,25 @@ RenderingEngine::RenderingEngine(olc::PixelGameEngine* engine_ptr,
   cam_position_px_y_ = 0;
 }
 
-void RenderingEngine::SetCameraPosition(const Vector2d& absolute_vec) {
+void RenderingSystem::SetCameraPosition(const Vector2d& absolute_vec) {
   cam_position_px_x_ = static_cast<int>(absolute_vec.x * tile_size_);
   cam_position_px_y_ = static_cast<int>(absolute_vec.y * tile_size_);
   KeepCameraInBounds();
 }
 
-void RenderingEngine::MoveCamera(const Vector2d& relative_vec) {
+void RenderingSystem::MoveCamera(const Vector2d& relative_vec) {
   cam_position_px_x_ += static_cast<int>(relative_vec.x * tile_size_);
   cam_position_px_y_ += static_cast<int>(relative_vec.y * tile_size_);
   KeepCameraInBounds();
 }
 
-Vector2d RenderingEngine::GetCameraPosition() const {
+Vector2d RenderingSystem::GetCameraPosition() const {
   return Vector2d{static_cast<double>(cam_position_px_x_) / tile_size_,
                   static_cast<double>(cam_position_px_y_) / tile_size_};
 }
 
 // TODO split ratio to x and y
-void RenderingEngine::KeepPlayerInFrame(const EntityId player_id) {
+void RenderingSystem::KeepPlayerInFrame(const EntityId player_id) {
   auto [position, collision_box] = registry_->GetComponents<Position, CollisionBox>(player_id);
   const auto screen_ratio_x =
       parameter_server_->GetParameter<double>("rendering/follow.player.screen.ratio.x");
@@ -113,7 +113,7 @@ void RenderingEngine::KeepPlayerInFrame(const EntityId player_id) {
   KeepCameraInBounds();
 }
 
-bool RenderingEngine::AddBackgroundLayer(const std::filesystem::path& background_png,
+bool RenderingSystem::AddBackgroundLayer(const std::filesystem::path& background_png,
                                          double scroll_slowdown_factor) {
   BackgroundLayer layer;
   layer.scroll_slowdown_factor = scroll_slowdown_factor;
@@ -126,7 +126,7 @@ bool RenderingEngine::AddBackgroundLayer(const std::filesystem::path& background
   return true;
 }
 
-bool RenderingEngine::AddForegroundLayer(const std::filesystem::path& background_png,
+bool RenderingSystem::AddForegroundLayer(const std::filesystem::path& background_png,
                                          double scroll_slowdown_factor) {
   BackgroundLayer layer;
   layer.scroll_slowdown_factor = scroll_slowdown_factor;
@@ -139,11 +139,11 @@ bool RenderingEngine::AddForegroundLayer(const std::filesystem::path& background
   return true;
 }
 
-void RenderingEngine::AddFoundationBackgroundLayer(uint8_t r, uint8_t g, uint8_t b) {
+void RenderingSystem::AddFoundationBackgroundLayer(uint8_t r, uint8_t g, uint8_t b) {
   foundation_background_color_ = olc::Pixel{r, g, b, 255};
 }
 
-void RenderingEngine::RenderBackground() {
+void RenderingSystem::RenderBackground() {
   if (foundation_background_color_.has_value()) {
     for (int y = 0; y < kScreenHeightPx; ++y) {
       for (int x = 0; x < kScreenWidthPx; ++x) {
@@ -157,13 +157,13 @@ void RenderingEngine::RenderBackground() {
   }
 }
 
-void RenderingEngine::RenderForeground() {
+void RenderingSystem::RenderForeground() {
   for (const auto& background_layer : foreground_layers_) {
     RenderBackgroundLayer(background_layer);
   }
 }
 
-void RenderingEngine::RenderBackgroundLayer(const BackgroundLayer& background_layer) {
+void RenderingSystem::RenderBackgroundLayer(const BackgroundLayer& background_layer) {
   const double scroll_factor = background_layer.scroll_slowdown_factor;
   const auto& background = background_layer.background_img;
 
@@ -205,7 +205,7 @@ void RenderingEngine::RenderBackgroundLayer(const BackgroundLayer& background_la
   // LOG_INFO("number of draws " << num_of_background_draws);
 }
 
-void RenderingEngine::RenderTiles() {
+void RenderingSystem::RenderTiles() {
   KeepCameraInBounds();
 
   const auto position = GetCameraPosition();
@@ -245,7 +245,7 @@ void RenderingEngine::RenderTiles() {
   }
 }
 
-void RenderingEngine::RenderEntities() {
+void RenderingSystem::RenderEntities() {
   for (auto id : registry_->GetView<Position>()) {
     auto [position] = registry_->GetComponents<Position>(id);
     const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
@@ -268,7 +268,7 @@ void RenderingEngine::RenderEntities() {
     }
   }
 }
-void RenderingEngine::RenderEntityCollisionBox(int entity_top_left_px_x,
+void RenderingSystem::RenderEntityCollisionBox(int entity_top_left_px_x,
                                                int entity_top_left_px_y,
                                                int sprite_height_px,
                                                EntityId entity_id) {
@@ -298,7 +298,7 @@ void RenderingEngine::RenderEntityCollisionBox(int entity_top_left_px_x,
                         bb_bottom_left_y - bb_height, color);
 }
 
-void RenderingEngine::KeepCameraInBounds() {
+void RenderingSystem::KeepCameraInBounds() {
   cam_position_px_x_ = std::max(cam_position_px_x_, 0);
   cam_position_px_x_ = std::min(cam_position_px_x_, max_cam_postion_px_x_);
   cam_position_px_y_ = std::max(cam_position_px_y_, 0);

@@ -4,10 +4,10 @@
 #include <optional>
 
 #include "config.h"
-#include "game_configuration.h"
-#include "grid.h"
+#include "common_types/game_configuration.h"
+#include "common_types/grid.h"
+#include "common_types/tileset.h"
 #include "nlohmann/json.hpp"
-#include "tileset.h"
 #include "utils/logging.h"
 
 using json = nlohmann::json;

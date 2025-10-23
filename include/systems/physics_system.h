@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include "basic_types.h"
-#include "components.h"
-#include "game_configuration.h"
+#include "common_types/basic_types.h"
+#include "common_types/components.h"
+#include "common_types/game_configuration.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/parameter_server.h"
@@ -19,16 +19,16 @@ struct AxisCollisions {
   bool upper_collision{false};
 };
 
-class PhysicsEngine {
+class PhysicsSystem {
  public:
-  PhysicsEngine(const Level& level,
+  PhysicsSystem(const Level& level,
                 std::shared_ptr<ParameterServer> parameter_server,
                 std::shared_ptr<Registry> registry);
 
-  void PhysicsSystem(double delta_t);
-  void GravitySystem();
-  void FrictionSystem(double delta_t);
-  void SetFacingDirectionSystem();
+  void PhysicsStep(double delta_t);
+  void ApplyGravity();
+  void ApplyFriction(double delta_t);
+  void SetFacingDirection();
   void SetDistanceFallen(double delta_t);
 
   [[nodiscard]] AxisCollisions CheckAxisCollision(const Position& position,

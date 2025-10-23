@@ -1,4 +1,4 @@
-#include "input_capture.h"
+#include "input/input_capture.h"
 
 namespace platformer {
 

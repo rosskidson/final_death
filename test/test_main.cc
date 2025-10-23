@@ -3,7 +3,7 @@
 
 #include <unordered_map>
 
-#include "components.h"
+#include "common_types/components.h"
 #include "registry.h"
 
 int add(int a, int b) { return a + b; }

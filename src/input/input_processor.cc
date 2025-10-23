@@ -1,15 +1,15 @@
 
 
-#include "input_processor.h"
+#include "input/input_processor.h"
 
 #include <memory>
 
-#include "basic_types.h"
-#include "components.h"
-#include "input_capture.h"
-#include "actor_state.h"
+#include "common_types/actor_state.h"
+#include "common_types/basic_types.h"
+#include "common_types/components.h"
+#include "input/input_capture.h"
 #include "registry_helpers.h"
-#include "sound.h"
+#include "sound_player.h"
 #include "utils/check.h"
 #include "utils/developer_console.h"
 #include "utils/game_clock.h"

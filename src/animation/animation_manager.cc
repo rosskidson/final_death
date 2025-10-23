@@ -1,7 +1,7 @@
-#include "animation_manager.h"
+#include "animation/animation_manager.h"
 
-#include "actor_state.h"
-#include "animated_sprite.h"
+#include "common_types/actor_state.h"
+#include "animation/animated_sprite.h"
 #include "registry_helpers.h"
 #include "utils/check.h"
 #include "utils/logging.h"

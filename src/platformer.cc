@@ -4,21 +4,21 @@
 #include <filesystem>
 #include <memory>
 
-#include "actor_state.h"
-#include "animated_sprite.h"
-#include "animation_manager.h"
-#include "basic_types.h"
-#include "components.h"
+#include "common_types/actor_state.h"
+#include "animation/animated_sprite.h"
+#include "animation/animation_manager.h"
+#include "common_types/basic_types.h"
+#include "common_types/components.h"
 #include "config.h"
-#include "game_configuration.h"
+#include "common_types/game_configuration.h"
 #include "global_defs.h"
-#include "input_processor.h"
+#include "input/input_processor.h"
 #include "load_game_configuration.h"
 #include "registry.h"
 #include "registry_helpers.h"
-#include "rendering_engine.h"
-#include "sound.h"
-#include "update_player_state.h"
+#include "systems/rendering_system.h"
+#include "sound_player.h"
+#include "systems/player_logic_system.h"
 #include "utils/check.h"
 #include "utils/developer_console.h"
 #include "utils/logging.h"
@@ -223,19 +223,19 @@ bool Platformer::OnUserCreate() {
   SetAnimationCallbacks(*animation_manager_);
 
   LOG_SIMPLE("Loading backgrounds...");
-  rendering_engine_ = std::make_unique<RenderingEngine>(this, GetCurrentLevel(), parameter_server_,
+  rendering_system_ = std::make_unique<RenderingSystem>(this, GetCurrentLevel(), parameter_server_,
                                                         animation_manager_, registry_);
   const auto background_path = std::filesystem::path(SOURCE_DIR) / "assets" / "backgrounds";
   RETURN_FALSE_IF_FAILED(
-      rendering_engine_->AddBackgroundLayer(background_path / "background.png", 4));
+      rendering_system_->AddBackgroundLayer(background_path / "background.png", 4));
 
   LOG_SIMPLE("Loading sounds/music...");
   sound_player_ = CreateSoundPlayer();
   RETURN_FALSE_IF_FAILED(sound_player_);
   // sound_player_->PlaySample("music", true, 0.2);
 
-  physics_engine_ =
-      std::make_unique<PhysicsEngine>(GetCurrentLevel(), parameter_server_, registry_);
+  physics_system_ =
+      std::make_unique<PhysicsSystem>(GetCurrentLevel(), parameter_server_, registry_);
   input_processor_ =
       std::make_unique<InputProcessor>(parameter_server_, sound_player_, registry_, this);
 
@@ -276,20 +276,20 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   UpdateState(*parameter_server_, player_id_, *registry_);
   UpdateComponentsFromState(*parameter_server_, *registry_);
 
-  physics_engine_->GravitySystem();
-  physics_engine_->FrictionSystem(delta_t);
-  physics_engine_->PhysicsSystem(delta_t);
-  physics_engine_->SetFacingDirectionSystem();
-  physics_engine_->SetDistanceFallen(delta_t);
+  physics_system_->ApplyGravity();
+  physics_system_->ApplyFriction(delta_t);
+  physics_system_->PhysicsStep(delta_t);
+  physics_system_->SetFacingDirection();
+  physics_system_->SetDistanceFallen(delta_t);
 
   // profiler_.LogEvent("01_update_player_state");
 
   // View
-  rendering_engine_->KeepPlayerInFrame(player_id_);
-  rendering_engine_->RenderBackground();
-  rendering_engine_->RenderTiles();
-  rendering_engine_->RenderEntities();
-  rendering_engine_->RenderForeground();
+  rendering_system_->KeepPlayerInFrame(player_id_);
+  rendering_system_->RenderBackground();
+  rendering_system_->RenderTiles();
+  rendering_system_->RenderEntities();
+  rendering_system_->RenderForeground();
   // profiler_.LogEvent("02_render");
 
   // profiler_.PrintTimings();

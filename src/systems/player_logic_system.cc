@@ -1,11 +1,11 @@
-#include "update_player_state.h"
+#include "systems/player_logic_system.h"
 
 #include <chrono>
 
-#include "actor_state.h"
-#include "components.h"
-#include "input_capture.h"
-#include "physics_engine.h"
+#include "common_types/actor_state.h"
+#include "common_types/components.h"
+#include "input/input_capture.h"
+#include "systems/physics_system.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/chrono_helpers.h"

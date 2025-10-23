@@ -1,10 +1,10 @@
-#include "physics_engine.h"
+#include "systems/physics_system.h"
 
 #include <algorithm>
 
-#include "actor_state.h"
-#include "basic_types.h"
-#include "components.h"
+#include "common_types/actor_state.h"
+#include "common_types/basic_types.h"
+#include "common_types/components.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/game_clock.h"
@@ -51,7 +51,7 @@ bool IsCollision(const Grid<int>& collision_grid, double x, double y) {
   return collision_grid.GetTile(int_x, int_y) == 1;
 }
 
-AxisCollisions PhysicsEngine::CheckAxisCollision(const Position& position,
+AxisCollisions PhysicsSystem::CheckAxisCollision(const Position& position,
                                                  const CollisionBox& bounding_box,
                                                  const Axis axis) const {
   constexpr double kLowerSamplePercent = 0.2;
@@ -98,7 +98,7 @@ AxisCollisions PhysicsEngine::CheckAxisCollision(const Position& position,
   return {lower_collision, upper_collision};
 }
 
-void PhysicsEngine::ResolveCollisions(EntityId id,
+void PhysicsSystem::ResolveCollisions(EntityId id,
                                       const Axis& axis,
                                       const int tile_size,
                                       const bool lower_collision,
@@ -139,7 +139,7 @@ void PhysicsEngine::ResolveCollisions(EntityId id,
   }
 }
 
-PhysicsEngine::PhysicsEngine(const Level& level,
+PhysicsSystem::PhysicsSystem(const Level& level,
                              std::shared_ptr<ParameterServer> parameter_server,
                              std::shared_ptr<Registry> registry)
     : tile_size_{level.level_tileset->GetTileSize()},
@@ -163,7 +163,9 @@ PhysicsEngine::PhysicsEngine(const Level& level,
                                   "Controls deceleration in the air.");
 }
 
-void PhysicsEngine::PhysicsSystem(const double delta_t) {
+void PhysicsSystem::PhysicsStep(const double delta_t) {
+  // TODO:: break up delta_t if its too large. Old implementation below
+
   for (auto id : registry_->GetView<Acceleration, Velocity, Position, CollisionBox, Collision>()) {
     auto [acceleration, velocity, position, collision_box, collisions] =
         registry_->GetComponents<Acceleration, Velocity, Position, CollisionBox, Collision>(id);
@@ -187,7 +189,7 @@ void PhysicsEngine::PhysicsSystem(const double delta_t) {
   }
 }
 
-void PhysicsEngine::GravitySystem() {
+void PhysicsSystem::ApplyGravity() {
   const auto gravity = parameter_server_->GetParameter<double>("physics/gravity");
   for (auto id : registry_->GetView<Acceleration>()) {
     auto [acceleration] = registry_->GetComponents<Acceleration>(id);
@@ -195,7 +197,7 @@ void PhysicsEngine::GravitySystem() {
   }
 }
 
-void PhysicsEngine::FrictionSystem(const double delta_t) {
+void PhysicsSystem::ApplyFriction(const double delta_t) {
   for (auto id :
        registry_->GetView<Acceleration, Velocity, Position, Collision, StateComponent>()) {
     auto [acceleration, velocity, position, collisions, state] =
@@ -223,7 +225,7 @@ void PhysicsEngine::FrictionSystem(const double delta_t) {
   }
 }
 
-void PhysicsEngine::SetFacingDirectionSystem() {
+void PhysicsSystem::SetFacingDirection() {
   for (const auto id : registry_->GetView<Acceleration, FacingDirection>()) {
     const auto [acceleration, facing] = registry_->GetComponents<Acceleration, FacingDirection>(id);
     if (acceleration.x != 0) {
@@ -232,7 +234,7 @@ void PhysicsEngine::SetFacingDirectionSystem() {
   }
 }
 
-void PhysicsEngine::SetDistanceFallen(const double delta_t) {
+void PhysicsSystem::SetDistanceFallen(const double delta_t) {
   for (const auto id : registry_->GetView<Velocity, DistanceFallen>()) {
     auto [velocity, distance_fallen] = registry_->GetComponents<Velocity, DistanceFallen>(id);
     if (velocity.y < 0) {
@@ -241,7 +243,7 @@ void PhysicsEngine::SetDistanceFallen(const double delta_t) {
   }
 }
 
-// void PhysicsEngine::PhysicsStep(Player& player) {
+// void PhysicsSystem::PhysicsStep(Player& player) {
 //   const auto now = GameClock::NowGlobal();
 //   const double delta_t = (now - player.last_update).count() / 1e9;
 //   Collisions old_collisions = player.collisions;
@@ -263,7 +265,7 @@ void PhysicsEngine::SetDistanceFallen(const double delta_t) {
 //   player.last_update = now;
 // }
 
-void PhysicsEngine::CheckPlayerCollision(EntityId id, const Axis& axis) {
+void PhysicsSystem::CheckPlayerCollision(EntityId id, const Axis& axis) {
   auto [position, collision_box, collisions] =
       registry_->GetComponents<Position, CollisionBox, Collision>(id);
   const auto [lower_collision, upper_collision] = CheckAxisCollision(position, collision_box, axis);

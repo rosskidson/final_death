@@ -1,7 +1,7 @@
 #pragma once
 
-#include "grid.h"
-#include "tileset.h"
+#include "common_types/grid.h"
+#include "common_types/tileset.h"
 
 namespace platformer {
 

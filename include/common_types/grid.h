@@ -2,7 +2,6 @@
 
 #include <utils/check.h>
 
-
 #include <vector>
 
 namespace platformer {

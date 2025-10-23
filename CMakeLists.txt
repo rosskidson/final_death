@@ -71,18 +71,24 @@ add_library(olc src/olc/olcPixelGameEngine.cc)
 target_link_libraries(olc ${OLC_LIBS})
 
 add_library(platformer_lib
-  src/animated_sprite.cc
-  src/animation_manager.cc
-  src/developer_console.cc
-  src/input_capture.cc
-  src/input_processor.cc
+  src/animation/animated_sprite.cc
+  src/animation/animation_manager.cc
+
+  src/common_types/tileset.cc
+
+  src/input/input_capture.cc
+  src/input/input_processor.cc
+
+  src/systems/physics_system.cc
+  src/systems/player_logic_system.cc
+  src/systems/rendering_system.cc
+  src/systems/sound_system.cc
+
+  src/utils/developer_console.cc
+
   src/load_game_configuration.cc
-  src/physics_engine.cc
   src/platformer.cc
-  src/rendering_engine.cc
-  src/sound.cc
-  src/tileset.cc
-  src/update_player_state.cc
+  src/sound_player.cc
 )
 
 target_include_directories(platformer_lib

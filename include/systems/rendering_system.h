@@ -3,10 +3,10 @@
 #include <memory>
 #include <optional>
 
-#include "animated_sprite.h"
-#include "animation_manager.h"
-#include "basic_types.h"
-#include "game_configuration.h"
+#include "animation/animated_sprite.h"
+#include "animation/animation_manager.h"
+#include "common_types/basic_types.h"
+#include "common_types/game_configuration.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/parameter_server.h"
@@ -15,12 +15,12 @@
 namespace platformer {
 
 // This abstracts away all pixel math with regards to sprites, drawing, etc.
-class RenderingEngine {
+class RenderingSystem {
  public:
   // The level is copied in, as opposed to a ref or pointer.
   // This class has invariants based on the level grids, so a reference could
   // result in having the rug pulled from its feet.
-  RenderingEngine(olc::PixelGameEngine* engine_ptr,
+  RenderingSystem(olc::PixelGameEngine* engine_ptr,
                   Level level,
                   std::shared_ptr<ParameterServer> parameter_server,
                   std::shared_ptr<AnimationManager> animation_manager,
