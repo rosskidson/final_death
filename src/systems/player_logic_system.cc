@@ -6,6 +6,7 @@
 #include "animation/animation_event.h"
 #include "common_types/actor_state.h"
 #include "common_types/components.h"
+#include "common_types/entity.h"
 #include "registry.h"
 #include "systems/physics_system.h"
 #include "utils/chrono_helpers.h"
@@ -23,11 +24,11 @@ namespace platformer {
     }                                                               \
   } while (0)
 
-#define LATCH_STATE(state, STATE)                                                                \
-  do {                                                                                           \
-    if ((state).state == (STATE) && !(state).animation_manager.GetActiveAnimation().Expired()) { \
-      return;                                                                                    \
-    }                                                                                            \
+#define LATCH_STATE(state, expired, new_state) \
+  do {                                         \
+    if ((state) == (new_state) && !expired) {  \
+      return;                                  \
+    }                                          \
   } while (0)
 
 namespace {
@@ -94,26 +95,26 @@ State GetShootState(const std::set<State>& requested_states,
   return State::Shoot;
 }
 
-// bool SetHardLandingState(const ParameterServer& parameter_server,
-//                          EntityId player_id,
-//                          Registry& registry) {
-//   auto [velocity, collisions, state, distance_fallen] =
-//       registry.GetComponents<Velocity, Collision, State, DistanceFallen>(player_id);
-//   const auto hard_fall_distance =
-//       parameter_server.GetParameter<double>("physics/hard.fall.distance");
-//   if (collisions.bottom) {
-//     if (distance_fallen.distance_fallen > hard_fall_distance) {
-//       distance_fallen.distance_fallen = 0;
-//       state.state = State::HardLanding;
-//       return true;
-//     }
-//   }
-//   if (velocity.y > 0) {
-//     distance_fallen.distance_fallen = 0;
-//     return false;
-//   }
-//   return false;
-// }
+bool SetHardLandingState(const ParameterServer& parameter_server,
+                         EntityId player_id,
+                         Registry& registry) {
+  auto [velocity, collisions, state_component, distance_fallen] =
+      registry.GetComponents<Velocity, Collision, StateComponent, DistanceFallen>(player_id);
+  const auto hard_fall_distance =
+      parameter_server.GetParameter<double>("physics/hard.fall.distance");
+  if (collisions.bottom) {
+    if (distance_fallen.distance_fallen > hard_fall_distance) {
+      distance_fallen.distance_fallen = 0;
+      state_component.state.SetState(State::HardLanding);
+      return true;
+    }
+  }
+  if (velocity.y > 0) {
+    distance_fallen.distance_fallen = 0;
+    return false;
+  }
+  return false;
+}
 
 bool AnimationExpired(const State state, const std::vector<AnimationEvent>& animation_events) {
   return std::any_of(
@@ -122,13 +123,17 @@ bool AnimationExpired(const State state, const std::vector<AnimationEvent>& anim
       });
 }
 
-}  // namespace
+bool EventOccurred(const std::string& event_name,
+                   const std::vector<AnimationEvent>& animation_events) {
+  return std::any_of(animation_events.begin(), animation_events.end(),
+                     [&](const AnimationEvent& event) { return event.event_name == event_name; });
+}
 
-void UpdateState(const ParameterServer& parameter_server,
-                 const std::vector<AnimationEvent>& animation_events,
-                 const PhysicsSystem& physics_system,
-                 EntityId player_id,
-                 Registry& registry) {
+void UpdatePlayerState(const EntityId player_id,
+                       const ParameterServer& parameter_server,
+                       const std::vector<AnimationEvent>& animation_events,
+                       const PhysicsSystem& physics_system,
+                       Registry& registry) {
   auto& state_component = registry.GetComponent<StateComponent>(player_id);
   const auto& state = state_component.state.GetState();
   const auto& collisions = registry.GetComponent<Collision>(player_id);
@@ -136,9 +141,9 @@ void UpdateState(const ParameterServer& parameter_server,
   const bool animation_expired = AnimationExpired(state, animation_events);
 
   // There is one thing that can interrupt non interuptable actions: Hard falling.
-  // if (SetHardLandingState(parameter_server, player_id, registry)) {
-  //   return;
-  // }
+  if (SetHardLandingState(parameter_server, player_id, registry)) {
+    return;
+  }
 
   // Now check for non interruptable actions.
   if (!animation_expired && !IsInterruptibleState(state)) {
@@ -188,43 +193,31 @@ void UpdateState(const ParameterServer& parameter_server,
     return;
   }
 
-  /*
-    // Shoot backwards only when standing or walking.
-    if (player.requested_states.count(State::BackShot) &&
-        (player.state == State::Walk || player.state == State::Idle)) {
-      player.state = State::BackShot;
-      return;
-    }
-
-    // BackDodgeShot only from crouching state.
-    if ((player.state == State::Crouch || player.state == State::CrouchShot) &&
-        player.requested_states.count(State::Crouch) &&
-        player.requested_states.count(State::BackShot)) {
-      player.state = State::BackDodgeShot;
-      return;
-    }
-
-    // Transition from PreRoll to Roll
-    if (player.state == State::PreRoll &&
-        player.animation_manager.GetActiveAnimation().Expired()) {
-      player.roll_start_time = GameClock::NowGlobal();
-      player.state = State::Roll;
-      return;
-    }
-
-    // Remaining non-interruptable states
-    TRY_SET_STATE(player, State::PreRoll);
-
-    // Next is to latch some non interruptable states.
-    LATCH_STATE(player, State::PostRoll);
-    LATCH_STATE(player, State::PreSuicide);
-    */
-
-  // Jump: Move to update from state!
-  if (animation_expired && state == State::PreJump) {
-    const auto jump_velocity = parameter_server.GetParameter<double>("physics/jump.velocity");
-    registry.GetComponent<Velocity>(player_id).y = jump_velocity;
+  // Shoot backwards only when standing or walking.
+  if (requested_states.count(State::BackShot) && (state == State::Walk || state == State::Idle)) {
+    state_component.state.SetState(State::BackShot);
+    return;
   }
+
+  // BackDodgeShot only from crouching state.
+  if ((state == State::Crouch || state == State::CrouchShot) &&
+      requested_states.count(State::Crouch) && requested_states.count(State::BackShot)) {
+    state_component.state.SetState(State::BackDodgeShot);
+    return;
+  }
+
+  // Transition from PreRoll to Roll
+  if (state == State::PreRoll && animation_expired) {
+    state_component.state.SetState(State::Roll);
+    return;
+  }
+
+  // Remaining non-interruptable states
+  TRY_SET_STATE(requested_states, state_component, State::PreRoll);
+
+  // Next is to latch some non interruptable states.
+  LATCH_STATE(state, animation_expired, State::PostRoll);
+  LATCH_STATE(state, animation_expired, State::PreSuicide);
 
   // InAir has priority over other states.
   if (!collisions.bottom) {
@@ -244,11 +237,11 @@ void UpdateState(const ParameterServer& parameter_server,
   TRY_SET_STATE(requested_states, state_component, State::Walk);
 
   // Soft landing may be interrupted by anything : lowest priority.
-  // if (player.collisions.bottom && player.collisions.bottom_changed) {
-  //   player.state = State::SoftLanding;
-  //   return;
-  // }
-  // LATCH_STATE(player, State::SoftLanding);
+  if (collisions.bottom && collisions.bottom_changed) {
+    state_component.state.SetState(State::SoftLanding);
+    return;
+  }
+  LATCH_STATE(state, animation_expired, State::SoftLanding);
 
   state_component.state.SetState(State::Idle);
 }
@@ -271,73 +264,125 @@ void UpdateMaxVelocity(const ParameterServer& parameter_server, Registry& regist
   }
 }
 
+void UpdatePlayerComponentsFromState(EntityId player_id,
+                                     const ParameterServer& parameter_server,
+                                     const std::vector<AnimationEvent>& animation_events,
+                                     Registry& registry) {
+  auto& state_component = registry.GetComponent<StateComponent>(player_id);
+  auto& acceleration = registry.GetComponent<Acceleration>(player_id);
+  auto& velocity = registry.GetComponent<Velocity>(player_id);
+  auto& cached_velocity = registry.GetComponent<PlayerComponent>(player_id).cached_velocity;
+
+  const auto& collisions = registry.GetComponent<Collision>(player_id);
+  const auto& facing = registry.GetComponent<FacingDirection>(player_id).facing;
+
+  const auto& state = state_component.state.GetState();
+  const bool animation_expired = AnimationExpired(state, animation_events);
+
+  // Disallow movement for certain states.
+  if ((MovementDisallowed(state)) && !animation_expired) {
+    velocity.x = 0;
+    acceleration.x = 0;
+  }
+
+  // Disallow movement during crouch, except changing direction.
+  if (state == State::Crouch) {
+    if (facing == Direction::LEFT && acceleration.x > 0) {
+      velocity.x = 1;
+    } else if (facing == Direction::RIGHT && acceleration.x < 0) {
+      velocity.x = -1;
+    } else {
+      velocity.x = 0;
+    }
+    acceleration.x = 0;
+  }
+
+  // Add vertical velocity for Jumping.
+  if (std::any_of(
+          animation_events.begin(), animation_events.end(), [](const AnimationEvent& event) {
+            return event.event_name == "AnimationEnded" && event.animation_state == State::PreJump;
+          })) {
+    const auto jump_velocity = parameter_server.GetParameter<double>("physics/jump.velocity");
+    velocity.x = cached_velocity.x;
+    velocity.y = jump_velocity;
+    cached_velocity.x = 0;
+  }
+
+  if (state == State::PreJump) {
+    auto& cached_velocity = registry.GetComponent<PlayerComponent>(player_id).cached_velocity;
+    if (velocity.x != 0) {
+      cached_velocity.x = velocity.x;
+    }
+    velocity.x = 0;
+    acceleration.x = 0;
+  }
+
+  if (EventOccurred("StartBackDodgeShot", animation_events)) {
+    velocity.x = (facing == Direction::LEFT) ? 100 : -100;
+  }
+
+  if (EventOccurred("ShootShotgunDownInAir", animation_events)) {
+    const auto shoot_down_upward_vel =
+        parameter_server.GetParameter<double>("physics/shoot.down.upward.vel");
+    velocity.y += shoot_down_upward_vel;
+  }
+
+  // Roll
+  const auto roll_vel = parameter_server.GetParameter<double>("physics/roll.x.vel");
+  if (state == State::Roll) {
+    acceleration.x = 0;
+    if (facing == Direction::LEFT) {
+      velocity.x = -roll_vel;
+    } else {
+      velocity.x = roll_vel;
+    }
+    if ((collisions.left && acceleration.x > 0) || (collisions.right && acceleration.x < 0)) {
+      velocity.x *= -1;
+    }
+  }
+
+  // Set bounding box based on state
+  // TODO:: This is hacky and should be configured better.
+  auto& collision_box = registry.GetComponent<CollisionBox>(player_id);
+  if (state == State::Roll) {
+    collision_box.x_offset_px = 32;
+    collision_box.y_offset_px = 0;
+    collision_box.collision_width_px = 16;
+    collision_box.collision_height_px = 16;
+  } else if (state == State::BackDodgeShot) {
+    collision_box.x_offset_px = 20;
+    collision_box.y_offset_px = 0;
+    collision_box.collision_width_px = 30;
+    collision_box.collision_height_px = 16;
+  } else {
+    collision_box.x_offset_px = 30;
+    collision_box.y_offset_px = 0;
+    collision_box.collision_width_px = 18;
+    collision_box.collision_height_px = 48;
+  }
+}
+
+}  // namespace
+
+void UpdatePlayerState(const ParameterServer& parameter_server,
+                       const std::vector<AnimationEvent>& animation_events,
+                       const PhysicsSystem& physics_system,
+                       Registry& registry) {
+  for (const auto id : registry.GetView<PlayerComponent>()) {
+    UpdatePlayerState(id, parameter_server, animation_events, physics_system, registry);
+  }
+}
+
 void UpdateComponentsFromState(const ParameterServer& parameter_server, Registry& registry) {
   UpdateMaxVelocity(parameter_server, registry);
 }
-//   // Disallow movement for certain states.
-//   if ((MovementDisallowed(player.state)) &&
-//       !player.animation_manager.GetActiveAnimation().Expired()) {
-//     player.velocity.x = 0;
-//     player.acceleration.x = 0;
-//   }
 
-//   // Disallow movement during crouch, except changing direction.
-//   if (player.state == PlayerState::Crouch) {
-//     if (player.facing == Direction::LEFT && player.acceleration.x > 0) {
-//       player.velocity.x = 1;
-//     } else if (player.facing == Direction::RIGHT && player.acceleration.x < 0) {
-//       player.velocity.x = -1;
-//     } else {
-//       player.velocity.x = 0;
-//     }
-//     player.acceleration.x = 0;
-//   }
-
-//   if (player.state == PlayerState::PreJump) {
-//     if (player.velocity.x != 0) {
-//       player.cached_velocity.x = player.velocity.x;
-//     }
-//     player.velocity.x = 0;
-//     player.acceleration.x = 0;
-//   }
-
-//   // Roll
-//   const auto roll_vel = parameter_server.GetParameter<double>("physics/roll.x.vel");
-//   if (player.state == PlayerState::Roll) {
-//     player.acceleration.x = 0;
-//     if (player.facing == Direction::LEFT) {
-//       player.velocity.x = -roll_vel;
-//     } else {
-//       player.velocity.x = roll_vel;
-//     }
-//     if ((player.collisions.left && player.acceleration.x > 0) ||
-//         (player.collisions.right && player.acceleration.x < 0)) {
-//       player.velocity.x *= -1;
-//     }
-
-//     // TODO:: This is hacky and should be configured better.
-//     player.x_offset_px = 32;
-//     player.y_offset_px = 0;
-//     player.collision_width_px = 16;
-//     player.collision_height_px = 16;
-//   } else if (player.state == PlayerState::BackDodgeShot) {
-//     player.x_offset_px = 20;
-//     player.y_offset_px = 0;
-//     player.collision_width_px = 30;
-//     player.collision_height_px = 16;
-//   } else {
-//     player.x_offset_px = 30;
-//     player.y_offset_px = 0;
-//     player.collision_width_px = 18;
-//     player.collision_height_px = 48;
-//   }
-// }
-
-// void UpdateState(const ParameterServer& parameter_server, EntityId player_id, Registry& registry)
-// {
-//   UpdateStateImpl(parameter_server, player_id, registry);
-//   auto [state] = registry.GetComponents<PlayerComponent>(player_id);
-//   state.requested_states.clear();
-// }
+void UpdatePlayerComponentsFromState(const ParameterServer& parameter_server,
+                                     const std::vector<AnimationEvent>& animation_events,
+                                     Registry& registry) {
+  for (const auto id : registry.GetView<PlayerComponent>()) {
+    UpdatePlayerComponentsFromState(id, parameter_server, animation_events, registry);
+  }
+}
 
 }  // namespace platformer

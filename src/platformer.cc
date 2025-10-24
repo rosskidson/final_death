@@ -7,7 +7,6 @@
 #include "animation/animated_sprite.h"
 #include "animation/animation_manager.h"
 #include "common_types/actor_state.h"
-#include "common_types/basic_types.h"
 #include "common_types/components.h"
 #include "common_types/game_configuration.h"
 #include "config.h"
@@ -15,12 +14,10 @@
 #include "input/input_processor.h"
 #include "load_game_configuration.h"
 #include "registry.h"
-#include "registry_helpers.h"
 #include "sound/sound_player.h"
 #include "sound/sound_processor.h"
 #include "systems/player_logic_system.h"
 #include "systems/rendering_system.h"
-#include "utils/check.h"
 #include "utils/developer_console.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
@@ -135,8 +132,6 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
 }
 
 void SetAnimationCallbacks(AnimationManager& animation_manager) {
-  // auto [player] = registry.GetComponents<PlayerComponent>(id);
-
   auto& a = animation_manager;
   a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(0, "ShootShotgun");
   a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(5, "ReloadShotgun");
@@ -156,31 +151,7 @@ void SetAnimationCallbacks(AnimationManager& animation_manager) {
   a.GetAnimation(Actor::Player, State::Suicide).AddEventSignal(0, "ShootShotgun");
 
   a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(0, "ShootShotgunDownInAir");
-
-  // player.animation_manager.GetAnimation(State::BackDodgeShot).AddCallback(0, [&]() {
-  //   player.velocity.x = (player_.facing == Direction::LEFT) ? 100 : -100;
-  // });
-
-  // const auto shoot_down_upward_vel =
-  //     parameter_server_->GetParameter<double>("physics/shoot.down.upward.vel");
-  // player_.animation_manager.GetAnimation(State::InAirDownShot)
-  //     .AddCallback(0, [&, shoot_down_upward_vel]() {
-  //       sound_player_->PlaySample("shotgun_fire", false);
-  //       player_.velocity.y += shoot_down_upward_vel;
-  //     });
-
-  // const auto jump_velocity = parameter_server_->GetParameter<double>("physics/jump.velocity");
-  // player_.animation_manager.GetAnimation(State::PreJump)
-  //     .AddExpireCallback([&, jump_velocity]() {
-  //       if (player_.collisions.bottom) {
-  //         player_.velocity.y = jump_velocity;
-  //       }
-  //     });
-
-  // player_.animation_manager.GetAnimation(State::PreJump).AddExpireCallback([&]() {
-  //   player_.velocity.x = player_.cached_velocity.x;
-  //   player_.cached_velocity.x = 0;
-  // });
+  a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(0, "StartBackDodgeShot");
 }
 
 std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
@@ -233,7 +204,7 @@ bool Platformer::OnUserCreate() {
   sound_player_ = CreateSoundPlayer();
   RETURN_FALSE_IF_FAILED(sound_player_);
   sound_processor_ = std::make_shared<SoundProcessor>(sound_player_);
-  // sound_player_->PlaySample("music", true, 0.2);
+  sound_player_->PlaySample("music", true, 0.2);
 
   physics_system_ =
       std::make_unique<PhysicsSystem>(GetCurrentLevel(), parameter_server_, registry_);
@@ -245,33 +216,28 @@ bool Platformer::OnUserCreate() {
 }
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
+  //// KNOWN BUGS
+  //
+  //  1. Directional keys work when player is in a back dodge slide
+  //  2. Cannot roll back out the end of a tunnel.
+  //  3. Starting to shoot in flight causes him to shoot again upon landing.
+  //
+
   // TODO:: Actual dt, not just 1 / frequency
   const double delta_t = std::chrono::duration<double>(rate_.GetFrameDuration()).count();
+  profiler_.Reset();
 
-  const auto& player_state = registry_->GetComponent<StateComponent>(player_id_).state;
-
-  const auto events = animation_manager_->GetAnimationEvents();
-
-  sound_processor_->ProcessAnimationEvents(events);
-
-  // for (const auto& event : events) {
-  //   if (event.event_name == "AnimationEnded" && event.animation_state == State::PreJump) {
-  //     const auto jump_velocity =
-  //     parameter_server_->GetParameter<double>("physics/jump.velocity");
-  //     registry_->GetComponent<Velocity>(player_id_).y = jump_velocity;
-  //     registry_->GetComponent<StateComponent>(player_id_).state.SetState(State::InAir);
-  //   }
-  //   // LOG_INFO(event.entity_id << ": " << event.event_name);
-  // }
-
-  // profiler_.Reset();
   // Control
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_id_));
-  // profiler_.LogEvent("00_control");
+  profiler_.LogEvent("00_control");
 
   // Model
-  UpdateState(*parameter_server_, events, *physics_system_, player_id_, *registry_);
+  const auto events = animation_manager_->GetAnimationEvents();
+  sound_processor_->ProcessAnimationEvents(events);
+
+  UpdatePlayerState(*parameter_server_, events, *physics_system_, *registry_);
   UpdateComponentsFromState(*parameter_server_, *registry_);
+  UpdatePlayerComponentsFromState(*parameter_server_, events, *registry_);
 
   physics_system_->ApplyGravity();
   physics_system_->ApplyFriction(delta_t);
@@ -279,7 +245,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_system_->SetFacingDirection();
   physics_system_->SetDistanceFallen(delta_t);
 
-  // profiler_.LogEvent("01_update_player_state");
+  profiler_.LogEvent("01_update_player_state");
 
   // View
   rendering_system_->KeepPlayerInFrame(player_id_);
@@ -287,7 +253,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_system_->RenderTiles();
   rendering_system_->RenderEntities();
   rendering_system_->RenderForeground();
-  // profiler_.LogEvent("02_render");
+  profiler_.LogEvent("02_render");
 
   // profiler_.PrintTimings();
   rate_.Sleep(false);
