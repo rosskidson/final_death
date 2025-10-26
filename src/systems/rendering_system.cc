@@ -245,7 +245,7 @@ void RenderingSystem::RenderTiles() {
 }
 
 void RenderingSystem::RenderEntities() {
-  for (auto id : registry_->GetView<Position>()) {
+  for (auto id : registry_->GetView<Position, StateComponent>()) {
     auto [position] = registry_->GetComponents<Position>(id);
     const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
 
@@ -265,6 +265,19 @@ void RenderingSystem::RenderEntities() {
     if (draw_bounding_box) {
       RenderEntityCollisionBox(player_top_left_px_x, player_top_left_px_y, sprite->height, id);
     }
+  }
+
+  for (auto id : registry_->GetView<Position, Projectile>()) {
+    auto [position] = registry_->GetComponents<Position>(id);
+    const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
+    const int px_x = static_cast<int>(position_in_screen.x * tile_size_);
+    const int px_y =
+        kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
+    engine_ptr_->Draw(px_x, px_y, olc::BLACK);
+    engine_ptr_->Draw(px_x+1, px_y, olc::BLACK);
+    engine_ptr_->Draw(px_x, px_y+1, olc::BLACK);
+    engine_ptr_->Draw(px_x-1, px_y, olc::BLACK);
+    engine_ptr_->Draw(px_x-1, px_y-1, olc::BLACK);
   }
 }
 void RenderingSystem::RenderEntityCollisionBox(int entity_top_left_px_x,

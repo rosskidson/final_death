@@ -29,6 +29,8 @@ constexpr double kShootDownUpwardVel = 10;
 constexpr double kHardFallDistance = 10;
 constexpr double kJumpVel = 21.0;
 
+constexpr double kShotgunProjectileVelocity = 50.0;
+
 namespace platformer {
 
 #define RETURN_NULL_PTR_ON_ERROR(statement) \
@@ -80,6 +82,9 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
 
   parameter_server->AddParameter("physics/jump.velocity", kJumpVel,
                                  "The instantaneous vertical velocity when you jump, unit: tile/s");
+
+  parameter_server->AddParameter("physics/shotgun.projectile.velocity", kShotgunProjectileVelocity,
+                                 "How fast the bullets go. Unit: tile/s");
 
   return parameter_server;
 }
@@ -231,6 +236,8 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   UpdatePlayerState(*parameter_server_, events, *physics_system_, *registry_);
   UpdateComponentsFromState(*parameter_server_, *registry_);
   UpdatePlayerComponentsFromState(*parameter_server_, events, *registry_);
+
+  SpawnProjectiles(*parameter_server_, events, *registry_);
 
   physics_system_->ApplyGravity();
   physics_system_->ApplyFriction(delta_t);

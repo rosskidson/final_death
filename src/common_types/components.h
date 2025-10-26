@@ -57,4 +57,8 @@ struct DistanceFallen {
   double distance_fallen{};
 };
 
+struct Projectile {
+
+};
+
 }  // namespace platformer

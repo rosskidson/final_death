@@ -165,27 +165,37 @@ PhysicsSystem::PhysicsSystem(const Level& level,
 
 void PhysicsSystem::PhysicsStep(const double delta_t) {
   // TODO:: break up delta_t if its too large. Old implementation below
-
-  for (auto id : registry_->GetView<Acceleration, Velocity, Position, CollisionBox, Collision>()) {
-    auto [acceleration, velocity, position, collision_box, collisions] =
-        registry_->GetComponents<Acceleration, Velocity, Position, CollisionBox, Collision>(id);
-
-    Collision old_collisions = collisions;
-    collisions = {};
-
+  for (auto id : registry_->GetView<Acceleration, Velocity>()) {
+    auto [acceleration, velocity] = registry_->GetComponents<Acceleration, Velocity>(id);
     velocity.x += acceleration.x * delta_t;
     velocity.x = std::min(velocity.x, velocity.max_x);
     velocity.x = std::max(velocity.x, -velocity.max_x);
-    position.x += velocity.x * delta_t;
-    this->CheckPlayerCollision(id, Axis::X);
 
     velocity.y += acceleration.y * delta_t;
     velocity.y = std::min(velocity.y, velocity.max_y);
     velocity.y = std::max(velocity.y, -velocity.max_y);
+  }
+
+  for (auto id : registry_->GetView<Velocity, Position, CollisionBox, Collision>()) {
+    auto [velocity, position, collision_box, collisions] =
+        registry_->GetComponents<Velocity, Position, CollisionBox, Collision>(id);
+
+    Collision old_collisions = collisions;
+    collisions = {};
+
+    position.x += velocity.x * delta_t;
+    this->CheckPlayerCollision(id, Axis::X);
+
     position.y += velocity.y * delta_t;
     this->CheckPlayerCollision(id, Axis::Y);
 
     UpdateCollisionsChanged(collisions, old_collisions);
+  }
+
+  for (auto id : registry_->GetView<Velocity, Position, Projectile>()) {
+    auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
+    position.x += velocity.x * delta_t;
+    position.y += velocity.y * delta_t;
   }
 }
 

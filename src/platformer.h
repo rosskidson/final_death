@@ -1,15 +1,12 @@
 #pragma once
 
-#include <map>
 #include <string>
 
 #include "animation/animation_manager.h"
-#include "common_types/basic_types.h"
 #include "common_types/game_configuration.h"
 #include "input/input_processor.h"
 #include "olcPixelGameEngine.h"
 #include "registry.h"
-#include "registry_helpers.h"
 #include "systems/rendering_system.h"
 #include "systems/physics_system.h"
 #include "sound/sound_processor.h"
@@ -17,7 +14,6 @@
 #include "utils/parameter_server.h"
 #include "utils/rate_timer.h"
 #include "utils/simple_profiler.h"
-#include "utils/windows_high_res_timer.h"
 
 namespace platformer {
 

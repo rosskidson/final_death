@@ -5,6 +5,7 @@
 
 #include "animation/animation_event.h"
 #include "common_types/actor_state.h"
+#include "common_types/basic_types.h"
 #include "common_types/components.h"
 #include "common_types/entity.h"
 #include "registry.h"
@@ -389,6 +390,47 @@ void UpdatePlayerComponentsFromState(const ParameterServer& parameter_server,
                                      Registry& registry) {
   for (const auto id : registry.GetView<PlayerComponent>()) {
     UpdatePlayerComponentsFromState(id, parameter_server, animation_events, registry);
+  }
+}
+
+// TODO:: const registry
+Vector2d GetBulletSpawnLocation(const EntityId entity_id, Registry& registry) {
+  // TODO:: none of the following should be hardcoded here.
+  constexpr int x_spawn_px = 23;  // From the center of the sprite
+  constexpr int y_spawn_px = 35;
+  constexpr double tile_size = 16.;
+  constexpr int sprite_width = 40;
+
+  auto [facing, position] = registry.GetComponents<FacingDirection, Position>(entity_id);
+  const int sign = facing.facing == Direction::LEFT ? -1 : 1;
+  const double x_location = position.x + (sprite_width + sign * x_spawn_px) / tile_size;
+  const double y_location = position.y + (y_spawn_px) / tile_size;
+  return {x_location, y_location};
+}
+
+void SpawnProjectiles(const EntityId entity_id,
+                      const ParameterServer& parameter_server,
+                      Registry& registry) {
+  for (int i = 0; i < 25; ++i) {
+    auto projectile_velocity =
+        parameter_server.GetParameter<double>("physics/shotgun.projectile.velocity");
+    const auto pos = GetBulletSpawnLocation(entity_id, registry);
+    const auto facing = registry.GetComponent<FacingDirection>(entity_id).facing;
+    projectile_velocity *= facing == Direction::LEFT ? -1 : 1;
+    registry.AddComponents(Position{pos.x, pos.y},
+                           Velocity{projectile_velocity + (static_cast<double>(rand() % 10) - 5),
+                                    static_cast<double>(rand() % 10) - 5},
+                           Projectile{});
+  }
+}
+
+void SpawnProjectiles(const ParameterServer& parameter_server,
+                      const std::vector<AnimationEvent>& animation_events,
+                      Registry& registry) {
+  for (const auto& event : animation_events) {
+    if (event.event_name == "ShootShotgun") {
+      SpawnProjectiles(event.entity_id, parameter_server, registry);
+    }
   }
 }
 
