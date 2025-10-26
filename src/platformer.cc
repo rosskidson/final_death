@@ -209,7 +209,7 @@ bool Platformer::OnUserCreate() {
   sound_player_ = CreateSoundPlayer();
   RETURN_FALSE_IF_FAILED(sound_player_);
   sound_processor_ = std::make_shared<SoundProcessor>(sound_player_);
-  sound_player_->PlaySample("music", true, 0.2);
+  // sound_player_->PlaySample("music", true, 0.2);
 
   physics_system_ =
       std::make_unique<PhysicsSystem>(GetCurrentLevel(), parameter_server_, registry_);

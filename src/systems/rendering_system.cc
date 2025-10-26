@@ -273,11 +273,11 @@ void RenderingSystem::RenderEntities() {
     const int px_x = static_cast<int>(position_in_screen.x * tile_size_);
     const int px_y =
         kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
-    engine_ptr_->Draw(px_x, px_y, olc::BLACK);
-    engine_ptr_->Draw(px_x+1, px_y, olc::BLACK);
-    engine_ptr_->Draw(px_x, px_y+1, olc::BLACK);
-    engine_ptr_->Draw(px_x-1, px_y, olc::BLACK);
-    engine_ptr_->Draw(px_x-1, px_y-1, olc::BLACK);
+    engine_ptr_->Draw(px_x, px_y, olc::WHITE);
+    engine_ptr_->Draw(px_x+1, px_y, olc::WHITE);
+    engine_ptr_->Draw(px_x, px_y+1, olc::WHITE);
+    engine_ptr_->Draw(px_x-1, px_y, olc::WHITE);
+    engine_ptr_->Draw(px_x, px_y-1, olc::WHITE);
   }
 }
 void RenderingSystem::RenderEntityCollisionBox(int entity_top_left_px_x,

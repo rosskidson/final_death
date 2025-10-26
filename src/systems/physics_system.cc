@@ -196,6 +196,9 @@ void PhysicsSystem::PhysicsStep(const double delta_t) {
     auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
     position.x += velocity.x * delta_t;
     position.y += velocity.y * delta_t;
+    if(IsCollision(collisions_grid_, position.x, position.y)){
+      registry_->RemoveComponent(id);
+    }
   }
 }
 
