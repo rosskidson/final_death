@@ -4,16 +4,19 @@
 #include <chrono>
 
 #include "animation/animation_event.h"
+#include "animation/animation_manager.h"
 #include "common_types/actor_state.h"
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
 #include "common_types/entity.h"
 #include "registry.h"
 #include "systems/physics_system.h"
+#include "utils/check.h"
 #include "utils/chrono_helpers.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
+#include "utils/random_number_generator.h"
 
 namespace platformer {
 
@@ -394,42 +397,74 @@ void UpdatePlayerComponentsFromState(const ParameterServer& parameter_server,
 }
 
 // TODO:: const registry
-Vector2d GetBulletSpawnLocation(const EntityId entity_id, Registry& registry) {
-  // TODO:: none of the following should be hardcoded here.
-  constexpr int x_spawn_px = 23;  // From the center of the sprite
-  constexpr int y_spawn_px = 35;
-  constexpr double tile_size = 16.;
-  constexpr int sprite_width = 40;
+Vector2d GetBulletSpawnLocation(const EntityId entity_id,
+                                const AnimationManager& animation_manger,
+                                const int tile_size,
+                                Registry& registry) {
+  auto [facing, position, state] =
+      registry.GetComponents<FacingDirection, Position, StateComponent>(entity_id);
+  const auto spawn_location = animation_manger.GetInsideSpriteLocation(entity_id);
+  RB_CHECK(spawn_location.has_value());
 
-  auto [facing, position] = registry.GetComponents<FacingDirection, Position>(entity_id);
+  const int sprite_width = animation_manger.GetSprite(entity_id)->width;
+  const int x_from_center = spawn_location->x_px - sprite_width / 2;
+
   const int sign = facing.facing == Direction::LEFT ? -1 : 1;
-  const double x_location = position.x + (sprite_width + sign * x_spawn_px) / tile_size;
-  const double y_location = position.y + (y_spawn_px) / tile_size;
+  const double tile_size_f = tile_size;
+  const double x_location = position.x + (sprite_width / 2 + sign * x_from_center) / tile_size_f;
+  const double y_location = position.y + (spawn_location->y_px) / tile_size_f;
   return {x_location, y_location};
+}
+
+Velocity GetShotgunPelletVelocity(const State state,
+                                  const Direction facing_direction,
+                                  const ParameterServer& parameter_server,
+                                  RandomNumberGenerator& rng) {
+  auto projectile_velocity =
+      parameter_server.GetParameter<double>("physics/shotgun.projectile.velocity");
+  constexpr double kSpreadWidth = 10;
+  constexpr double kSpreadDepth = 10;
+  constexpr double kHalfSpreadWidth = kSpreadWidth / 2;
+  constexpr double kHalfSpreadDepth = kSpreadDepth / 2;
+  if (state == State::UpShot || state == State::InAirDownShot) {
+    Velocity vel{rng.RandomFloat(-kHalfSpreadWidth, kHalfSpreadWidth),
+                 projectile_velocity + rng.RandomFloat(-kHalfSpreadDepth, kHalfSpreadDepth)};
+    vel.y = state == State::InAirDownShot ? vel.y *= -1 : vel.y;
+    return vel;
+  }
+  Velocity vel{projectile_velocity + rng.RandomFloat(-kHalfSpreadDepth, kHalfSpreadDepth),
+               rng.RandomFloat(-kHalfSpreadWidth, kHalfSpreadWidth)};
+  vel.x = facing_direction == Direction::LEFT ? vel.x *= -1 : vel.x;
+  vel.x = state == State::BackShot ? vel.x *= -1 : vel.x;
+  return vel;
 }
 
 void SpawnProjectiles(const EntityId entity_id,
                       const ParameterServer& parameter_server,
+                      const AnimationManager& animation_manager,
+                      const int tile_size,
+                      RandomNumberGenerator& rng,
                       Registry& registry) {
+  const auto& state = registry.GetComponent<StateComponent>(entity_id).state.GetState();
+  const auto& facing_direction = registry.GetComponent<FacingDirection>(entity_id).facing;
   for (int i = 0; i < 25; ++i) {
-    auto projectile_velocity =
-        parameter_server.GetParameter<double>("physics/shotgun.projectile.velocity");
-    const auto pos = GetBulletSpawnLocation(entity_id, registry);
-    const auto facing = registry.GetComponent<FacingDirection>(entity_id).facing;
-    projectile_velocity *= facing == Direction::LEFT ? -1 : 1;
+    const auto pos = GetBulletSpawnLocation(entity_id, animation_manager, tile_size, registry);
     registry.AddComponents(Position{pos.x, pos.y},
-                           Velocity{projectile_velocity + (static_cast<double>(rand() % 10) - 5),
-                                    static_cast<double>(rand() % 10) - 5},
+                           GetShotgunPelletVelocity(state, facing_direction, parameter_server, rng),
                            Projectile{});
   }
 }
 
 void SpawnProjectiles(const ParameterServer& parameter_server,
                       const std::vector<AnimationEvent>& animation_events,
+                      const AnimationManager& animation_manager,
+                      int tile_size,
+                      RandomNumberGenerator& rng,
                       Registry& registry) {
   for (const auto& event : animation_events) {
     if (event.event_name == "ShootShotgun") {
-      SpawnProjectiles(event.entity_id, parameter_server, registry);
+      SpawnProjectiles(event.entity_id, parameter_server, animation_manager, tile_size, rng,
+                       registry);
     }
   }
 }

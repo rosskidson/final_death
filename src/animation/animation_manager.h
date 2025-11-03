@@ -3,9 +3,10 @@
 #include <map>
 #include <memory>
 
-#include "animation/animation_event.h"
 #include "animation/animated_sprite.h"
+#include "animation/animation_event.h"
 #include "common_types/actor_state.h"
+#include "common_types/entity.h"
 #include "registry.h"
 #include "registry_helpers.h"
 
@@ -26,32 +27,32 @@ struct SpriteKey {
   State state;
 };
 
+// Needed for specific actions, e.g. spawning bullets
+struct InsideSpriteLocation {
+  int x_px{};  // Measured from the left
+  int y_px{};  // Measured from the bottom
+};
+
 class AnimationManager {
  public:
   AnimationManager(std::shared_ptr<Registry> registry) : registry_{std::move(registry)} {}
 
-  void AddAnimation(AnimatedSprite sprite, Actor actor, State state){
-    animated_sprites_.try_emplace(SpriteKey{actor, state}, std::move(sprite));
-  }
+  void AddAnimation(AnimatedSprite sprite, Actor actor, State state);
 
-  [[nodiscard]] AnimatedSprite& GetAnimation(Actor actor, State state) {
-    return animated_sprites_.at(SpriteKey{actor, state});
-  }
+  [[nodiscard]] AnimatedSprite& GetAnimation(Actor actor, State state);
+  [[nodiscard]] const AnimatedSprite& GetAnimation(Actor actor, State state) const;
 
-  [[nodiscard]] const AnimatedSprite& GetAnimation(Actor actor, State state) const {
-    return animated_sprites_.at(SpriteKey{actor, state});
-  }
+  void AddInsideSpriteLocation(InsideSpriteLocation location, Actor actor, State state);
+
+  [[nodiscard]] std::optional<InsideSpriteLocation> GetInsideSpriteLocation(EntityId id) const;
 
   [[nodiscard]] std::vector<AnimationEvent> GetAnimationEvents() const;
-
-  // void SwapAnimation(PlayerState action);
-
-  // void Update(EntityId id);
 
   [[nodiscard]] const olc::Sprite* GetSprite(EntityId id) const;
 
  private:
   std::map<SpriteKey, AnimatedSprite> animated_sprites_;
+  std::map<SpriteKey, InsideSpriteLocation> inside_sprite_locations_;
   std::shared_ptr<Registry> registry_;
 };
 }  // namespace platformer

@@ -28,8 +28,8 @@ struct Acceleration {
 };
 
 struct CollisionBox {
-  int x_offset_px{};
-  int y_offset_px{};
+  int x_offset_px{};  // Measured from the left
+  int y_offset_px{};  // Measured from the bottom
   int collision_width_px{};
   int collision_height_px{};
 };
@@ -57,8 +57,6 @@ struct DistanceFallen {
   double distance_fallen{};
 };
 
-struct Projectile {
-
-};
+struct Projectile {};
 
 }  // namespace platformer

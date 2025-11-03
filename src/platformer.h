@@ -7,11 +7,12 @@
 #include "input/input_processor.h"
 #include "olcPixelGameEngine.h"
 #include "registry.h"
-#include "systems/rendering_system.h"
-#include "systems/physics_system.h"
-#include "sound/sound_processor.h"
 #include "sound/sound_player.h"
+#include "sound/sound_processor.h"
+#include "systems/physics_system.h"
+#include "systems/rendering_system.h"
 #include "utils/parameter_server.h"
+#include "utils/random_number_generator.h"
 #include "utils/rate_timer.h"
 #include "utils/simple_profiler.h"
 
@@ -42,15 +43,16 @@ class Platformer : public olc::PixelGameEngine {
   std::shared_ptr<SoundPlayer> sound_player_;
   std::shared_ptr<SoundProcessor> sound_processor_;
   std::shared_ptr<AnimationManager> animation_manager_;
+  std::shared_ptr<RandomNumberGenerator> rng_;
 
   RateTimer rate_;
   SimpleProfiler profiler_;
 
   EntityId player_id_;
 
-  #ifdef _WIN32
+#ifdef _WIN32
   WindowsHighResTimer high_res_timer_{1};
-  #endif
+#endif
 };
 
 }  // namespace platformer

@@ -29,7 +29,7 @@ constexpr double kShootDownUpwardVel = 10;
 constexpr double kHardFallDistance = 10;
 constexpr double kJumpVel = 21.0;
 
-constexpr double kShotgunProjectileVelocity = 50.0;
+constexpr double kShotgunProjectileVelocity = 30.0;
 
 namespace platformer {
 
@@ -133,6 +133,14 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
     animation_manager->AddAnimation(std::move(*animated_sprite), Actor::Player, animation.state);
   }
 
+  animation_manager->AddInsideSpriteLocation({58, 12}, Actor::Player, State::BackDodgeShot);
+  animation_manager->AddInsideSpriteLocation({9, 27}, Actor::Player, State::BackShot);
+  animation_manager->AddInsideSpriteLocation({62, 19}, Actor::Player, State::CrouchShot);
+  animation_manager->AddInsideSpriteLocation({61, 27}, Actor::Player, State::InAirShot);
+  animation_manager->AddInsideSpriteLocation({46, 11}, Actor::Player, State::InAirDownShot);
+  animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Shoot);
+  animation_manager->AddInsideSpriteLocation({43, 47}, Actor::Player, State::UpShot);
+
   return animation_manager;
 }
 
@@ -182,6 +190,8 @@ bool Platformer::OnUserDestroy() { return true; }
 bool Platformer::OnUserCreate() {
   this->SetPixelMode(olc::Pixel::Mode::MASK);
 
+  rng_ = std::make_shared<RandomNumberGenerator>(RandomNumberGenerator::Mode::Hardware);
+
   // TODO(FOR RELEASE): Path is assumed to be cmake source. Store assets in the binary.
   const auto levels_path = std::filesystem::path(SOURCE_DIR) / "levels.json";
   auto config = platformer::LoadGameConfiguration(levels_path.string());
@@ -220,6 +230,11 @@ bool Platformer::OnUserCreate() {
   return true;
 }
 
+// BUGTRACKER
+//
+// - Can't change direction when aiming up
+// - If you try and move in a crouch, he slides backwards super slowly. Can't change direction.
+
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   // TODO:: Actual dt, not just 1 / frequency
   const double delta_t = std::chrono::duration<double>(rate_.GetFrameDuration()).count();
@@ -237,7 +252,8 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   UpdateComponentsFromState(*parameter_server_, *registry_);
   UpdatePlayerComponentsFromState(*parameter_server_, events, *registry_);
 
-  SpawnProjectiles(*parameter_server_, events, *registry_);
+  const auto tile_size = GetCurrentLevel().level_tileset->GetTileSize();
+  SpawnProjectiles(*parameter_server_, events, *animation_manager_, tile_size, *rng_, *registry_);
 
   physics_system_->ApplyGravity();
   physics_system_->ApplyFriction(delta_t);
