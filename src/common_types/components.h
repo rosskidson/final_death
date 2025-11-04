@@ -1,5 +1,6 @@
 #pragma once
 
+#include <limits>
 #include <set>
 
 #include "common_types/actor_state.h"
@@ -18,8 +19,8 @@ struct Velocity {
   double x{};
   double y{};
 
-  double max_x{};
-  double max_y{};
+  double max_x{std::numeric_limits<double>::max()};
+  double max_y{std::numeric_limits<double>::max()};
 };
 
 struct Acceleration {
@@ -58,5 +59,7 @@ struct DistanceFallen {
 };
 
 struct Projectile {};
+
+struct Particle {};
 
 }  // namespace platformer

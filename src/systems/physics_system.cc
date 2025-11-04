@@ -196,9 +196,26 @@ void PhysicsSystem::PhysicsStep(const double delta_t) {
     auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
     position.x += velocity.x * delta_t;
     position.y += velocity.y * delta_t;
+
     if(IsCollision(collisions_grid_, position.x, position.y)){
+      // Spawn particles
+      for(int i = 0; i < 3; ++i) {
+        Position particle_pos = position;
+        Velocity particle_vel{};
+        int sign = velocity.x > 0 ? -1 : 1;
+        particle_vel.x = sign * (rand() % 30) / 10.;
+        particle_vel.y = 10 - (rand() % 50) / 10.;
+        registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{});
+      }
+
       registry_->RemoveComponent(id);
     }
+  }
+
+  for (auto id : registry_->GetView<Velocity, Position, Particle>()) {
+    auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
+    position.x += velocity.x * delta_t;
+    position.y += velocity.y * delta_t;
   }
 }
 
