@@ -255,15 +255,6 @@ void PhysicsSystem::ApplyFriction(const double delta_t) {
   }
 }
 
-void PhysicsSystem::SetFacingDirection() {
-  for (const auto id : registry_->GetView<Acceleration, FacingDirection>()) {
-    const auto [acceleration, facing] = registry_->GetComponents<Acceleration, FacingDirection>(id);
-    if (acceleration.x != 0) {
-      facing.facing = acceleration.x < 0 ? Direction::LEFT : Direction::RIGHT;
-    }
-  }
-}
-
 void PhysicsSystem::SetDistanceFallen(const double delta_t) {
   for (const auto id : registry_->GetView<Velocity, DistanceFallen>()) {
     auto [velocity, distance_fallen] = registry_->GetComponents<Velocity, DistanceFallen>(id);

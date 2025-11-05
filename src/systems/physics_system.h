@@ -28,7 +28,6 @@ class PhysicsSystem {
   void PhysicsStep(double delta_t);
   void ApplyGravity();
   void ApplyFriction(double delta_t);
-  void SetFacingDirection();
   void SetDistanceFallen(double delta_t);
 
   [[nodiscard]] AxisCollisions CheckAxisCollision(const Position& position,

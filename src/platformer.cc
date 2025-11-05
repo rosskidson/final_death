@@ -232,8 +232,6 @@ bool Platformer::OnUserCreate() {
 
 // BUGTRACKER
 //
-// - Can't change direction when aiming up
-// - If you try and move in a crouch, he slides backwards super slowly. Can't change direction.
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   // TODO:: Actual dt, not just 1 / frequency
@@ -249,6 +247,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   sound_processor_->ProcessAnimationEvents(events);
 
   UpdatePlayerState(*parameter_server_, events, *physics_system_, *registry_);
+  SetFacingDirection(*registry_);
   UpdateComponentsFromState(*parameter_server_, *registry_);
   UpdatePlayerComponentsFromState(*parameter_server_, events, *registry_);
 
@@ -258,7 +257,6 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_system_->ApplyGravity();
   physics_system_->ApplyFriction(delta_t);
   physics_system_->PhysicsStep(delta_t);
-  physics_system_->SetFacingDirection();
   physics_system_->SetDistanceFallen(delta_t);
 
   profiler_.LogEvent("01_update_player_state");

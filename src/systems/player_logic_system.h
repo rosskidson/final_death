@@ -23,6 +23,8 @@ void UpdatePlayerComponentsFromState(const ParameterServer& parameter_server,
                                      const std::vector<AnimationEvent>& animation_events,
                                      Registry& registry);
 
+void SetFacingDirection(Registry& registry);
+
 // TODO:: Doesn't fit here, move it somewhere else
 void SpawnProjectiles(const ParameterServer& parameter_server,
                       const std::vector<AnimationEvent>& animation_events,

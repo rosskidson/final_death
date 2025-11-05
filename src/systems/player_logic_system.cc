@@ -61,6 +61,7 @@ bool MovementDisallowed(State state) {
     case State::UpShot:
     case State::BackShot:
     case State::AimUp:
+    case State::Crouch:
     case State::CrouchShot:
     case State::HardLanding:
     case State::PreSuicide:
@@ -290,16 +291,22 @@ void UpdatePlayerComponentsFromState(EntityId player_id,
   }
 
   // Disallow movement during crouch, except changing direction.
-  if (state == State::Crouch) {
-    if (facing == Direction::LEFT && acceleration.x > 0) {
-      velocity.x = 1;
-    } else if (facing == Direction::RIGHT && acceleration.x < 0) {
-      velocity.x = -1;
-    } else {
-      velocity.x = 0;
-    }
-    acceleration.x = 0;
-  }
+  // if (state == State::Crouch) {
+  //   LOG_INFO("#############");
+  //   LOG_INFO(ToString(state) << " " << ToString(facing) << " acc: " << acceleration.x
+  //                            << " vel: " << velocity.x);
+  //   if (facing == Direction::LEFT && acceleration.x > 0) {
+  //     velocity.x = 1;
+  //   } else if (facing == Direction::RIGHT && acceleration.x < 0) {
+  //     velocity.x = -1;
+  //   } else {
+  //     velocity.x = 0;
+  //   }
+  //   acceleration.x = 0;
+
+  //   LOG_INFO(ToString(state) << " " << ToString(facing) << " acc: " << acceleration.x
+  //                            << " vel: " << velocity.x);
+  // }
 
   // Disallow movement during the backdodgeslide
   if (state == State::BackDodgeShot) {
@@ -393,6 +400,23 @@ void UpdatePlayerComponentsFromState(const ParameterServer& parameter_server,
                                      Registry& registry) {
   for (const auto id : registry.GetView<PlayerComponent>()) {
     UpdatePlayerComponentsFromState(id, parameter_server, animation_events, registry);
+  }
+}
+
+void SetFacingDirection(Registry& registry){
+  for (const auto id : registry.GetView<Acceleration, FacingDirection>()) {
+    // Disallow change of direction if non interruptible state
+    // More realistic, but I didn't like how it felt.
+    // if(registry.HasComponent<StateComponent>(id)){
+    //   const auto state = registry.GetComponent<StateComponent>(id).state.GetState();
+    //   if(!IsInterruptibleState(state)) {
+    //     continue;
+    //   }
+    // }
+    const auto [acceleration, facing] = registry.GetComponents<Acceleration, FacingDirection>(id);
+    if (acceleration.x != 0) {
+      facing.facing = acceleration.x < 0 ? Direction::LEFT : Direction::RIGHT;
+    }
   }
 }
 
