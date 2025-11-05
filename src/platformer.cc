@@ -141,6 +141,8 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
   animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Shoot);
   animation_manager->AddInsideSpriteLocation({43, 47}, Actor::Player, State::UpShot);
 
+  animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Idle);
+
   return animation_manager;
 }
 
@@ -234,7 +236,6 @@ bool Platformer::OnUserCreate() {
 //
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
-  // TODO:: Actual dt, not just 1 / frequency
   const double delta_t = std::chrono::duration<double>(rate_.GetFrameDuration()).count();
   profiler_.Reset();
 
@@ -254,12 +255,14 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   const auto tile_size = GetCurrentLevel().level_tileset->GetTileSize();
   SpawnProjectiles(*parameter_server_, events, *animation_manager_, tile_size, *rng_, *registry_);
 
+  profiler_.LogEvent("01_update_player_state");
+
   physics_system_->ApplyGravity();
   physics_system_->ApplyFriction(delta_t);
   physics_system_->PhysicsStep(delta_t);
   physics_system_->SetDistanceFallen(delta_t);
 
-  profiler_.LogEvent("01_update_player_state");
+  profiler_.LogEvent("02_physics");
 
   // View
   rendering_system_->KeepPlayerInFrame(player_id_);
@@ -267,7 +270,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_system_->RenderTiles();
   rendering_system_->RenderEntities();
   rendering_system_->RenderForeground();
-  profiler_.LogEvent("02_render");
+  profiler_.LogEvent("03_render");
 
   // profiler_.PrintTimings();
   rate_.Sleep(false);

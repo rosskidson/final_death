@@ -32,15 +32,6 @@ std::vector<std::string> GenerateIndexLookup(const std::string& sprite_base_name
   return index;
 }
 
-std::vector<std::string> GetAnimationEventsFromVec(const std::vector<std::string>& events_to_emit) {
-  std::vector<std::string> events;
-  events.reserve(events_to_emit.size());
-  for (const auto& event_name : events_to_emit) {
-    events.push_back(event_name);
-  }
-  return events;
-}
-
 }  // namespace
 
 std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
@@ -205,15 +196,18 @@ int AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
 
 std::vector<std::string> AnimatedSprite::GetAnimationEvents(const TimePoint start_time,
                                                             int& last_animation_frame) const {
+  // TODO:: This doesn't check skipped frames
+  // Note: A skipped frames implementation needs to handle both expired state and looping
+
   const int frame_idx = GetCurrentFrameIdx(start_time);
   if (frame_idx == last_animation_frame) {
     return {};
   }
   last_animation_frame = frame_idx;
   if (frame_idx == -1) {
-    return GetAnimationEventsFromVec(signals_to_emit_on_expiration_);
+    return signals_to_emit_on_expiration_;
   }
-  return GetAnimationEventsFromVec(signals_to_emit_.at(frame_idx));
+  return signals_to_emit_.at(frame_idx);
 }
 
 void AnimatedSprite::AddEventSignal(const int frame_idx, const std::string& event_name) {

@@ -35,7 +35,7 @@ class PhysicsSystem {
                                                   Axis axis) const;
 
  private:
-  // void PhysicsStep(const double delta_t, Player& player);
+  void PhysicsStepImpl(double delta_t);
   void CheckPlayerCollision(EntityId id, const Axis& axis);
   void ResolveCollisions(EntityId id,
                          const Axis& axis,

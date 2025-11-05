@@ -1,10 +1,12 @@
 #include "physics_system.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 #include "common_types/actor_state.h"
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
+#include "common_types/entity.h"
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/game_clock.h"
@@ -49,6 +51,24 @@ bool IsCollision(const Grid<int>& collision_grid, double x, double y) {
     return false;
   }
   return collision_grid.GetTile(int_x, int_y) == 1;
+}
+
+void ResolvePointCollision(const Grid<int>& collision_grid,
+                           const Axis axis,
+                           Position& position,
+                           Velocity& velocity) {
+  const int int_x = static_cast<int>(std::floor(position.x));
+  const int int_y = static_cast<int>(std::floor(position.y));
+  if (!IsCollision(collision_grid, position.x, position.y)) {
+    return;
+  }
+  if (axis == Axis::X) {
+    position.x = std::round(position.x);
+    velocity.x = -velocity.x;
+    return;
+  }
+  position.y = std::round(position.y);
+  velocity.y = 0;
 }
 
 AxisCollisions PhysicsSystem::CheckAxisCollision(const Position& position,
@@ -163,8 +183,7 @@ PhysicsSystem::PhysicsSystem(const Level& level,
                                   "Controls deceleration in the air.");
 }
 
-void PhysicsSystem::PhysicsStep(const double delta_t) {
-  // TODO:: break up delta_t if its too large. Old implementation below
+void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
   for (auto id : registry_->GetView<Acceleration, Velocity>()) {
     auto [acceleration, velocity] = registry_->GetComponents<Acceleration, Velocity>(id);
     velocity.x += acceleration.x * delta_t;
@@ -197,25 +216,19 @@ void PhysicsSystem::PhysicsStep(const double delta_t) {
     position.x += velocity.x * delta_t;
     position.y += velocity.y * delta_t;
 
-    if(IsCollision(collisions_grid_, position.x, position.y)){
+    if (IsCollision(collisions_grid_, position.x, position.y)) {
       // Spawn particles
-      for(int i = 0; i < 3; ++i) {
+      for (int i = 0; i < 3; ++i) {
         Position particle_pos = position;
         Velocity particle_vel{};
         int sign = velocity.x > 0 ? -1 : 1;
-        particle_vel.x = sign * (rand() % 30) / 10.;
-        particle_vel.y = 10 - (rand() % 50) / 10.;
+        particle_vel.x = sign * (rand() % 50) / 10.;
+        particle_vel.y = 5 - (rand() % 100) / 10.;
         registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{});
       }
 
       registry_->RemoveComponent(id);
     }
-  }
-
-  for (auto id : registry_->GetView<Velocity, Position, Particle>()) {
-    auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
-    position.x += velocity.x * delta_t;
-    position.y += velocity.y * delta_t;
   }
 }
 
@@ -264,27 +277,39 @@ void PhysicsSystem::SetDistanceFallen(const double delta_t) {
   }
 }
 
-// void PhysicsSystem::PhysicsStep(Player& player) {
-//   const auto now = GameClock::NowGlobal();
-//   const double delta_t = (now - player.last_update).count() / 1e9;
-//   Collisions old_collisions = player.collisions;
+void PhysicsSystem::PhysicsStep(const double delta_t) {
+  std::unordered_map<EntityId, Collision> old_collisions;
+  for (EntityId id : registry_->GetView<Collision>()) {
+    old_collisions[id] = registry_->GetComponent<Collision>(id);
+  }
 
-//   if (delta_t > 0.1) {
-//     // Collision detection will not work if the game is running very slow (<10hz).
-//     // Therefore break it up into many smaller steps.
-//     const int num_steps = static_cast<int>(delta_t / 0.02);
-//     const double delta_t_fraction = delta_t / num_steps;
-//     for (int i = 0; i < num_steps; ++i) {
-//       PhysicsStep(delta_t_fraction, player);
-//     }
-//   } else {
-//     PhysicsStep(delta_t, player);
-//   }
+  if (delta_t > 0.05) {
+    // Collision detection will not work if the game is running very slow (<10hz).
+    // Therefore break it up into many smaller steps.
+    // NOTE: If physics is the reason it is running slow, this makes things worse.
+    const int num_steps = static_cast<int>(delta_t / 0.02);
+    const double delta_t_fraction = delta_t / num_steps;
+    for (int i = 0; i < num_steps; ++i) {
+      PhysicsStepImpl(delta_t_fraction);
+    }
+  } else {
+    PhysicsStepImpl(delta_t);
+  }
 
-//   UpdateCollisionsChanged(player.collisions, old_collisions);
+  for (EntityId id : registry_->GetView<Collision>()) {
+    UpdateCollisionsChanged(registry_->GetComponent<Collision>(id), old_collisions[id]);
+  }
 
-//   player.last_update = now;
-// }
+  LOG_INFO("Count " << registry_->GetView<Position>().size());
+  for (auto id : registry_->GetView<Velocity, Position, Particle>()) {
+    bool collision{};
+    auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
+    position.x += velocity.x * delta_t;
+    ResolvePointCollision(collisions_grid_, Axis::X, position, velocity);
+    position.y += velocity.y * delta_t;
+    ResolvePointCollision(collisions_grid_, Axis::Y, position, velocity);
+  }
+}
 
 void PhysicsSystem::CheckPlayerCollision(EntityId id, const Axis& axis) {
   auto [position, collision_box, collisions] =

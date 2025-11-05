@@ -35,7 +35,11 @@ std::optional<InsideSpriteLocation> AnimationManager::GetInsideSpriteLocation(
     return std::nullopt;
   }
   const auto& state = registry_->GetComponent<StateComponent>(entity_id);
-  return inside_sprite_locations_.at(SpriteKey{state.actor_type, state.state.GetState()});
+  const auto itr =  inside_sprite_locations_.find(SpriteKey{state.actor_type, state.state.GetState()});
+  if(itr == inside_sprite_locations_.end()) {
+    return std::nullopt;
+  }
+  return itr->second;
 }
 
 // TODO:: Remove const

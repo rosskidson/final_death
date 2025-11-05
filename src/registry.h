@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include <unordered_map>
+#include <utility>
 
 #include "common_types/components.h"
 #include "registry_helpers.h"
@@ -60,7 +61,19 @@ class Registry {
   // TODO:: Add const version
   template <typename... Components>
   auto GetComponents(EntityId id) {
+    RB_CHECK((HasComponent<Components>(id) && ...));
     return std::tie(GetMap<Components>()[id]...);
+  }
+
+  template <typename... Components>
+  auto GetComponents(EntityId id) const {
+    RB_CHECK((HasComponent<Components>(id) && ...));
+    return std::tie(std::as_const(GetMap<Components>()).at(id)...);
+  }
+
+  template <typename... Components>
+  auto GetComponentsConst(EntityId id) const {
+    return GetComponents<Components...>(id);
   }
 
   // As above, but just one component.

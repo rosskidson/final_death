@@ -96,14 +96,12 @@ class StateAccess {
       return;
     }
     state_set_at_ = GameClock::NowGlobal();
-    last_animation_frame_idx_ = -1;
+    last_animation_frame_idx_ = -2;  // -2 = Not initialized, -1 = Expired
     state_ = state;
   }
 
   // Use this method with caution!
-  void SetStateWithoutUpdatingOtherVariables(State state) {
-    state_ = state;
-  }
+  void SetStateWithoutUpdatingOtherVariables(State state) { state_ = state; }
 
   [[nodiscard]] TimePoint GetStateSetAt() const { return state_set_at_; }
 

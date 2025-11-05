@@ -39,7 +39,7 @@ namespace {
 
 bool IsInterruptibleState(State state) {
   switch (state) {
-    case State::Shoot:
+    // case State::Shoot:
     case State::UpShot:
     case State::BackShot:
     case State::BackDodgeShot:
@@ -156,8 +156,6 @@ void UpdatePlayerState(const EntityId player_id,
     // pose.  Only do this after the first few frame to avoid double fire.
     if ((state == State::InAirShot || state == State::InAirDownShot) && collisions.bottom &&
         (ToMs(GameClock::NowGlobal() - state_component.state.GetStateSetAt()) > 300)) {
-      // player.animation_manager.SwapAnimation(State::Shoot);
-      // TODO:: set setstarttime
       state_component.state.SetStateWithoutUpdatingOtherVariables(State::Shoot);
       return;
     }
@@ -193,8 +191,8 @@ void UpdatePlayerState(const EntityId player_id,
     return;
   }
   if (requested_states.count(State::Shoot)) {
-    state_component.state.SetState(GetShootState(requested_states, state, collisions),
-                                   animation_expired);
+    state_component.state.SetState(GetShootState(requested_states, state, collisions), true);
+    //  animation_expired);
     return;
   }
 
@@ -403,7 +401,7 @@ void UpdatePlayerComponentsFromState(const ParameterServer& parameter_server,
   }
 }
 
-void SetFacingDirection(Registry& registry){
+void SetFacingDirection(Registry& registry) {
   for (const auto id : registry.GetView<Acceleration, FacingDirection>()) {
     // Disallow change of direction if non interruptible state
     // More realistic, but I didn't like how it felt.
@@ -413,20 +411,19 @@ void SetFacingDirection(Registry& registry){
     //     continue;
     //   }
     // }
-    const auto [acceleration, facing] = registry.GetComponents<Acceleration, FacingDirection>(id);
+    auto [acceleration, facing] = registry.GetComponents<Acceleration, FacingDirection>(id);
     if (acceleration.x != 0) {
       facing.facing = acceleration.x < 0 ? Direction::LEFT : Direction::RIGHT;
     }
   }
 }
 
-// TODO:: const registry
 Vector2d GetBulletSpawnLocation(const EntityId entity_id,
                                 const AnimationManager& animation_manger,
                                 const int tile_size,
-                                Registry& registry) {
+                                const Registry& registry) {
   auto [facing, position, state] =
-      registry.GetComponents<FacingDirection, Position, StateComponent>(entity_id);
+      registry.GetComponentsConst<FacingDirection, Position, StateComponent>(entity_id);
   const auto spawn_location = animation_manger.GetInsideSpriteLocation(entity_id);
   RB_CHECK(spawn_location.has_value());
 

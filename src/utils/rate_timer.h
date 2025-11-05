@@ -20,7 +20,10 @@ class RateTimer {
 
   void Sleep(const bool debug) {
     const auto now = Clock::now();
+    last_frame_duration_ = single_frame_;
+
     if (now > frame_end_) {
+      last_frame_duration_ += now - frame_end_;
       if (debug) {
         std::cerr << "Frame timer has overrun. " << std::endl;
         std::cout << "Now (us):          " << ToUs(now) << std::endl;
@@ -37,11 +40,12 @@ class RateTimer {
   }
 
   // TODO:: This could be improved upon: keep track of how much the timer overruns, if at all.
-  [[nodiscard]] Duration GetFrameDuration() const { return single_frame_; }
+  [[nodiscard]] Duration GetFrameDuration() const { return last_frame_duration_; }
 
  private:
   TimePoint frame_end_;
   Duration single_frame_;
+  Duration last_frame_duration_;
 };
 
 }  // namespace platformer
