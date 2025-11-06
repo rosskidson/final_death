@@ -113,7 +113,8 @@ class Registry {
              std::unordered_map<EntityId, PlayerComponent>,
              std::unordered_map<EntityId, DistanceFallen>,
              std::unordered_map<EntityId, Projectile>,
-             std::unordered_map<EntityId, Particle>>
+             std::unordered_map<EntityId, Particle>,
+             std::unordered_map<EntityId, TimeToDespawn>>
       maps_tuple_;
 };
 

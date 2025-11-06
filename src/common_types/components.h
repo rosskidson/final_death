@@ -5,6 +5,7 @@
 
 #include "common_types/actor_state.h"
 #include "common_types/basic_types.h"
+#include "utils/game_clock.h"
 
 namespace platformer {
 
@@ -65,5 +66,11 @@ struct DistanceFallen {
 struct Projectile {};
 
 struct Particle {};
+
+struct TimeToDespawn {
+  TimeToDespawn() = default;
+  TimeToDespawn(double seconds): time_to_despawn(GameClock::NowGlobal() + FromSecs(seconds)) {}
+  TimePoint time_to_despawn{};
+};
 
 }  // namespace platformer

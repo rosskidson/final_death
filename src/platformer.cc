@@ -141,7 +141,9 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
   animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Shoot);
   animation_manager->AddInsideSpriteLocation({43, 47}, Actor::Player, State::UpShot);
 
+  // TODO:: REMOVE
   animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Idle);
+  animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Walk);
 
   return animation_manager;
 }
@@ -263,6 +265,14 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_system_->SetDistanceFallen(delta_t);
 
   profiler_.LogEvent("02_physics");
+
+  // Move this elsewhere
+  for(EntityId id: registry_->GetView<TimeToDespawn>()) {
+    const auto &time_to_die = registry_->GetComponent<TimeToDespawn>(id).time_to_despawn;
+    if(GameClock::NowGlobal() > time_to_die) {
+      registry_->RemoveComponent(id);
+    }
+  }
 
   // View
   rendering_system_->KeepPlayerInFrame(player_id_);

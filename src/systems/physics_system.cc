@@ -68,6 +68,7 @@ void ResolvePointCollision(const Grid<int>& collision_grid,
     return;
   }
   position.y = std::round(position.y);
+  velocity.x = 0;
   velocity.y = 0;
 }
 
@@ -218,13 +219,13 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
 
     if (IsCollision(collisions_grid_, position.x, position.y)) {
       // Spawn particles
-      for (int i = 0; i < 3; ++i) {
+      for (int i = 0; i < 1; ++i) {
         Position particle_pos = position;
         Velocity particle_vel{};
         int sign = velocity.x > 0 ? -1 : 1;
         particle_vel.x = sign * (rand() % 50) / 10.;
         particle_vel.y = 5 - (rand() % 100) / 10.;
-        registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{});
+        registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{}, TimeToDespawn{0.5});
       }
 
       registry_->RemoveComponent(id);

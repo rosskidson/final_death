@@ -26,4 +26,8 @@ constexpr int64_t ToMs(const Duration& duration) {
   return std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();
 }
 
+constexpr Duration FromSecs(double seconds) {
+  return std::chrono::duration_cast<Duration>(std::chrono::duration<double>(seconds));
+}
+
 }  // namespace platformer
