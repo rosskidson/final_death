@@ -221,15 +221,27 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
       // Spawn particles
       for (int i = 0; i < 1; ++i) {
         Position particle_pos = position;
-        Velocity particle_vel{};
-        int sign = velocity.x > 0 ? -1 : 1;
-        particle_vel.x = sign * (rand() % 50) / 10.;
-        particle_vel.y = 5 - (rand() % 100) / 10.;
+        Velocity particle_vel = velocity;
+        ResolvePointCollision(collisions_grid_, Axis::X, particle_pos, particle_vel);
+        ResolvePointCollision(collisions_grid_, Axis::Y, particle_pos, particle_vel);
+        int x_sign = velocity.x > 0 ? -1 : 1;
+        int y_sign = velocity.y > 0 ? -1 : 1;
+        particle_vel.x = x_sign * (rand() % 50) / 10.;
+        particle_vel.y = y_sign * (rand() % 50) / 10.;
         registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{}, TimeToDespawn{0.5});
       }
 
       registry_->RemoveComponent(id);
     }
+  }
+
+  for (auto id : registry_->GetView<Velocity, Position, Particle>()) {
+    bool collision{};
+    auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
+    position.x += velocity.x * delta_t;
+    ResolvePointCollision(collisions_grid_, Axis::X, position, velocity);
+    position.y += velocity.y * delta_t;
+    ResolvePointCollision(collisions_grid_, Axis::Y, position, velocity);
   }
 }
 
@@ -299,16 +311,6 @@ void PhysicsSystem::PhysicsStep(const double delta_t) {
 
   for (EntityId id : registry_->GetView<Collision>()) {
     UpdateCollisionsChanged(registry_->GetComponent<Collision>(id), old_collisions[id]);
-  }
-
-  LOG_INFO("Count " << registry_->GetView<Position>().size());
-  for (auto id : registry_->GetView<Velocity, Position, Particle>()) {
-    bool collision{};
-    auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
-    position.x += velocity.x * delta_t;
-    ResolvePointCollision(collisions_grid_, Axis::X, position, velocity);
-    position.y += velocity.y * delta_t;
-    ResolvePointCollision(collisions_grid_, Axis::Y, position, velocity);
   }
 }
 

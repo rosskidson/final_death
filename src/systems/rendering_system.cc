@@ -245,7 +245,7 @@ void RenderingSystem::RenderTiles() {
 }
 
 void RenderingSystem::RenderEntities() {
-  for (auto id : registry_->GetView<Position, StateComponent>()) {
+  for (auto id : registry_->GetView<Position, Animation>()) {
     auto [position] = registry_->GetComponents<Position>(id);
     const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
 

@@ -39,7 +39,7 @@ namespace {
 
 bool IsInterruptibleState(State state) {
   switch (state) {
-    // case State::Shoot:
+    case State::Shoot:
     case State::UpShot:
     case State::BackShot:
     case State::BackDodgeShot:
@@ -191,8 +191,7 @@ void UpdatePlayerState(const EntityId player_id,
     return;
   }
   if (requested_states.count(State::Shoot)) {
-    state_component.state.SetState(GetShootState(requested_states, state, collisions), true);
-    //  animation_expired);
+    state_component.state.SetState(GetShootState(requested_states, state, collisions), animation_expired);
     return;
   }
 
@@ -287,24 +286,6 @@ void UpdatePlayerComponentsFromState(EntityId player_id,
     velocity.x = 0;
     acceleration.x = 0;
   }
-
-  // Disallow movement during crouch, except changing direction.
-  // if (state == State::Crouch) {
-  //   LOG_INFO("#############");
-  //   LOG_INFO(ToString(state) << " " << ToString(facing) << " acc: " << acceleration.x
-  //                            << " vel: " << velocity.x);
-  //   if (facing == Direction::LEFT && acceleration.x > 0) {
-  //     velocity.x = 1;
-  //   } else if (facing == Direction::RIGHT && acceleration.x < 0) {
-  //     velocity.x = -1;
-  //   } else {
-  //     velocity.x = 0;
-  //   }
-  //   acceleration.x = 0;
-
-  //   LOG_INFO(ToString(state) << " " << ToString(facing) << " acc: " << acceleration.x
-  //                            << " vel: " << velocity.x);
-  // }
 
   // Disallow movement during the backdodgeslide
   if (state == State::BackDodgeShot) {
@@ -443,7 +424,7 @@ Velocity GetShotgunPelletVelocity(const State state,
                                   RandomNumberGenerator& rng) {
   auto projectile_velocity =
       parameter_server.GetParameter<double>("physics/shotgun.projectile.velocity");
-  constexpr double kSpreadWidth = 10;
+  constexpr double kSpreadWidth = 5;
   constexpr double kSpreadDepth = 10;
   constexpr double kHalfSpreadWidth = kSpreadWidth / 2;
   constexpr double kHalfSpreadDepth = kSpreadDepth / 2;
@@ -468,12 +449,18 @@ void SpawnProjectiles(const EntityId entity_id,
                       Registry& registry) {
   const auto& state = registry.GetComponent<StateComponent>(entity_id).state.GetState();
   const auto& facing_direction = registry.GetComponent<FacingDirection>(entity_id).facing;
-  for (int i = 0; i < 25; ++i) {
-    const auto pos = GetBulletSpawnLocation(entity_id, animation_manager, tile_size, registry);
-    registry.AddComponents(Position{pos.x, pos.y},
-                           GetShotgunPelletVelocity(state, facing_direction, parameter_server, rng),
-                           Projectile{});
-  }
+  // for (int i = 0; i < 25; ++i) {
+  //   const auto pos = GetBulletSpawnLocation(entity_id, animation_manager, tile_size, registry);
+  //   registry.AddComponents(Position{pos.x, pos.y},
+  //                          GetShotgunPelletVelocity(state, facing_direction, parameter_server, rng),
+  //                          Projectile{});
+  // }
+
+  const auto pos = GetBulletSpawnLocation(entity_id, animation_manager, tile_size, registry);
+
+  registry.AddComponents(Position{pos.x, pos.y},
+                         GetShotgunPelletVelocity(state, facing_direction, parameter_server, rng),
+                         Projectile{}, Animation{GameClock::NowGlobal(), "bullet_01"});
 }
 
 void SpawnProjectiles(const ParameterServer& parameter_server,

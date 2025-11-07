@@ -45,6 +45,8 @@ class Platformer : public olc::PixelGameEngine {
   std::shared_ptr<AnimationManager> animation_manager_;
   std::shared_ptr<RandomNumberGenerator> rng_;
 
+  std::map<std::string, olc::Sprite*> static_sprite_storage_;
+
   RateTimer rate_;
   SimpleProfiler profiler_;
 

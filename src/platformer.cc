@@ -62,6 +62,7 @@ EntityId InitializePlayer(Registry& registry) {
                                    Collision{},                                   //
                                    StateComponent{Actor::Player, {State::Idle}},  //
                                    PlayerComponent{},                             //
+                                   Animation{},                                   //
                                    DistanceFallen{0});                            //
   return id;
 }
@@ -133,6 +134,13 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
     animation_manager->AddAnimation(std::move(*animated_sprite), Actor::Player, animation.state);
   }
 
+  auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
+    player_path / "misc_animated_bullet_01.png", true);
+  if (!animated_sprite.has_value()) {
+    return nullptr;
+  }
+  animation_manager->AddAnimation(std::move(*animated_sprite), "bullet_01");
+
   animation_manager->AddInsideSpriteLocation({58, 12}, Actor::Player, State::BackDodgeShot);
   animation_manager->AddInsideSpriteLocation({9, 27}, Actor::Player, State::BackShot);
   animation_manager->AddInsideSpriteLocation({62, 19}, Actor::Player, State::CrouchShot);
@@ -140,10 +148,6 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
   animation_manager->AddInsideSpriteLocation({46, 11}, Actor::Player, State::InAirDownShot);
   animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Shoot);
   animation_manager->AddInsideSpriteLocation({43, 47}, Actor::Player, State::UpShot);
-
-  // TODO:: REMOVE
-  animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Idle);
-  animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Walk);
 
   return animation_manager;
 }

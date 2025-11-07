@@ -11,22 +11,32 @@
 
 namespace platformer {
 
+  namespace {
+    std::string MakeKey(const Actor actor, const State state) {
+      return ToString(actor) + "-" + ToString(state);
+    }
+  }
+
 void AnimationManager::AddAnimation(AnimatedSprite sprite, Actor actor, State state) {
-  animated_sprites_.try_emplace(SpriteKey{actor, state}, std::move(sprite));
+  animated_sprites_.try_emplace(MakeKey(actor, state), std::move(sprite));
+}
+
+void AnimationManager::AddAnimation(AnimatedSprite sprite, const std::string& key){
+  animated_sprites_.try_emplace(key, std::move(sprite));
 }
 
 AnimatedSprite& AnimationManager::GetAnimation(Actor actor, State state) {
-  return animated_sprites_.at(SpriteKey{actor, state});
+  return animated_sprites_.at(MakeKey(actor, state));
 }
 
 const AnimatedSprite& AnimationManager::GetAnimation(Actor actor, State state) const {
-  return animated_sprites_.at(SpriteKey{actor, state});
+  return animated_sprites_.at(MakeKey(actor, state));
 }
 
 void AnimationManager::AddInsideSpriteLocation(InsideSpriteLocation location,
                                                Actor actor,
                                                State state) {
-  inside_sprite_locations_.try_emplace(SpriteKey{actor, state}, std::move(location));
+  inside_sprite_locations_.try_emplace(MakeKey(actor, state), std::move(location));
 }
 
 std::optional<InsideSpriteLocation> AnimationManager::GetInsideSpriteLocation(
@@ -35,7 +45,7 @@ std::optional<InsideSpriteLocation> AnimationManager::GetInsideSpriteLocation(
     return std::nullopt;
   }
   const auto& state = registry_->GetComponent<StateComponent>(entity_id);
-  const auto itr =  inside_sprite_locations_.find(SpriteKey{state.actor_type, state.state.GetState()});
+  const auto itr =  inside_sprite_locations_.find(MakeKey(state.actor_type, state.state.GetState()));
   if(itr == inside_sprite_locations_.end()) {
     return std::nullopt;
   }
@@ -49,7 +59,7 @@ std::vector<AnimationEvent> AnimationManager::GetAnimationEvents() const {
   for (EntityId id : registry_->GetView<StateComponent>()) {
     auto& state = registry_->GetComponent<StateComponent>(id);
     const auto& animated_sprite =
-        animated_sprites_.at(SpriteKey{state.actor_type, state.state.GetState()});
+        animated_sprites_.at(MakeKey(state.actor_type, state.state.GetState()));
 
     const auto start_time = state.state.GetStateSetAt();
     auto animation_frame_idx = state.state.GetLastAnimationFrameIdx();
@@ -64,11 +74,16 @@ std::vector<AnimationEvent> AnimationManager::GetAnimationEvents() const {
 }
 
 const olc::Sprite* AnimationManager::GetSprite(EntityId id) const {
-  RB_CHECK(registry_->HasComponent<StateComponent>(id));
-  const auto& state = registry_->GetComponent<StateComponent>(id);
-  const auto& animated_sprite =
-      animated_sprites_.at(SpriteKey{state.actor_type, state.state.GetState()});
-  return animated_sprite.GetFrame(state.state.GetStateSetAt());
+  RB_CHECK(registry_->HasComponent<Animation>(id));
+  if(registry_->HasComponent<StateComponent>(id)) {
+    const auto& state = registry_->GetComponent<StateComponent>(id);
+    const auto& animated_sprite =
+        animated_sprites_.at(MakeKey(state.actor_type, state.state.GetState()));
+    return animated_sprite.GetFrame(state.state.GetStateSetAt());
+  }
+  const auto animation = registry_->GetComponent<Animation>(id);
+  const auto &animated_sprite = animated_sprites_.at(animation.key);
+  return animated_sprite.GetFrame(animation.start_time);
 }
 
 }  // namespace platformer

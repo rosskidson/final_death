@@ -12,20 +12,20 @@
 
 namespace platformer {
 
-struct SpriteKey {
-  SpriteKey() = default;
-  SpriteKey(Actor actor, State state) : actor{actor}, state{state} {}
+// struct SpriteKey {
+//   SpriteKey() = default;
+//   SpriteKey(Actor actor, State state) : actor{actor}, state{state} {}
 
-  bool operator<(const SpriteKey& other) const {
-    if (actor != other.actor) {
-      return actor < other.actor;
-    }
-    return state < other.state;
-  }
+//   bool operator<(const SpriteKey& other) const {
+//     if (actor != other.actor) {
+//       return actor < other.actor;
+//     }
+//     return state < other.state;
+//   }
 
-  Actor actor;
-  State state;
-};
+//   Actor actor;
+//   State state;
+// };
 
 // Needed for specific actions, e.g. spawning bullets
 struct InsideSpriteLocation {
@@ -38,6 +38,7 @@ class AnimationManager {
   AnimationManager(std::shared_ptr<Registry> registry) : registry_{std::move(registry)} {}
 
   void AddAnimation(AnimatedSprite sprite, Actor actor, State state);
+  void AddAnimation(AnimatedSprite sprite, const std::string& key);
 
   [[nodiscard]] AnimatedSprite& GetAnimation(Actor actor, State state);
   [[nodiscard]] const AnimatedSprite& GetAnimation(Actor actor, State state) const;
@@ -51,8 +52,8 @@ class AnimationManager {
   [[nodiscard]] const olc::Sprite* GetSprite(EntityId id) const;
 
  private:
-  std::map<SpriteKey, AnimatedSprite> animated_sprites_;
-  std::map<SpriteKey, InsideSpriteLocation> inside_sprite_locations_;
+  std::map<std::string, AnimatedSprite> animated_sprites_;
+  std::map<std::string, InsideSpriteLocation> inside_sprite_locations_;
   std::shared_ptr<Registry> registry_;
 };
 }  // namespace platformer

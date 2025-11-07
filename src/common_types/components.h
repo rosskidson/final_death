@@ -59,6 +59,11 @@ struct PlayerComponent {
   Vector2d cached_velocity{};
 };
 
+struct Animation {
+  TimePoint start_time{GameClock::NowGlobal()};
+  std::string key;
+};
+
 struct DistanceFallen {
   double distance_fallen{};
 };

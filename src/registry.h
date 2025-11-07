@@ -111,6 +111,7 @@ class Registry {
              std::unordered_map<EntityId, FacingDirection>,
              std::unordered_map<EntityId, StateComponent>,
              std::unordered_map<EntityId, PlayerComponent>,
+             std::unordered_map<EntityId, Animation>,
              std::unordered_map<EntityId, DistanceFallen>,
              std::unordered_map<EntityId, Projectile>,
              std::unordered_map<EntityId, Particle>,

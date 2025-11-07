@@ -6,7 +6,19 @@
 
 namespace platformer {
 
-enum class Actor : uint8_t { Player, Enemy, BadassEnemy, Boss };
+enum class Actor : uint8_t { Player, Enemy, Boss };
+
+inline std::string ToString(Actor actor) {
+  switch (actor) {
+    case Actor::Player:
+      return "Player";
+    case Actor::Enemy:
+      return "Enemy";
+    case Actor::Boss:
+      return "Boss";
+  }
+  return "unknown actor";
+}
 
 enum class State {
   Idle,
