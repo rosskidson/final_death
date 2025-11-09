@@ -267,18 +267,18 @@ void RenderingSystem::RenderEntities() {
     }
   }
 
-  for (auto id : registry_->GetView<Position, Projectile>()) {
-    auto [position] = registry_->GetComponents<Position>(id);
-    const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
-    const int px_x = static_cast<int>(position_in_screen.x * tile_size_);
-    const int px_y =
-        kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
-    engine_ptr_->Draw(px_x, px_y, olc::WHITE);
-    engine_ptr_->Draw(px_x+1, px_y, olc::WHITE);
-    engine_ptr_->Draw(px_x, px_y+1, olc::WHITE);
-    engine_ptr_->Draw(px_x-1, px_y, olc::WHITE);
-    engine_ptr_->Draw(px_x, px_y-1, olc::WHITE);
-  }
+  // for (auto id : registry_->GetView<Position, Projectile>()) {
+  //   auto [position] = registry_->GetComponents<Position>(id);
+  //   const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
+  //   const int px_x = static_cast<int>(position_in_screen.x * tile_size_);
+  //   const int px_y =
+  //       kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
+  //   engine_ptr_->Draw(px_x, px_y, olc::WHITE);
+  //   engine_ptr_->Draw(px_x+1, px_y, olc::WHITE);
+  //   engine_ptr_->Draw(px_x, px_y+1, olc::WHITE);
+  //   engine_ptr_->Draw(px_x-1, px_y, olc::WHITE);
+  //   engine_ptr_->Draw(px_x, px_y-1, olc::WHITE);
+  // }
 
   for (auto id : registry_->GetView<Position, Particle>()) {
     auto [position] = registry_->GetComponents<Position>(id);

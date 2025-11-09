@@ -4,6 +4,7 @@ namespace platformer {
 
 constexpr double kShotgunProjectileVelocity = 30.0;
 constexpr double kShotgunNumPellets = 25.0;  //TODO(UL-01): parameter server type support
+constexpr double kRifleProjectileVelocity = 30.0;
 
 ProjectileSystem::ProjectileSystem(std::shared_ptr<ParameterServer> parameter_server,
                      std::shared_ptr<const AnimationManager> animation_manager,
@@ -20,6 +21,9 @@ ProjectileSystem::ProjectileSystem(std::shared_ptr<ParameterServer> parameter_se
 
   parameter_server_->AddParameter("projectiles/num_shotgun_pellets", kShotgunNumPellets,
                                    "How many pellets in a shotgun blast");
+
+  parameter_server_->AddParameter("projectiles/rifle.vel", kRifleProjectileVelocity,
+                                   "How fast the bullet goes. Unit: tile/s");
 
 }
 
@@ -60,6 +64,21 @@ Velocity ProjectileSystem::GetShotgunPelletVelocity(const State state,
   return vel;
 }
 
+Velocity ProjectileSystem::GetRifleBulletVelocity(const State state,
+                                                  const Direction facing_direction) const {
+  const auto bullet_vel =
+      parameter_server_->GetParameter<double>("projectiles/rifle.vel");
+  if (state == State::UpShot || state == State::InAirDownShot) {
+    Velocity vel{0, bullet_vel};
+    vel.y = state == State::InAirDownShot ? vel.y *= -1 : vel.y;
+    return vel;
+  }
+  Velocity vel{bullet_vel, 0}; 
+  vel.x = facing_direction == Direction::LEFT ? vel.x *= -1 : vel.x;
+  vel.x = state == State::BackShot ? vel.x *= -1 : vel.x;
+  return vel;
+}
+
 void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
   const auto& state = registry_->GetComponent<StateComponent>(entity_id).state.GetState();
   const auto& facing_direction = registry_->GetComponent<FacingDirection>(entity_id).facing;
@@ -67,6 +86,7 @@ void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
   const int num_pellets = static_cast<int>(parameter_server_->GetParameter<double>("projectiles/num_shotgun_pellets"));
   for (int i = 0; i < num_pellets; ++i) {
     const auto pos = GetBulletSpawnLocation(entity_id);
+    
     registry_->AddComponents(Position{pos.x, pos.y},
                            GetShotgunPelletVelocity(state, facing_direction),
                            Projectile{});
@@ -79,7 +99,21 @@ void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
                          Projectile{});//, Animation{GameClock::NowGlobal(), "bullet_01"});
 }
 
-void ProjectileSystem::SpawnRifleProjectile(const EntityId entity_id) {}
+void ProjectileSystem::SpawnRifleProjectile(const EntityId entity_id) {
+  const auto& state = registry_->GetComponent<StateComponent>(entity_id).state.GetState();
+  const auto& facing_direction = registry_->GetComponent<FacingDirection>(entity_id).facing;
+  const auto pos = GetBulletSpawnLocation(entity_id);
+  const auto vel = GetRifleBulletVelocity(state, facing_direction);
+
+  FacingDirection facing{};
+  facing.facing = vel.x < 0 ? Direction::LEFT : Direction::RIGHT;
+
+  registry_->AddComponents(Position{pos.x, pos.y}, vel,
+                           Animation{GameClock::NowGlobal(), "bullet_01"}, 
+                           facing, Projectile{});
+
+
+}
 
 void ProjectileSystem::SpawnProjectiles(const std::vector<AnimationEvent>& animation_events) {
   for (const auto& event : animation_events) {

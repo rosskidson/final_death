@@ -219,7 +219,7 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
 
     if (IsCollision(collisions_grid_, position.x, position.y)) {
       // Spawn particles
-      for (int i = 0; i < 1; ++i) {
+      for (int i = 0; i < 5; ++i) {
         Position particle_pos = position;
         Velocity particle_vel = velocity;
         ResolvePointCollision(collisions_grid_, Axis::X, particle_pos, particle_vel);

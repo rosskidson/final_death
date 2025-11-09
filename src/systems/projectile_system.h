@@ -26,6 +26,8 @@ class ProjectileSystem {
     Vector2d GetBulletSpawnLocation(const EntityId entity_id) const;
     Velocity GetShotgunPelletVelocity(const State state,
                                       const Direction facing_direction) const;
+    Velocity GetRifleBulletVelocity(const State state,
+                                    const Direction facing_direction) const;
 
     std::shared_ptr<ParameterServer> parameter_server_;
     std::shared_ptr<const AnimationManager> animation_manager_;

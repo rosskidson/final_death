@@ -148,22 +148,24 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
 
 void SetAnimationCallbacks(AnimationManager& animation_manager) {
   auto& a = animation_manager;
-  a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(0, "ShootShotgun");
-  a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(5, "ReloadShotgun");
-  a.GetAnimation(Actor::Player, State::InAirShot).AddEventSignal(0, "ShootShotgun");
-  a.GetAnimation(Actor::Player, State::InAirShot).AddEventSignal(5, "ReloadShotgun");
-  a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(0, "ShootShotgun");
-  a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(5, "ReloadShotgun");
-  a.GetAnimation(Actor::Player, State::CrouchShot).AddEventSignal(0, "ShootShotgun");
-  a.GetAnimation(Actor::Player, State::CrouchShot).AddEventSignal(5, "ReloadShotgun");
-  a.GetAnimation(Actor::Player, State::UpShot).AddEventSignal(0, "ShootShotgun");
-  a.GetAnimation(Actor::Player, State::UpShot).AddEventSignal(5, "ReloadShotgun");
-  a.GetAnimation(Actor::Player, State::BackShot).AddEventSignal(1, "ShootShotgun");
-  a.GetAnimation(Actor::Player, State::BackShot).AddEventSignal(6, "ReloadShotgun");
-  a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(6, "ShootShotgun");
-  a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(9, "ReloadShotgun");
-  a.GetAnimation(Actor::Player, State::PreSuicide).AddEventSignal(0, "ReloadShotgun");
-  a.GetAnimation(Actor::Player, State::Suicide).AddEventSignal(0, "ShootShotgun");
+  const std::string shoot = "ShootRifle";
+  const std::string reload = "ReloadShotgun";
+  a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(0, shoot);
+  a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(5, reload);
+  a.GetAnimation(Actor::Player, State::InAirShot).AddEventSignal(0, shoot);
+  a.GetAnimation(Actor::Player, State::InAirShot).AddEventSignal(5, reload);
+  a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(0, shoot);
+  a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(5, reload);
+  a.GetAnimation(Actor::Player, State::CrouchShot).AddEventSignal(0, shoot);
+  a.GetAnimation(Actor::Player, State::CrouchShot).AddEventSignal(5, reload);
+  a.GetAnimation(Actor::Player, State::UpShot).AddEventSignal(0, shoot);
+  a.GetAnimation(Actor::Player, State::UpShot).AddEventSignal(5, reload);
+  a.GetAnimation(Actor::Player, State::BackShot).AddEventSignal(1, shoot);
+  a.GetAnimation(Actor::Player, State::BackShot).AddEventSignal(6, reload);
+  a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(6, shoot);
+  a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(9, reload);
+  a.GetAnimation(Actor::Player, State::PreSuicide).AddEventSignal(0, reload);
+  a.GetAnimation(Actor::Player, State::Suicide).AddEventSignal(0, shoot);
 
   a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(0, "ShootShotgunDownInAir");
   a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(0, "StartBackDodgeShot");
@@ -235,6 +237,16 @@ bool Platformer::OnUserCreate() {
   return true;
 }
 
+// Move this elsewhere
+void Platformer::RemoveComponentsWithTimeToLive() {
+  for(EntityId id: registry_->GetView<TimeToDespawn>()) {
+    const auto &time_to_die = registry_->GetComponent<TimeToDespawn>(id).time_to_despawn;
+    if(GameClock::NowGlobal() > time_to_die) {
+      registry_->RemoveComponent(id);
+    }
+  }
+}
+
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   const double delta_t = std::chrono::duration<double>(rate_.GetFrameDuration()).count();
   profiler_.Reset();
@@ -254,7 +266,9 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 
   projectile_system_->SpawnProjectiles(events);
 
-  profiler_.LogEvent("01_update_player_state");
+  RemoveComponentsWithTimeToLive();
+
+  profiler_.LogEvent("01_update_states");
 
   physics_system_->ApplyGravity();
   physics_system_->ApplyFriction(delta_t);
@@ -262,14 +276,6 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_system_->SetDistanceFallen(delta_t);
 
   profiler_.LogEvent("02_physics");
-
-  // Move this elsewhere
-  for(EntityId id: registry_->GetView<TimeToDespawn>()) {
-    const auto &time_to_die = registry_->GetComponent<TimeToDespawn>(id).time_to_despawn;
-    if(GameClock::NowGlobal() > time_to_die) {
-      registry_->RemoveComponent(id);
-    }
-  }
 
   // View
   rendering_system_->KeepPlayerInFrame(player_id_);

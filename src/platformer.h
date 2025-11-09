@@ -31,6 +31,8 @@ class Platformer : public olc::PixelGameEngine {
   bool Keyboard();
   Level& GetCurrentLevel() { return config_.levels.at(level_idx_); };
 
+  void RemoveComponentsWithTimeToLive();
+
   GameConfiguration config_;
   int level_idx_;
   // TODO(UL-03):: Remove all unique ptrs. They are like this for delayed initialization
