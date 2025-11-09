@@ -3,7 +3,6 @@
 #include "olcPixelGameEngine.h"
 namespace platformer {
 
-// TODO:: Probably replace with Eigen
 struct Vector2d {
   double x{};
   double y{};

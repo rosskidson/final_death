@@ -196,9 +196,7 @@ int AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
 
 std::vector<std::string> AnimatedSprite::GetAnimationEvents(const TimePoint start_time,
                                                             int& last_animation_frame) const {
-  // TODO:: This doesn't check skipped frames
-  // Note: A skipped frames implementation needs to handle both expired state and looping
-
+  // TODO(UL-04):: This doesn't check skipped frames
   const int frame_idx = GetCurrentFrameIdx(start_time);
   if (frame_idx == last_animation_frame) {
     return {};

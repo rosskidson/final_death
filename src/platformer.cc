@@ -22,14 +22,12 @@
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
 
-// TODO:: Int parameters
+// TODO(UL-01):: Int parameters
 constexpr double kShootDelayMs = 1000;
 constexpr double kRollDurationMs = 250;
 constexpr double kShootDownUpwardVel = 10;
 constexpr double kHardFallDistance = 10;
 constexpr double kJumpVel = 21.0;
-
-constexpr double kShotgunProjectileVelocity = 30.0;
 
 namespace platformer {
 
@@ -81,11 +79,9 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
   parameter_server->AddParameter("physics/hard.fall.distance", kHardFallDistance,
                                  "Distance to trigger a hard fall (crouch + delay for recovery)");
 
+  // TODO:: rename all .velocity with .vel
   parameter_server->AddParameter("physics/jump.velocity", kJumpVel,
                                  "The instantaneous vertical velocity when you jump, unit: tile/s");
-
-  parameter_server->AddParameter("physics/shotgun.projectile.velocity", kShotgunProjectileVelocity,
-                                 "How fast the bullets go. Unit: tile/s");
 
   return parameter_server;
 }
@@ -106,8 +102,6 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
       {player_path / "player_fire_jumping_downshot.png", false, 0, -1, -1, false,
        State::InAirDownShot},
       {player_path / "player_idle_crouch.png", true, 0, -1, -1, false, State::Crouch},
-      // TODO:: The first frame of aim up has been deleted as there is special logic missing to only
-      // play it the on the transition from idle to up.
       {player_path / "player_idle_up.png", true, 0, -1, 0, false, State::AimUp},
       {player_path / "player_fire_upwards.png", false, 2, -1, -1, false, State::UpShot},
       {player_path / "player_roll.png", false, 1, 6, -1, false, State::PreRoll},
@@ -200,13 +194,12 @@ bool Platformer::OnUserCreate() {
 
   rng_ = std::make_shared<RandomNumberGenerator>(RandomNumberGenerator::Mode::Hardware);
 
-  // TODO(FOR RELEASE): Path is assumed to be cmake source. Store assets in the binary.
+  // TODO(UL-02): Path is assumed to be cmake source. Store assets in the binary.
   const auto levels_path = std::filesystem::path(SOURCE_DIR) / "levels.json";
   auto config = platformer::LoadGameConfiguration(levels_path.string());
   RETURN_FALSE_IF_FAILED(config);
   config_ = std::move(*config);
   level_idx_ = 0;
-  const auto& tile_grid = GetCurrentLevel().tile_grid;
 
   registry_ = std::make_shared<Registry>();
   player_id_ = InitializePlayer(*registry_);
@@ -232,14 +225,15 @@ bool Platformer::OnUserCreate() {
   physics_system_ =
       std::make_unique<PhysicsSystem>(GetCurrentLevel(), parameter_server_, registry_);
   input_processor_ = std::make_unique<InputProcessor>(parameter_server_, registry_, this);
+  projectile_system_ = std::make_unique<ProjectileSystem>(parameter_server_, 
+                     animation_manager_,
+                     rng_,
+                     registry_, GetCurrentLevel().level_tileset->GetTileSize());
 
   LOG_SIMPLE("Initialization successful.");
   rate_.Reset();
   return true;
 }
-
-// BUGTRACKER
-//
 
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   const double delta_t = std::chrono::duration<double>(rate_.GetFrameDuration()).count();
@@ -258,8 +252,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   UpdateComponentsFromState(*parameter_server_, *registry_);
   UpdatePlayerComponentsFromState(*parameter_server_, events, *registry_);
 
-  const auto tile_size = GetCurrentLevel().level_tileset->GetTileSize();
-  SpawnProjectiles(*parameter_server_, events, *animation_manager_, tile_size, *rng_, *registry_);
+  projectile_system_->SpawnProjectiles(events);
 
   profiler_.LogEvent("01_update_player_state");
 

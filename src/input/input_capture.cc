@@ -3,7 +3,7 @@
 namespace platformer {
 
 InputCapture::InputCapture(olc::PixelGameEngine* engine_ptr) : engine_ptr_{engine_ptr} {
-  // TODO:: Load this via some sort of config.
+  // TODO(UL-05):: Load this via some sort of config.
   bindings_[olc::Key::LEFT] = InputAction::Left;
   bindings_[olc::Key::RIGHT] = InputAction::Right;
   bindings_[olc::Key::UP] = InputAction::Up;

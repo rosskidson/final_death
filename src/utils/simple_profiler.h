@@ -3,6 +3,7 @@
 #include <deque>
 #include <iostream>
 #include <map>
+#include <numeric>
 #include <string>
 #include "chrono_helpers.h"
 
@@ -35,12 +36,7 @@ class SimpleProfiler {
     if (values.empty()) {
       return 0;
     }
-    uint64_t total{};
-    // TODO:: std::accumulate
-    for (const auto& val : values) {
-      total += val;
-    }
-    return total / values.size();
+    return std::accumulate(values.begin(), values.end(), uint64_t{0}) / values.size();
   }
 
   static constexpr int kBufferSize = 100;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <random>
 
 namespace platformer {
@@ -22,18 +23,21 @@ class RandomNumberGenerator {
     }
   }
 
-  int RandomInt(int min, int max) {
+  int RandomInt(int min, int max) const {
+    std::lock_guard<std::mutex> lock{mutex_};
     std::uniform_int_distribution<int> dist(min, max);
     return dist(*engine_);
   }
 
-  double RandomFloat(double min, double max) {
+  double RandomFloat(double min, double max) const {
+    std::lock_guard<std::mutex> lock{mutex_};
     std::uniform_real_distribution<double> dist(min, max);
     return dist(*engine_);
   }
 
  private:
   std::unique_ptr<std::mt19937> engine_;
+  mutable std::mutex mutex_;
 };
 
 }  // namespace platformer

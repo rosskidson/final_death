@@ -39,7 +39,6 @@ class RateTimer {
     frame_end_ += single_frame_;
   }
 
-  // TODO:: This could be improved upon: keep track of how much the timer overruns, if at all.
   [[nodiscard]] Duration GetFrameDuration() const { return last_frame_duration_; }
 
  private:

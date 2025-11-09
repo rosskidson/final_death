@@ -54,11 +54,6 @@ class Registry {
   // Usage:
   // auto [pos, vel, acc] = registry.GetComponents<Position, Velocity, Acceleration>(id);
   // These are still references even though the auto is without an ampersand.
-  // Note: There is no safety on the types you pass in.
-  //       If the component doesn't exist, it will be default initialized.
-  //
-  // TODO:: Add saftey
-  // TODO:: Add const version
   template <typename... Components>
   auto GetComponents(EntityId id) {
     RB_CHECK((HasComponent<Components>(id) && ...));

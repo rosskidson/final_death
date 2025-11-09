@@ -18,10 +18,10 @@ namespace platformer {
 constexpr double kFollowPlayerScreenRatioX = 0.4;
 constexpr double kFollowPlayerScreenRatioY = 0.5;
 
-constexpr double kDrawPlayerCollisions = 0.0;  // TODO::Bool
+constexpr double kDrawPlayerCollisions = 0.0;  // TODO(UL-01)::Bool
 
 namespace {
-bool GetFlip(EntityId id, Registry& registry) {  // TODO:: const registry
+bool GetFlip(EntityId id, const Registry& registry) {
   if (!registry.HasComponent<FacingDirection>(id)) {
     return false;
   }

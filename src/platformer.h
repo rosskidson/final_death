@@ -10,6 +10,7 @@
 #include "sound/sound_player.h"
 #include "sound/sound_processor.h"
 #include "systems/physics_system.h"
+#include "systems/projectile_system.h"
 #include "systems/rendering_system.h"
 #include "utils/parameter_server.h"
 #include "utils/random_number_generator.h"
@@ -32,7 +33,7 @@ class Platformer : public olc::PixelGameEngine {
 
   GameConfiguration config_;
   int level_idx_;
-  // TODO:: Remove all unique ptrs. They are like this for delayed initialization
+  // TODO(UL-03):: Remove all unique ptrs. They are like this for delayed initialization
   // (constructor requires resources not available at Platformer constructor time)
   // Change to a static creation factory pattern.
   std::shared_ptr<Registry> registry_;
@@ -44,6 +45,7 @@ class Platformer : public olc::PixelGameEngine {
   std::shared_ptr<SoundProcessor> sound_processor_;
   std::shared_ptr<AnimationManager> animation_manager_;
   std::shared_ptr<RandomNumberGenerator> rng_;
+  std::unique_ptr<ProjectileSystem> projectile_system_;
 
   std::map<std::string, olc::Sprite*> static_sprite_storage_;
 
