@@ -16,6 +16,7 @@
 #include "utils/random_number_generator.h"
 #include "utils/rate_timer.h"
 #include "utils/simple_profiler.h"
+#include "utils/windows_high_res_timer.h"
 
 namespace platformer {
 

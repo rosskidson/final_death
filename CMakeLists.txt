@@ -33,7 +33,7 @@ FetchContent_MakeAvailable(miniaudio)
 FetchContent_Declare(
   doctest
   GIT_REPOSITORY https://github.com/doctest/doctest.git
-  GIT_TAG v2.4.11   # latest stable as of now
+  GIT_TAG v2.4.12   # latest stable as of now
 )
 FetchContent_MakeAvailable(doctest)
 
