@@ -155,12 +155,12 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
   return std::nullopt;
 }
 
-const olc::Sprite* AnimatedSprite::GetFrame(const TimePoint start_time) const {
+Sprite AnimatedSprite::GetFrame(const TimePoint start_time) const {
   const auto current_frame_idx = GetCurrentFrameIdx(start_time);
   if (current_frame_idx == -1) {
-    return frames_.back().get();
+    return {frames_.back().get(), draw_offset_x, draw_offset_y};
   }
-  return frames_.at(current_frame_idx).get();
+  return {frames_.at(current_frame_idx).get(), draw_offset_x, draw_offset_y};
 }
 
 int AnimatedSprite::GetTotalAnimationTimeMs() const { return frame_timing_lookup_.back(); }
@@ -170,6 +170,7 @@ int AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
 
   // Check if it has expired first.
   if (!loops_ && time_elapsed >= frame_timing_lookup_.back()) {
+    // TODO(BT-13): Use std::optional instead of -1
     return -1;
   }
 
@@ -196,7 +197,7 @@ int AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
 
 std::vector<std::string> AnimatedSprite::GetAnimationEvents(const TimePoint start_time,
                                                             int& last_animation_frame) const {
-  // TODO(UL-04):: This doesn't check skipped frames
+  // TODO(BT-04):: This doesn't check skipped frames
   const int frame_idx = GetCurrentFrameIdx(start_time);
   if (frame_idx == last_animation_frame) {
     return {};

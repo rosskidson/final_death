@@ -74,7 +74,7 @@ class RenderingSystem {
 
   std::shared_ptr<ParameterServer> parameter_server_;
   std::shared_ptr<AnimationManager> animation_manager_;
-  std::shared_ptr<Registry> registry_; // TODO(UL-07):: Should be const
+  std::shared_ptr<Registry> registry_; // TODO(BT-07):: Should be const
 
   // std::unique_ptr<olc::Sprite> background_;
   std::vector<BackgroundLayer> background_layers_;

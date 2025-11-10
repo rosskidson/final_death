@@ -3,7 +3,7 @@
 namespace platformer {
 
 constexpr double kShotgunProjectileVelocity = 30.0;
-constexpr double kShotgunNumPellets = 25.0;  //TODO(UL-01): parameter server type support
+constexpr double kShotgunNumPellets = 25.0;  //TODO(BT-01): parameter server type support
 constexpr double kRifleProjectileVelocity = 30.0;
 
 ProjectileSystem::ProjectileSystem(std::shared_ptr<ParameterServer> parameter_server,
@@ -33,7 +33,7 @@ Vector2d ProjectileSystem::GetBulletSpawnLocation(const EntityId entity_id) cons
   const auto spawn_location = animation_manager_->GetInsideSpriteLocation(entity_id);
   RB_CHECK(spawn_location.has_value());
 
-  const int sprite_width = animation_manager_->GetSprite(entity_id)->width;
+  const int sprite_width = animation_manager_->GetSprite(entity_id).sprite_ptr->width;
   const int x_from_center = spawn_location->x_px - sprite_width / 2;
 
   const int sign = facing.facing == Direction::LEFT ? -1 : 1;
@@ -82,7 +82,7 @@ Velocity ProjectileSystem::GetRifleBulletVelocity(const State state,
 void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
   const auto& state = registry_->GetComponent<StateComponent>(entity_id).state.GetState();
   const auto& facing_direction = registry_->GetComponent<FacingDirection>(entity_id).facing;
-  // TODO(UL-01): Parameter server more type support
+  // TODO(BT-01): Parameter server more type support
   const int num_pellets = static_cast<int>(parameter_server_->GetParameter<double>("projectiles/num_shotgun_pellets"));
   for (int i = 0; i < num_pellets; ++i) {
     const auto pos = GetBulletSpawnLocation(entity_id);

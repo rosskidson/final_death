@@ -7,6 +7,7 @@
 #include <optional>
 #include <vector>
 
+#include "common_types/sprite.h"
 #include "utils/chrono_helpers.h"
 
 namespace platformer {
@@ -32,7 +33,7 @@ class AnimatedSprite {
       bool forwards_backwards = false);
 
   // If the animation has ended and it is not looping, the last frame will be returned.
-  [[nodiscard]] const olc::Sprite* GetFrame(TimePoint start_time) const;
+  [[nodiscard]] Sprite GetFrame(TimePoint start_time) const;
 
   // Add an event to be triggered and emitted when a certain frame is reached.
   // The event may be specified as a free form string.
@@ -59,6 +60,8 @@ class AnimatedSprite {
   bool loops_;
   bool forwards_backwards_;
   int intro_frames_;
+  int draw_offset_x;
+  int draw_offset_y;
   std::vector<std::unique_ptr<olc::Sprite>> frames_;
   std::vector<int> frame_timing_;
   std::vector<int> frame_timing_lookup_;

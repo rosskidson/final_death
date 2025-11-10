@@ -18,7 +18,7 @@ namespace platformer {
 constexpr double kFollowPlayerScreenRatioX = 0.4;
 constexpr double kFollowPlayerScreenRatioY = 0.5;
 
-constexpr double kDrawPlayerCollisions = 0.0;  // TODO(UL-01)::Bool
+constexpr double kDrawPlayerCollisions = 0.0;  // TODO(BT-01)::Bool
 
 namespace {
 bool GetFlip(EntityId id, const Registry& registry) {

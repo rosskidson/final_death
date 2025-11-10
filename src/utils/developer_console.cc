@@ -27,7 +27,7 @@ void PrintConsoleWelcome() {
   std::cout << " param " << std::endl << std::endl;
 }
 
-// TODO(UL-08):: clean up this mess!!! Do a class structure to handle nested commands, usage etc.
+// TODO(BT-08):: clean up this mess!!! Do a class structure to handle nested commands, usage etc.
 void DeveloperConsole(const std::string& sCommand,
                       std::shared_ptr<ParameterServer>& parameter_server) {
   std::cout << std::endl;
@@ -53,7 +53,7 @@ void DeveloperConsole(const std::string& sCommand,
         for (int i = 0; i < max_param_key_length + 3 - key.length(); ++i) {
           std::cout << " ";
         }
-        // TODO(UL-01):: type erasure.
+        // TODO(BT-01):: type erasure.
         std::cout << parameter_server->GetParameter<double>(key) << std::endl;
       }
       std::cout << std::endl;
@@ -65,13 +65,13 @@ void DeveloperConsole(const std::string& sCommand,
         std::cout << "e.g. > param set physics/gravity 10" << std::endl << std::endl;
       }
       const auto& param = split_string[2];
-      // TODO(UL-09):: stod throws std::invalid_argument
+      // TODO(BT-09):: stod throws std::invalid_argument
       const auto val = std::stod(split_string[3]);
       if (!parameter_server->ParameterExists(param)) {
         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
         return;
       }
-      // TODO(UL-01):: We either need a type erased version of set parameter,
+      // TODO(BT-01):: We either need a type erased version of set parameter,
       // Or we need to detect the type and call it correctly.
       parameter_server->SetParameter(param, val);
       std::cout << "Parameter set to " << val << "." << std::endl << std::endl;

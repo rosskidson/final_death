@@ -47,9 +47,9 @@ class AnimationManager {
 
   [[nodiscard]] std::optional<InsideSpriteLocation> GetInsideSpriteLocation(EntityId id) const;
 
-  [[nodiscard]] std::vector<AnimationEvent> GetAnimationEvents() const;
+  [[nodiscard]] std::vector<AnimationEvent> GetAnimationEvents();
 
-  [[nodiscard]] const olc::Sprite* GetSprite(EntityId id) const;
+  [[nodiscard]] Sprite GetSprite(EntityId id) const;
 
  private:
   std::map<std::string, AnimatedSprite> animated_sprites_;

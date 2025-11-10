@@ -22,7 +22,7 @@
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
 
-// TODO(UL-01):: Int parameters
+// TODO(BT-01):: Int parameters
 constexpr double kShootDelayMs = 1000;
 constexpr double kRollDurationMs = 250;
 constexpr double kShootDownUpwardVel = 10;
@@ -196,7 +196,7 @@ bool Platformer::OnUserCreate() {
 
   rng_ = std::make_shared<RandomNumberGenerator>(RandomNumberGenerator::Mode::Hardware);
 
-  // TODO(UL-02): Path is assumed to be cmake source. Store assets in the binary.
+  // TODO(BT-02): Path is assumed to be cmake source. Store assets in the binary.
   const auto levels_path = std::filesystem::path(SOURCE_DIR) / "levels.json";
   auto config = platformer::LoadGameConfiguration(levels_path.string());
   RETURN_FALSE_IF_FAILED(config);

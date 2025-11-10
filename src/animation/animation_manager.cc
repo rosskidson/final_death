@@ -52,11 +52,10 @@ std::optional<InsideSpriteLocation> AnimationManager::GetInsideSpriteLocation(
   return itr->second;
 }
 
-std::vector<AnimationEvent> AnimationManager::GetAnimationEvents() const {
+std::vector<AnimationEvent> AnimationManager::GetAnimationEvents() {
   std::vector<AnimationEvent> events;
 
   for (EntityId id : registry_->GetView<StateComponent>()) {
-    // TODO(UL-13) WHY is this function allowed to be const?!
     auto& state = registry_->GetComponent<StateComponent>(id);
     const auto& animated_sprite =
         animated_sprites_.at(MakeKey(state.actor_type, state.state.GetState()));
@@ -73,7 +72,7 @@ std::vector<AnimationEvent> AnimationManager::GetAnimationEvents() const {
   return events;
 }
 
-const olc::Sprite* AnimationManager::GetSprite(EntityId id) const {
+Sprite AnimationManager::GetSprite(EntityId id) const {
   RB_CHECK(registry_->HasComponent<Animation>(id));
   if(registry_->HasComponent<StateComponent>(id)) {
     const auto& state = registry_->GetComponent<StateComponent>(id);

@@ -36,7 +36,7 @@ class Platformer : public olc::PixelGameEngine {
 
   GameConfiguration config_;
   int level_idx_;
-  // TODO(UL-03):: Remove all unique ptrs. They are like this for delayed initialization
+  // TODO(BT-03):: Remove all unique ptrs. They are like this for delayed initialization
   // (constructor requires resources not available at Platformer constructor time)
   // Change to a static creation factory pattern.
   std::shared_ptr<Registry> registry_;

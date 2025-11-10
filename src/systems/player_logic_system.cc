@@ -161,7 +161,7 @@ void UpdatePlayerState(const EntityId player_id,
     }
 
     // Transition from Roll to PostRoll
-    // TODO(UL-01):: ints in parameter server
+    // TODO(BT-01):: ints in parameter server
     const int roll_duration_ms =
         static_cast<int>(parameter_server.GetParameter<double>("timing/roll.duration.ms"));
     if (state == State::Roll && GameClock::NowGlobal() - state_component.state.GetStateSetAt() >
@@ -339,7 +339,7 @@ void UpdatePlayerComponentsFromState(EntityId player_id,
   }
 
   // Set bounding box based on state
-  // TODO(UL-06):: Consider a bounding box system
+  // TODO(BT-06):: Consider a bounding box system
   auto& collision_box = registry.GetComponent<CollisionBox>(player_id);
   if (state == State::Roll) {
     collision_box.x_offset_px = 32;
