@@ -129,7 +129,7 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
   }
 
   auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
-    player_path / "misc_animated_bullet_01.png", true);
+    player_path / "misc_animated_bullet_01.png", true, 0, -1, -1, 8, 3);
   if (!animated_sprite.has_value()) {
     return nullptr;
   }

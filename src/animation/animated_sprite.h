@@ -30,6 +30,8 @@ class AnimatedSprite {
       int start_frame_idx = 0,
       int end_frame_idx = -1,
       int intro_frames = -1,
+      int draw_offset_x = 0,
+      int draw_offset_y = 0,
       bool forwards_backwards = false);
 
   // If the animation has ended and it is not looping, the last frame will be returned.

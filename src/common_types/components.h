@@ -59,6 +59,7 @@ struct PlayerComponent {
   Vector2d cached_velocity{};
 };
 
+// TODO:: Rename to Sprite
 struct Animation {
   TimePoint start_time{GameClock::NowGlobal()};
   std::string key;

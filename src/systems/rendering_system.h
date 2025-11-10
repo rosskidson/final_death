@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 
+#include "common_types/sprite.h"
 #include "animation/animated_sprite.h"
 #include "animation/animation_manager.h"
 #include "common_types/basic_types.h"
@@ -63,6 +64,9 @@ class RenderingSystem {
     double scroll_slowdown_factor;
   };
 
+  Vector2i GetPixelLocation(const Position& world_pos);
+  Vector2i GetPixelLocation(const Position& world_pos, const Sprite& sprite);
+  void DrawSprite(EntityId id);
   void KeepCameraInBounds();
   void RenderBackgroundLayer(const BackgroundLayer& background_layer);
   void RenderEntityCollisionBox(int entity_top_left_px_x,

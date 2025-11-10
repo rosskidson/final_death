@@ -40,6 +40,8 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     int start_frame_idx,
     int end_frame_idx,
     int intro_frames,
+    int draw_offset_x,
+    int draw_offset_y,
     bool forwards_backwards) try {
   // Check both spritesheet and metadata files are preset.
   if (!fs::exists(sprite_sheet_path)) {
@@ -69,6 +71,8 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
   animated_sprite.loops_ = loops;
   animated_sprite.forwards_backwards_ = forwards_backwards;
   animated_sprite.intro_frames_ = intro_frames;
+  animated_sprite.draw_offset_x = draw_offset_x;
+  animated_sprite.draw_offset_y = draw_offset_y;
   int frame_count = static_cast<int>(sprite_meta["frames"].size());
   if (frame_count < 1) {
     LOG_ERROR("Sprite has zero frames.");
