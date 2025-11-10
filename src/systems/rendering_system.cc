@@ -286,7 +286,7 @@ Vector2i RenderingSystem::GetPixelLocation(const Position& world_pos){
 
 Vector2i RenderingSystem::GetPixelLocation(const Position& world_pos, const Sprite& sprite){
   auto [top_left_px_x, top_left_px_y] = GetPixelLocation(world_pos);
-  top_left_px_x += sprite.draw_offset_x;
+  top_left_px_x -= sprite.draw_offset_x;
   top_left_px_y -= (sprite.sprite_ptr->height - sprite.draw_offset_y);
   return {top_left_px_x, top_left_px_y};
 }
