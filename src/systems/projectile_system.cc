@@ -105,11 +105,17 @@ void ProjectileSystem::SpawnRifleProjectile(const EntityId entity_id) {
   const auto pos = GetBulletSpawnLocation(entity_id);
   const auto vel = GetRifleBulletVelocity(state, facing_direction);
 
+  std::string key{"bullet_01"};
   FacingDirection facing{};
   facing.facing = vel.x < 0 ? Direction::LEFT : Direction::RIGHT;
 
+  if(std::abs(vel.y) > 1e-3) {
+    key = "bullet_v_01";
+    facing.facing = vel.y > 0 ? Direction::UP : Direction::DOWN;
+  }
+
   registry_->AddComponents(Position{pos.x, pos.y}, vel,
-                           Animation{GameClock::NowGlobal(), "bullet_01"}, 
+                           Animation{GameClock::NowGlobal(), key}, 
                            facing, Projectile{});
 
 

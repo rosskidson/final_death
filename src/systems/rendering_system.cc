@@ -21,12 +21,23 @@ constexpr double kFollowPlayerScreenRatioY = 0.5;
 constexpr double kDrawPlayerCollisions = 0.0;  // TODO(BT-01)::Bool
 
 namespace {
-bool GetFlip(EntityId id, const Registry& registry) {
+olc::Sprite::Flip GetFlip(EntityId id, const Registry& registry) {
   if (!registry.HasComponent<FacingDirection>(id)) {
-    return false;
+    return olc::Sprite::Flip::NONE;
   }
-  return registry.GetComponent<FacingDirection>(id).facing == Direction::LEFT;
+  // From olc:
+  // 		enum Flip { NONE = 0, HORIZ = 1, VERT = 2 };
+  // This is a bitmask.
+  const auto facing = registry.GetComponent<FacingDirection>(id).facing;
+  if(facing == Direction::LEFT) {
+    return olc::Sprite::Flip::HORIZ;
+  }
+  if(facing == Direction::DOWN) {
+    return olc::Sprite::Flip::VERT;
+  }
+  return olc::Sprite::Flip::NONE;
 }
+
 }  // namespace
 
 RenderingSystem::RenderingSystem(olc::PixelGameEngine* engine_ptr,
@@ -299,7 +310,7 @@ void RenderingSystem::DrawSprite(const EntityId id) {
   const auto [top_left_px_x, top_left_px_y] = GetPixelLocation(position, sprite);
   const auto flip = GetFlip(id, *registry_);
   engine_ptr_->DrawSprite(top_left_px_x, top_left_px_y,
-                          const_cast<olc::Sprite*>(sprite.sprite_ptr), 1, static_cast<uint8_t>(flip));
+                          const_cast<olc::Sprite*>(sprite.sprite_ptr), 1, flip);
 }
 
 void RenderingSystem::RenderEntityCollisionBox(int entity_top_left_px_x,

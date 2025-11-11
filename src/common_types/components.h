@@ -9,10 +9,20 @@
 
 namespace platformer {
 
-enum class Direction : uint8_t { LEFT, RIGHT };
+enum class Direction : uint8_t { LEFT, RIGHT, UP, DOWN };
 
 inline std::string ToString(Direction direction) {
-  return direction == Direction::LEFT ? "LEFT" : "RIGHT";
+  switch (direction) {
+    case Direction::LEFT:
+      return "LEFT";
+    case Direction::RIGHT:
+      return "RIGHT";
+    case Direction::UP:
+      return "UP";
+    case Direction::DOWN:
+      return "DOWN";
+  }
+  return "unknown direction";
 }
 
 struct Position {

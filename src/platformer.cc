@@ -128,12 +128,22 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
     animation_manager->AddAnimation(std::move(*animated_sprite), Actor::Player, animation.state);
   }
 
-  auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
-    player_path / "misc_animated_bullet_01.png", true, 0, -1, -1, 8, 3);
-  if (!animated_sprite.has_value()) {
-    return nullptr;
+  {
+    auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
+      player_path / "misc_animated_bullet_01.png", true, 0, -1, -1, 8, 3);
+    if (!animated_sprite.has_value()) {
+      return nullptr;
+    }
+    animation_manager->AddAnimation(std::move(*animated_sprite), "bullet_01");
   }
-  animation_manager->AddAnimation(std::move(*animated_sprite), "bullet_01");
+  {
+    auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
+      player_path / "misc_animated_bullet_v_01.png", true, 0, -1, -1, 3, 7);
+    if (!animated_sprite.has_value()) {
+      return nullptr;
+    }
+    animation_manager->AddAnimation(std::move(*animated_sprite), "bullet_v_01");
+  }
 
   animation_manager->AddInsideSpriteLocation({58, 12}, Actor::Player, State::BackDodgeShot);
   animation_manager->AddInsideSpriteLocation({9, 27}, Actor::Player, State::BackShot);
