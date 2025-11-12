@@ -47,7 +47,7 @@ Velocity ProjectileSystem::GetShotgunPelletVelocity(const State state,
                                   const Direction facing_direction) const {
   auto projectile_velocity =
       parameter_server_->GetParameter<double>("projectiles/shotgun.vel");
-  constexpr double kSpreadWidth = 5;
+  constexpr double kSpreadWidth = 8;
   constexpr double kSpreadDepth = 10;
   constexpr double kHalfSpreadWidth = kSpreadWidth / 2;
   constexpr double kHalfSpreadDepth = kSpreadDepth / 2;
@@ -89,14 +89,9 @@ void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
     
     registry_->AddComponents(Position{pos.x, pos.y},
                            GetShotgunPelletVelocity(state, facing_direction),
+                           Animation{GameClock::NowGlobal(), "pellet"},
                            Projectile{});
   }
-
-  const auto pos = GetBulletSpawnLocation(entity_id);
-
-  registry_->AddComponents(Position{pos.x, pos.y},
-                         GetShotgunPelletVelocity(state, facing_direction),
-                         Projectile{});//, Animation{GameClock::NowGlobal(), "bullet_01"});
 }
 
 void ProjectileSystem::SpawnRifleProjectile(const EntityId entity_id) {
@@ -123,10 +118,13 @@ void ProjectileSystem::SpawnRifleProjectile(const EntityId entity_id) {
 
 void ProjectileSystem::SpawnProjectiles(const std::vector<AnimationEvent>& animation_events) {
   for (const auto& event : animation_events) {
-    if (event.event_name == "ShootShotgun") {
-      SpawnShotgunProjectiles(event.entity_id);
-    } else if(event.event_name == "ShootRifle") {
-      SpawnRifleProjectile(event.entity_id);
+    if (event.event_name == "PlayerShoot") {
+      const auto &weapon = registry_->GetComponent<PlayerComponent>(event.entity_id).weapon;
+      if(weapon == Weapon::Rifle) {
+        SpawnRifleProjectile(event.entity_id);
+      } else if (weapon== Weapon::Shotgun) {
+        SpawnShotgunProjectiles(event.entity_id);
+      }
     }
   }
 }

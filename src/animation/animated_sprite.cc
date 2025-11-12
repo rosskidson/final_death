@@ -34,6 +34,28 @@ std::vector<std::string> GenerateIndexLookup(const std::string& sprite_base_name
 
 }  // namespace
 
+void AnimatedSprite::InitializeOtherState(AnimatedSprite& animated_sprite) {
+  // Forwards backwards means we cycle from the last frame back to the first frame.
+  // This isn't 1984, so instead of doing index gymnastics, just copy those frames after the last
+  // frame.
+  if (animated_sprite.forwards_backwards_) {
+    for (int frame_idx = static_cast<int>(animated_sprite.frames_.size()) - 2; frame_idx > 0;
+         frame_idx--) {
+      animated_sprite.frames_.emplace_back(animated_sprite.frames_[frame_idx]->Duplicate());
+      animated_sprite.frame_timing_.push_back(animated_sprite.frame_timing_[frame_idx]);
+    }
+  }
+  animated_sprite.frame_timing_lookup_.push_back(animated_sprite.frame_timing_[0]);
+
+  for (int i = 1; i < animated_sprite.frame_timing_.size(); ++i) {
+    animated_sprite.frame_timing_lookup_.push_back(animated_sprite.frame_timing_[i] +
+                                                   animated_sprite.frame_timing_lookup_[i - 1]);
+  }
+  animated_sprite.signals_to_emit_.resize(animated_sprite.frames_.size());
+  animated_sprite.signals_to_emit_on_expiration_.emplace_back("AnimationEnded");
+}
+
+
 std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     const std::filesystem::path& sprite_sheet_path,
     bool loops,
@@ -125,24 +147,7 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     }
   }
 
-  // Forwards backwards means we cycle from the last frame back to the first frame.
-  // This isn't 1984, so instead of doing index gymnastics, just copy those frames after the last
-  // frame.
-  if (forwards_backwards) {
-    for (int frame_idx = static_cast<int>(animated_sprite.frames_.size()) - 2; frame_idx > 0;
-         frame_idx--) {
-      animated_sprite.frames_.emplace_back(animated_sprite.frames_[frame_idx]->Duplicate());
-      animated_sprite.frame_timing_.push_back(animated_sprite.frame_timing_[frame_idx]);
-    }
-  }
-  animated_sprite.frame_timing_lookup_.push_back(animated_sprite.frame_timing_[0]);
-
-  for (int i = 1; i < animated_sprite.frame_timing_.size(); ++i) {
-    animated_sprite.frame_timing_lookup_.push_back(animated_sprite.frame_timing_[i] +
-                                                   animated_sprite.frame_timing_lookup_[i - 1]);
-  }
-  animated_sprite.signals_to_emit_.resize(animated_sprite.frames_.size());
-  animated_sprite.signals_to_emit_on_expiration_.emplace_back("AnimationEnded");
+  InitializeOtherState(animated_sprite);
 
   return animated_sprite;
 } catch (const json::parse_error& e) {
@@ -158,6 +163,26 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
                                             << "'. Unknown error: " << e.what());
   return std::nullopt;
 }
+
+std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
+      std::vector<std::unique_ptr<olc::Sprite>> frames,
+      std::vector<int> frame_timing,
+      bool loops,
+      int intro_frames,
+      int draw_offset_x,
+      int draw_offset_y,
+      bool forwards_backwards){
+  AnimatedSprite animated_sprite{};
+  animated_sprite.frames_ = std::move(frames);
+  animated_sprite.frame_timing_ = std::move(frame_timing);
+  animated_sprite.loops_ = loops;
+  animated_sprite.forwards_backwards_ = forwards_backwards;
+  animated_sprite.intro_frames_ = intro_frames;
+  animated_sprite.draw_offset_x = draw_offset_x;
+  animated_sprite.draw_offset_y = draw_offset_y;
+  InitializeOtherState(animated_sprite);
+  return animated_sprite;
+} 
 
 Sprite AnimatedSprite::GetFrame(const TimePoint start_time) const {
   const auto current_frame_idx = GetCurrentFrameIdx(start_time);

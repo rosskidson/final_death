@@ -48,6 +48,7 @@ bool IsInterruptibleState(State state) {
     case State::CrouchShot:
     case State::PreRoll:
     case State::Roll:
+    case State::PostRoll:
     case State::PreJump:
     case State::HardLanding:
     case State::Suicide:

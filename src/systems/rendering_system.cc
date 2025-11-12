@@ -307,6 +307,7 @@ void RenderingSystem::DrawSprite(const EntityId id) {
   RB_CHECK(registry_->HasComponent<Position>(id));
   const auto &position = registry_->GetComponent<Position>(id);
   const auto sprite = animation_manager_->GetSprite(id);
+  // TODO(BT-14): Sprite offset not applied properly for flipped sprites
   const auto [top_left_px_x, top_left_px_y] = GetPixelLocation(position, sprite);
   const auto flip = GetFlip(id, *registry_);
   engine_ptr_->DrawSprite(top_left_px_x, top_left_px_y,

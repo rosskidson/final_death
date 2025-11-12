@@ -73,6 +73,7 @@ target_link_libraries(olc ${OLC_LIBS})
 add_library(platformer_lib
   src/animation/animated_sprite.cc
   src/animation/animation_manager.cc
+  src/animation/simple_sprites.cc
 
   src/common_types/tileset.cc
 

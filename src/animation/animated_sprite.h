@@ -34,6 +34,20 @@ class AnimatedSprite {
       int draw_offset_y = 0,
       bool forwards_backwards = false);
 
+  // 
+  // As above, but the frames and frame timing can be loaded from memory instead of from disk.
+  //
+  static std::optional<AnimatedSprite> CreateAnimatedSprite(
+      std::vector<std::unique_ptr<olc::Sprite>> frames,
+      std::vector<int> frame_timing,
+      bool loops,
+      int intro_frames = -1,
+      int draw_offset_x = 0,
+      int draw_offset_y = 0,
+      bool forwards_backwards = false);
+
+  static void InitializeOtherState(AnimatedSprite& sprite);
+
   // If the animation has ended and it is not looping, the last frame will be returned.
   [[nodiscard]] Sprite GetFrame(TimePoint start_time) const;
 

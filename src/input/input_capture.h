@@ -19,7 +19,8 @@ enum class InputAction : uint8_t {
   Suicide,
   Quit,
   Menu,
-  Console
+  Console,
+  NextWeapon
 };
 
 struct InputButton {

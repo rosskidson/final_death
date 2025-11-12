@@ -6,6 +6,7 @@
 
 #include "animation/animated_sprite.h"
 #include "animation/animation_manager.h"
+#include "animation/simple_sprites.h"
 #include "common_types/actor_state.h"
 #include "common_types/components.h"
 #include "common_types/game_configuration.h"
@@ -128,6 +129,7 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
     animation_manager->AddAnimation(std::move(*animated_sprite), Actor::Player, animation.state);
   }
 
+  // Bullet
   {
     auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
       player_path / "misc_animated_bullet_01.png", true, 0, -1, -1, 8, 3);
@@ -136,14 +138,19 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
     }
     animation_manager->AddAnimation(std::move(*animated_sprite), "bullet_01");
   }
+
+  // Bullet vertical
   {
     auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
-      player_path / "misc_animated_bullet_v_01.png", true, 0, -1, -1, 3, 7);
+      player_path / "misc_animated_bullet_v_01.png", true, 0, -1, -1, 2, 7);
     if (!animated_sprite.has_value()) {
       return nullptr;
     }
     animation_manager->AddAnimation(std::move(*animated_sprite), "bullet_v_01");
   }
+
+  // shotgun pellet
+  animation_manager->AddAnimation(CreateShotgunPelletSprite(), "pellet");
 
   animation_manager->AddInsideSpriteLocation({58, 12}, Actor::Player, State::BackDodgeShot);
   animation_manager->AddInsideSpriteLocation({9, 27}, Actor::Player, State::BackShot);
@@ -158,7 +165,7 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
 
 void SetAnimationCallbacks(AnimationManager& animation_manager) {
   auto& a = animation_manager;
-  const std::string shoot = "ShootRifle";
+  const std::string shoot = "PlayerShoot";
   const std::string reload = "ReloadShotgun";
   a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(0, shoot);
   a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(5, reload);

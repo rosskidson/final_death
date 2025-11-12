@@ -82,6 +82,11 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
     state.requested_states.insert(State::PreSuicide);
   }
 
+  if (input_.GetKey(InputAction::NextWeapon).pressed) {
+    state.weapon = static_cast<Weapon>(
+      (static_cast<int>(state.weapon) + 1) % static_cast<int>(Weapon::SIZE));
+  }
+
   if (input_.GetKey(InputAction::Console).pressed) {
     GameClock::PauseGlobal();
     engine_ptr_->ConsoleShow(olc::Key::TAB, false);

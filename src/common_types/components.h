@@ -9,22 +9,6 @@
 
 namespace platformer {
 
-enum class Direction : uint8_t { LEFT, RIGHT, UP, DOWN };
-
-inline std::string ToString(Direction direction) {
-  switch (direction) {
-    case Direction::LEFT:
-      return "LEFT";
-    case Direction::RIGHT:
-      return "RIGHT";
-    case Direction::UP:
-      return "UP";
-    case Direction::DOWN:
-      return "DOWN";
-  }
-  return "unknown direction";
-}
-
 struct Position {
   double x{};
   double y{};
@@ -67,6 +51,7 @@ struct StateComponent {
 struct PlayerComponent {
   std::set<State> requested_states;
   Vector2d cached_velocity{};
+  Weapon weapon{Weapon::Rifle};
 };
 
 // TODO:: Rename to Sprite
