@@ -54,10 +54,30 @@ struct PlayerComponent {
   Weapon weapon{Weapon::Rifle};
 };
 
-// TODO:: Rename to Sprite
-struct Animation {
-  TimePoint start_time{GameClock::NowGlobal()};
+// **** Sprite refactor ******
+//
+// All the animation state will be moved/copied from StateComponent to AnimatedSpriteComponent
+//
+// 1. Remove last_animation_frame_idx from StateAccess
+// 2. Add a function after UpdatePlayerState that updates the AnimatedSpriteComponent
+//     This will contain special setting logic
+//        - transition from flyingshoot -> standingshoot -> don't reset start time
+//        - Reset timer if shooting and animation expired
+// 3. Rendering only iterates over AnimatedSprite components
+// 4. AnimationManager also now knows nothing about StateComponent
+// 5. Rename animation manager to sprite manager
+// 6. Add a sprite map
+// 7. Get sprite simply checks if the entity has animated or non animated sprite, then
+//     looks in the corresponding map.
+
+struct SpriteComponent {
   std::string key;
+};
+
+struct AnimatedSpriteComponent {
+  TimePoint start_time{GameClock::NowGlobal()};
+  int last_animation_frame_idx{-2};
+  std::string key{};
 };
 
 struct DistanceFallen {
