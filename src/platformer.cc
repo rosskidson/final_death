@@ -52,6 +52,11 @@ struct AnimationInfo {
   State state;
 };
 
+std::string MakeKey(const Actor actor, const State state) {
+  return ToString(actor) + "-" + ToString(state);
+}
+
+
 EntityId InitializePlayer(Registry& registry) {
   auto id = registry.AddComponents(Position{2, 10},                               //
                                    Velocity{0, 0},                                //
@@ -60,8 +65,8 @@ EntityId InitializePlayer(Registry& registry) {
                                    CollisionBox{30, 0, 18, 48},                   //
                                    Collision{},                                   //
                                    StateComponent{Actor::Player, {State::Idle}},  //
-                                   PlayerComponent{},                             //
-                                   Animation{},                                   //
+                                   PlayerComponent{GameClock::NowGlobal(), {}, MakeKey(Actor::Player, State::Idle)}, // TODO REMOVE!!!!
+                                   AnimatedSpriteComponent{},                     //
                                    DistanceFallen{0});                            //
   return id;
 }
@@ -126,7 +131,7 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
     if (!animated_sprite.has_value()) {
       return nullptr;
     }
-    animation_manager->AddAnimation(std::move(*animated_sprite), Actor::Player, animation.state);
+    animation_manager->AddAnimation(MakeKey(Actor::Player, animation.state), std::move(*animated_sprite));
   }
 
   // Bullet

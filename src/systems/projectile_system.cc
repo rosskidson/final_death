@@ -80,7 +80,7 @@ Velocity ProjectileSystem::GetRifleBulletVelocity(const State state,
 }
 
 void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
-  const auto& state = registry_->GetComponent<StateComponent>(entity_id).state.GetState();
+  const auto& state = registry_->GetComponent<StateComponent>(entity_id).state;
   const auto& facing_direction = registry_->GetComponent<FacingDirection>(entity_id).facing;
   // TODO(BT-01): Parameter server more type support
   const int num_pellets = static_cast<int>(parameter_server_->GetParameter<double>("projectiles/num_shotgun_pellets"));
@@ -89,13 +89,13 @@ void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
     
     registry_->AddComponents(Position{pos.x, pos.y},
                            GetShotgunPelletVelocity(state, facing_direction),
-                           Animation{GameClock::NowGlobal(), "pellet"},
+                           AnimatedSpriteComponent{GameClock::NowGlobal(), {}, "pellet"},  // TODO: make non animated
                            Projectile{});
   }
 }
 
 void ProjectileSystem::SpawnRifleProjectile(const EntityId entity_id) {
-  const auto& state = registry_->GetComponent<StateComponent>(entity_id).state.GetState();
+  const auto& state = registry_->GetComponent<StateComponent>(entity_id).state;
   const auto& facing_direction = registry_->GetComponent<FacingDirection>(entity_id).facing;
   const auto pos = GetBulletSpawnLocation(entity_id);
   const auto vel = GetRifleBulletVelocity(state, facing_direction);
@@ -110,7 +110,7 @@ void ProjectileSystem::SpawnRifleProjectile(const EntityId entity_id) {
   }
 
   registry_->AddComponents(Position{pos.x, pos.y}, vel,
-                           Animation{GameClock::NowGlobal(), key}, 
+                           AnimatedSpriteComponent{GameClock::NowGlobal(), {}, key}, 
                            facing, Projectile{});
 
 

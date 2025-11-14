@@ -98,38 +98,24 @@ inline std::string ToString(State state) {
   return "unknown state";
 }
 
-class StateAccess {
- public:
-  StateAccess() = default;
-  StateAccess(State state) : state_{state} {}
-  [[nodiscard]] State GetState() const { return state_; }
-  void SetState(State state, bool reset = false) {
-    if (state_ == state && !reset) {
-      return;
-    }
-    state_set_at_ = GameClock::NowGlobal();
-    last_animation_frame_idx_ = -2;  // -2 = Not initialized, -1 = Expired
-    state_ = state;
-  }
+// class StateAccess {
+//  public:
+//   StateAccess() = default;
+//   StateAccess(State state) : state_{state} {}
+//   [[nodiscard]] State GetState() const { return state_; }
+//   void SetState(State state ) {
+//     if (state_ == state) {
+//       return;
+//     }
+//     state_set_at_ = GameClock::NowGlobal();
+//     state_ = state;
+//   }
 
-  // Use this method with caution!
-  void SetStateWithoutUpdatingOtherVariables(State state) { state_ = state; }
+//   [[nodiscard]] TimePoint GetStateSetAt() const { return state_set_at_; }
 
-  [[nodiscard]] TimePoint GetStateSetAt() const { return state_set_at_; }
-
-  [[nodiscard]] int GetLastAnimationFrameIdx() const { return last_animation_frame_idx_; }
-  void SetLastAnimationFrameIdx(int last_animation_frame_idx) {
-    last_animation_frame_idx_ = last_animation_frame_idx;
-  }
-
- private:
-  State state_{State::Idle};
-  TimePoint state_set_at_{GameClock::NowGlobal()};
-
-  // I know this is not excellent that this is in here, but it needs to be reset on state changes
-  // This could be fixed by creating an animation state component that contains it's
-  // own state, but then it needs to be explicitly updated once per game loop.
-  int last_animation_frame_idx_{-1};
-};
+//  private:
+//   State state_{State::Idle};
+//   TimePoint state_set_at_{GameClock::NowGlobal()};
+// };
 
 }  // namespace platformer

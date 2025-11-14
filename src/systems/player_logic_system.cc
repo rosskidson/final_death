@@ -141,7 +141,7 @@ void UpdatePlayerState(const EntityId player_id,
                        const PhysicsSystem& physics_system,
                        Registry& registry) {
   auto& state_component = registry.GetComponent<StateComponent>(player_id);
-  const auto& state = state_component.state.GetState();
+  const auto& state = state_component.state;
   const auto& collisions = registry.GetComponent<Collision>(player_id);
   const auto& requested_states = registry.GetComponent<PlayerComponent>(player_id).requested_states;
   const bool animation_expired = AnimationExpired(state, animation_events);
@@ -155,11 +155,11 @@ void UpdatePlayerState(const EntityId player_id,
   if (!animation_expired && !IsInterruptibleState(state)) {
     // If the player is shooting in the air and lands, transition the animation to the standing
     // pose.  Only do this after the first few frame to avoid double fire.
-    if ((state == State::InAirShot || state == State::InAirDownShot) && collisions.bottom &&
-        (ToMs(GameClock::NowGlobal() - state_component.state.GetStateSetAt()) > 300)) {
-      state_component.state.SetStateWithoutUpdatingOtherVariables(State::Shoot);
-      return;
-    }
+    // if ((state == State::InAirShot || state == State::InAirDownShot) && collisions.bottom &&
+    //     (ToMs(GameClock::NowGlobal() - state_component.state.GetStateSetAt()) > 300)) {
+    //   state_component.state.SetStateWithoutUpdatingOtherVariables(State::Shoot);
+    //   return;
+    // }
 
     // Transition from Roll to PostRoll
     // TODO(BT-01):: ints in parameter server

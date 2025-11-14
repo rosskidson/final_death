@@ -268,7 +268,7 @@ void PhysicsSystem::ApplyFriction(const double delta_t) {
       continue;
     }
     std::string ground_friction_key = "physics/ground.friction";
-    if (state.state.GetState() == State::BackDodgeShot) {
+    if (state.state == State::BackDodgeShot) {
       ground_friction_key = "physics/slide.friction";
     }
     const auto ground_friction = parameter_server_->GetParameter<double>(ground_friction_key);
