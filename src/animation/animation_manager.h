@@ -12,21 +12,6 @@
 
 namespace platformer {
 
-// struct SpriteKey {
-//   SpriteKey() = default;
-//   SpriteKey(Actor actor, State state) : actor{actor}, state{state} {}
-
-//   bool operator<(const SpriteKey& other) const {
-//     if (actor != other.actor) {
-//       return actor < other.actor;
-//     }
-//     return state < other.state;
-//   }
-
-//   Actor actor;
-//   State state;
-// };
-
 // Needed for specific actions, e.g. spawning bullets
 struct InsideSpriteLocation {
   int x_px{};  // Measured from the left
@@ -37,13 +22,12 @@ class AnimationManager {
  public:
   AnimationManager(std::shared_ptr<Registry> registry) : registry_{std::move(registry)} {}
 
-  void AddAnimation(AnimatedSprite sprite, Actor actor, State state);
-  void AddAnimation(AnimatedSprite sprite, const std::string& key);
+  void AddAnimation(const std::string& key, AnimatedSprite sprite);
 
-  [[nodiscard]] AnimatedSprite& GetAnimation(Actor actor, State state);
-  [[nodiscard]] const AnimatedSprite& GetAnimation(Actor actor, State state) const;
+  AnimatedSprite& GetAnimation(const std::string& key);
+  const AnimatedSprite& GetAnimation(const std::string& key) const;
 
-  void AddInsideSpriteLocation(InsideSpriteLocation location, Actor actor, State state);
+  void AddInsideSpriteLocation(const std::string& key, InsideSpriteLocation location);
 
   [[nodiscard]] std::optional<InsideSpriteLocation> GetInsideSpriteLocation(EntityId id) const;
 

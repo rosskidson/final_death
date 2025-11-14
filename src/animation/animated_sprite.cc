@@ -186,21 +186,20 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
 
 Sprite AnimatedSprite::GetFrame(const TimePoint start_time) const {
   const auto current_frame_idx = GetCurrentFrameIdx(start_time);
-  if (current_frame_idx == -1) {
+  if (current_frame_idx.Expired()) {
     return {frames_.back().get(), draw_offset_x, draw_offset_y};
   }
-  return {frames_.at(current_frame_idx).get(), draw_offset_x, draw_offset_y};
+  return {frames_.at(current_frame_idx.Index()).get(), draw_offset_x, draw_offset_y};
 }
 
 int AnimatedSprite::GetTotalAnimationTimeMs() const { return frame_timing_lookup_.back(); }
 
-int AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
+AnimationFrameIndex AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
   auto time_elapsed = ToMs(GameClock::NowGlobal() - start_time);
 
   // Check if it has expired first.
   if (!loops_ && time_elapsed >= frame_timing_lookup_.back()) {
-    // TODO(BT-13): Use std::optional instead of -1
-    return -1;
+    return AnimationFrameIndex{AnimationFrameState::Expired};
   }
 
   // Intro frames are frames that only play the first time through
@@ -218,24 +217,25 @@ int AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_time) const {
   const auto itr =
       std::upper_bound(frame_timing_lookup_.begin(), frame_timing_lookup_.end(), time_elapsed);
 
-  if (itr == frame_timing_lookup_.end()) {
-    return static_cast<int>(frames_.size()) - 1;
-  }
-  return static_cast<int>(std::distance(frame_timing_lookup_.begin(), itr));
+  // itr == frame_timing_lookup_.end() essentially means the animation has expired.
+  // This has been checked for above and shouldn't happen here.
+  RB_CHECK(itr != frame_timing_lookup_.end());
+
+  return AnimationFrameIndex{static_cast<int>(std::distance(frame_timing_lookup_.begin(), itr))};
 }
 
 std::vector<std::string> AnimatedSprite::GetAnimationEvents(const TimePoint start_time,
-                                                            int& last_animation_frame) const {
+                                                            AnimationFrameIndex& last_animation_frame) const {
   // TODO(BT-04):: This doesn't check skipped frames
-  const int frame_idx = GetCurrentFrameIdx(start_time);
+  const auto frame_idx = GetCurrentFrameIdx(start_time);
   if (frame_idx == last_animation_frame) {
     return {};
   }
   last_animation_frame = frame_idx;
-  if (frame_idx == -1) {
+  if (frame_idx.Expired()) {
     return signals_to_emit_on_expiration_;
   }
-  return signals_to_emit_.at(frame_idx);
+  return signals_to_emit_.at(frame_idx.Index());
 }
 
 void AnimatedSprite::AddEventSignal(const int frame_idx, const std::string& event_name) {

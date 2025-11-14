@@ -3,6 +3,7 @@
 #include <limits>
 #include <set>
 
+#include "animation/animation_frame_index.h"
 #include "common_types/actor_state.h"
 #include "common_types/basic_types.h"
 #include "utils/game_clock.h"
@@ -44,8 +45,8 @@ struct FacingDirection {
 };
 
 struct StateComponent {
-  Actor actor_type;  // Consider adding Components for each actor type instead.
-  StateAccess state;
+  Actor actor_type{};
+  State state{};
 };
 
 struct PlayerComponent {
@@ -58,13 +59,19 @@ struct PlayerComponent {
 //
 // All the animation state will be moved/copied from StateComponent to AnimatedSpriteComponent
 //
-// 1. Remove last_animation_frame_idx from StateAccess
+// 1. Remove last_animation_frame_idx from StateAccess               (DONE)
 // 2. Add a function after UpdatePlayerState that updates the AnimatedSpriteComponent
 //     This will contain special setting logic
 //        - transition from flyingshoot -> standingshoot -> don't reset start time
 //        - Reset timer if shooting and animation expired
-// 3. Rendering only iterates over AnimatedSprite components
-// 4. AnimationManager also now knows nothing about StateComponent
+// 3. Rendering only iterates over AnimatedSprite components         (DONE)
+// 4. AnimationManager also now knows nothing about StateComponent   (DONE)
+// 
+//  You removed the state object and state set at, but you need this after all to 
+//  transition between roll states.  Add it back
+//
+//   TEST
+//
 // 5. Rename animation manager to sprite manager
 // 6. Add a sprite map
 // 7. Get sprite simply checks if the entity has animated or non animated sprite, then
@@ -76,7 +83,7 @@ struct SpriteComponent {
 
 struct AnimatedSpriteComponent {
   TimePoint start_time{GameClock::NowGlobal()};
-  int last_animation_frame_idx{-2};
+  AnimationFrameIndex last_animation_frame_idx{};
   std::string key{};
 };
 

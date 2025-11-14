@@ -256,7 +256,7 @@ void RenderingSystem::RenderTiles() {
 }
 
 void RenderingSystem::RenderEntities() {
-  for (auto id : registry_->GetView<Position, Animation>()) {
+  for (auto id : registry_->GetView<Position, AnimatedSpriteComponent>()) {
     this->DrawSprite(id);
 
     const bool draw_bounding_box =
@@ -303,7 +303,6 @@ Vector2i RenderingSystem::GetPixelLocation(const Position& world_pos, const Spri
 }
 
 void RenderingSystem::DrawSprite(const EntityId id) {
-  RB_CHECK(registry_->HasComponent<Animation>(id));
   RB_CHECK(registry_->HasComponent<Position>(id));
   const auto &position = registry_->GetComponent<Position>(id);
   const auto sprite = animation_manager_->GetSprite(id);

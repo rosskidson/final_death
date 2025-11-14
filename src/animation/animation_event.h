@@ -7,7 +7,7 @@ namespace platformer {
 
 struct AnimationEvent {
   EntityId entity_id;
-  State animation_state;
+  std::string animation_key;
   std::string event_name;
 };
 

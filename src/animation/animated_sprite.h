@@ -7,6 +7,7 @@
 #include <optional>
 #include <vector>
 
+#include "animation/animation_frame_index.h"
 #include "common_types/sprite.h"
 #include "utils/chrono_helpers.h"
 
@@ -63,15 +64,14 @@ class AnimatedSprite {
   void AddExpiredEventSignal(const std::string& event_name);
 
   [[nodiscard]] std::vector<std::string> GetAnimationEvents(TimePoint start_time,
-                                                            int& last_animation_frame) const;
+                                                            AnimationFrameIndex& last_animation_frame) const;
 
   [[nodiscard]] int GetTotalAnimationTimeMs() const;
 
  private:
   AnimatedSprite() = default;
 
-  // Returns -1 if it is non loop and the animation has ended.
-  [[nodiscard]] int GetCurrentFrameIdx(TimePoint start_time) const;
+  [[nodiscard]] AnimationFrameIndex GetCurrentFrameIdx(TimePoint start_time) const;
 
   bool loops_;
   bool forwards_backwards_;
