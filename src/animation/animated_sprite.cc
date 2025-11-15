@@ -55,7 +55,6 @@ void AnimatedSprite::InitializeOtherState(AnimatedSprite& animated_sprite) {
   animated_sprite.signals_to_emit_on_expiration_.emplace_back("AnimationEnded");
 }
 
-
 std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
     const std::filesystem::path& sprite_sheet_path,
     bool loops,
@@ -165,13 +164,13 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
 }
 
 std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
-      std::vector<std::unique_ptr<olc::Sprite>> frames,
-      std::vector<int> frame_timing,
-      bool loops,
-      int intro_frames,
-      int draw_offset_x,
-      int draw_offset_y,
-      bool forwards_backwards){
+    std::vector<std::unique_ptr<olc::Sprite>> frames,
+    std::vector<int> frame_timing,
+    bool loops,
+    int intro_frames,
+    int draw_offset_x,
+    int draw_offset_y,
+    bool forwards_backwards) {
   AnimatedSprite animated_sprite{};
   animated_sprite.frames_ = std::move(frames);
   animated_sprite.frame_timing_ = std::move(frame_timing);
@@ -182,7 +181,7 @@ std::optional<AnimatedSprite> AnimatedSprite::CreateAnimatedSprite(
   animated_sprite.draw_offset_y = draw_offset_y;
   InitializeOtherState(animated_sprite);
   return animated_sprite;
-} 
+}
 
 Sprite AnimatedSprite::GetFrame(const TimePoint start_time) const {
   const auto current_frame_idx = GetCurrentFrameIdx(start_time);
@@ -224,8 +223,9 @@ AnimationFrameIndex AnimatedSprite::GetCurrentFrameIdx(const TimePoint start_tim
   return AnimationFrameIndex{static_cast<int>(std::distance(frame_timing_lookup_.begin(), itr))};
 }
 
-std::vector<std::string> AnimatedSprite::GetAnimationEvents(const TimePoint start_time,
-                                                            AnimationFrameIndex& last_animation_frame) const {
+std::vector<std::string> AnimatedSprite::GetAnimationEvents(
+    const TimePoint start_time,
+    AnimationFrameIndex& last_animation_frame) const {
   // TODO(BT-04):: This doesn't check skipped frames
   const auto frame_idx = GetCurrentFrameIdx(start_time);
   if (frame_idx == last_animation_frame) {

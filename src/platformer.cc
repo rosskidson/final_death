@@ -9,6 +9,7 @@
 #include "animation/simple_sprites.h"
 #include "common_types/actor_state.h"
 #include "common_types/components.h"
+#include "common_types/entity.h"
 #include "common_types/game_configuration.h"
 #include "config.h"
 #include "global_defs.h"
@@ -56,18 +57,23 @@ std::string MakeKey(const Actor actor, const State state) {
   return ToString(actor) + "-" + ToString(state);
 }
 
+std::string MakePlayerKey(const State state) {
+  return ToString(Actor::Player) + "-" + ToString(state);
+}
 
 EntityId InitializePlayer(Registry& registry) {
-  auto id = registry.AddComponents(Position{2, 10},                               //
-                                   Velocity{0, 0},                                //
-                                   Acceleration{0, 0},                            //
-                                   FacingDirection{Direction::RIGHT},             //
-                                   CollisionBox{30, 0, 18, 48},                   //
-                                   Collision{},                                   //
-                                   StateComponent{Actor::Player, {State::Idle}},  //
-                                   PlayerComponent{GameClock::NowGlobal(), {}, MakeKey(Actor::Player, State::Idle)}, // TODO REMOVE!!!!
-                                   AnimatedSpriteComponent{},                     //
-                                   DistanceFallen{0});                            //
+  auto id = registry.AddComponents(
+      Position{2, 10},                               //
+      Velocity{0, 0},                                //
+      Acceleration{0, 0},                            //
+      FacingDirection{Direction::RIGHT},             //
+      CollisionBox{30, 0, 18, 48},                   //
+      Collision{},                                   //
+      StateComponent{Actor::Player, {State::Idle}},  //
+      PlayerComponent{},                             //
+      AnimatedSpriteComponent{
+          GameClock::NowGlobal(), {}, MakeKey(Actor::Player, State::Idle)},  //// TODO REMOVE!!!!
+      DistanceFallen{0});                                                    //
   return id;
 }
 
@@ -131,39 +137,40 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
     if (!animated_sprite.has_value()) {
       return nullptr;
     }
-    animation_manager->AddAnimation(MakeKey(Actor::Player, animation.state), std::move(*animated_sprite));
+    animation_manager->AddAnimation(MakeKey(Actor::Player, animation.state),
+                                    std::move(*animated_sprite));
   }
 
   // Bullet
   {
     auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
-      player_path / "misc_animated_bullet_01.png", true, 0, -1, -1, 8, 3);
+        player_path / "misc_animated_bullet_01.png", true, 0, -1, -1, 8, 3);
     if (!animated_sprite.has_value()) {
       return nullptr;
     }
-    animation_manager->AddAnimation(std::move(*animated_sprite), "bullet_01");
+    animation_manager->AddAnimation("bullet_01", std::move(*animated_sprite));
   }
 
   // Bullet vertical
   {
     auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
-      player_path / "misc_animated_bullet_v_01.png", true, 0, -1, -1, 2, 7);
+        player_path / "misc_animated_bullet_v_01.png", true, 0, -1, -1, 2, 7);
     if (!animated_sprite.has_value()) {
       return nullptr;
     }
-    animation_manager->AddAnimation(std::move(*animated_sprite), "bullet_v_01");
+    animation_manager->AddAnimation("bullet_v_01", std::move(*animated_sprite));
   }
 
   // shotgun pellet
-  animation_manager->AddAnimation(CreateShotgunPelletSprite(), "pellet");
+  animation_manager->AddAnimation("pellet", CreateShotgunPelletSprite());
 
-  animation_manager->AddInsideSpriteLocation({58, 12}, Actor::Player, State::BackDodgeShot);
-  animation_manager->AddInsideSpriteLocation({9, 27}, Actor::Player, State::BackShot);
-  animation_manager->AddInsideSpriteLocation({62, 19}, Actor::Player, State::CrouchShot);
-  animation_manager->AddInsideSpriteLocation({61, 27}, Actor::Player, State::InAirShot);
-  animation_manager->AddInsideSpriteLocation({46, 11}, Actor::Player, State::InAirDownShot);
-  animation_manager->AddInsideSpriteLocation({62, 36}, Actor::Player, State::Shoot);
-  animation_manager->AddInsideSpriteLocation({43, 47}, Actor::Player, State::UpShot);
+  animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::BackDodgeShot), {58, 12});
+  animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::BackShot), {9, 27});
+  animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::CrouchShot), {62, 19});
+  animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::InAirShot), {61, 27});
+  animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::InAirDownShot), {46, 11});
+  animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::Shoot), {62, 36});
+  animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::UpShot), {43, 47});
 
   return animation_manager;
 }
@@ -172,25 +179,24 @@ void SetAnimationCallbacks(AnimationManager& animation_manager) {
   auto& a = animation_manager;
   const std::string shoot = "PlayerShoot";
   const std::string reload = "ReloadShotgun";
-  a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(0, shoot);
-  a.GetAnimation(Actor::Player, State::Shoot).AddEventSignal(5, reload);
-  a.GetAnimation(Actor::Player, State::InAirShot).AddEventSignal(0, shoot);
-  a.GetAnimation(Actor::Player, State::InAirShot).AddEventSignal(5, reload);
-  a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(0, shoot);
-  a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(5, reload);
-  a.GetAnimation(Actor::Player, State::CrouchShot).AddEventSignal(0, shoot);
-  a.GetAnimation(Actor::Player, State::CrouchShot).AddEventSignal(5, reload);
-  a.GetAnimation(Actor::Player, State::UpShot).AddEventSignal(0, shoot);
-  a.GetAnimation(Actor::Player, State::UpShot).AddEventSignal(5, reload);
-  a.GetAnimation(Actor::Player, State::BackShot).AddEventSignal(1, shoot);
-  a.GetAnimation(Actor::Player, State::BackShot).AddEventSignal(6, reload);
-  a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(6, shoot);
-  a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(9, reload);
-  a.GetAnimation(Actor::Player, State::PreSuicide).AddEventSignal(0, reload);
-  a.GetAnimation(Actor::Player, State::Suicide).AddEventSignal(0, shoot);
-
-  a.GetAnimation(Actor::Player, State::InAirDownShot).AddEventSignal(0, "ShootShotgunDownInAir");
-  a.GetAnimation(Actor::Player, State::BackDodgeShot).AddEventSignal(0, "StartBackDodgeShot");
+  a.GetAnimation(MakePlayerKey(State::Shoot)).AddEventSignal(0, shoot);
+  a.GetAnimation(MakePlayerKey(State::Shoot)).AddEventSignal(5, reload);
+  a.GetAnimation(MakePlayerKey(State::InAirShot)).AddEventSignal(0, shoot);
+  a.GetAnimation(MakePlayerKey(State::InAirShot)).AddEventSignal(5, reload);
+  a.GetAnimation(MakePlayerKey(State::InAirDownShot)).AddEventSignal(0, shoot);
+  a.GetAnimation(MakePlayerKey(State::InAirDownShot)).AddEventSignal(5, reload);
+  a.GetAnimation(MakePlayerKey(State::CrouchShot)).AddEventSignal(0, shoot);
+  a.GetAnimation(MakePlayerKey(State::CrouchShot)).AddEventSignal(5, reload);
+  a.GetAnimation(MakePlayerKey(State::UpShot)).AddEventSignal(0, shoot);
+  a.GetAnimation(MakePlayerKey(State::UpShot)).AddEventSignal(5, reload);
+  a.GetAnimation(MakePlayerKey(State::BackShot)).AddEventSignal(1, shoot);
+  a.GetAnimation(MakePlayerKey(State::BackShot)).AddEventSignal(6, reload);
+  a.GetAnimation(MakePlayerKey(State::BackDodgeShot)).AddEventSignal(6, shoot);
+  a.GetAnimation(MakePlayerKey(State::BackDodgeShot)).AddEventSignal(9, reload);
+  a.GetAnimation(MakePlayerKey(State::PreSuicide)).AddEventSignal(0, reload);
+  a.GetAnimation(MakePlayerKey(State::Suicide)).AddEventSignal(0, shoot);
+  a.GetAnimation(MakePlayerKey(State::InAirDownShot)).AddEventSignal(0, "ShootShotgunDownInAir");
+  a.GetAnimation(MakePlayerKey(State::BackDodgeShot)).AddEventSignal(0, "StartBackDodgeShot");
 }
 
 std::shared_ptr<SoundPlayer> CreateSoundPlayer() {
@@ -249,10 +255,9 @@ bool Platformer::OnUserCreate() {
   physics_system_ =
       std::make_unique<PhysicsSystem>(GetCurrentLevel(), parameter_server_, registry_);
   input_processor_ = std::make_unique<InputProcessor>(parameter_server_, registry_, this);
-  projectile_system_ = std::make_unique<ProjectileSystem>(parameter_server_, 
-                     animation_manager_,
-                     rng_,
-                     registry_, GetCurrentLevel().level_tileset->GetTileSize());
+  projectile_system_ =
+      std::make_unique<ProjectileSystem>(parameter_server_, animation_manager_, rng_, registry_,
+                                         GetCurrentLevel().level_tileset->GetTileSize());
 
   LOG_SIMPLE("Initialization successful.");
   rate_.Reset();
@@ -261,10 +266,23 @@ bool Platformer::OnUserCreate() {
 
 // Move this elsewhere
 void Platformer::RemoveComponentsWithTimeToLive() {
-  for(EntityId id: registry_->GetView<TimeToDespawn>()) {
-    const auto &time_to_die = registry_->GetComponent<TimeToDespawn>(id).time_to_despawn;
-    if(GameClock::NowGlobal() > time_to_die) {
+  for (EntityId id : registry_->GetView<TimeToDespawn>()) {
+    const auto& time_to_die = registry_->GetComponent<TimeToDespawn>(id).time_to_despawn;
+    if (GameClock::NowGlobal() > time_to_die) {
       registry_->RemoveComponent(id);
+    }
+  }
+}
+
+void Platformer::UpdateAnimatedSpriteComponentFromState() {
+  for (const EntityId id : registry_->GetView<AnimatedSpriteComponent, StateComponent>()) {
+    const auto& state = registry_->GetComponentConst<StateComponent>(id);
+    auto& animated_sprite = registry_->GetComponent<AnimatedSpriteComponent>(id);
+    const auto new_key = MakeKey(state.actor_type, state.state.GetState());
+    if (new_key != animated_sprite.key) {
+      animated_sprite.key = new_key;
+      animated_sprite.last_animation_frame_idx.Reset();
+      animated_sprite.start_time = state.state.GetStateSetAt();
     }
   }
 }
@@ -285,6 +303,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   SetFacingDirection(*registry_);
   UpdateComponentsFromState(*parameter_server_, *registry_);
   UpdatePlayerComponentsFromState(*parameter_server_, events, *registry_);
+  UpdateAnimatedSpriteComponentFromState();
 
   projectile_system_->SpawnProjectiles(events);
 

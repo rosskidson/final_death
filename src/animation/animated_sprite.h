@@ -35,7 +35,7 @@ class AnimatedSprite {
       int draw_offset_y = 0,
       bool forwards_backwards = false);
 
-  // 
+  //
   // As above, but the frames and frame timing can be loaded from memory instead of from disk.
   //
   static std::optional<AnimatedSprite> CreateAnimatedSprite(
@@ -63,8 +63,9 @@ class AnimatedSprite {
   // As above, but trigger after a non looping animation has finished.
   void AddExpiredEventSignal(const std::string& event_name);
 
-  [[nodiscard]] std::vector<std::string> GetAnimationEvents(TimePoint start_time,
-                                                            AnimationFrameIndex& last_animation_frame) const;
+  [[nodiscard]] std::vector<std::string> GetAnimationEvents(
+      TimePoint start_time,
+      AnimationFrameIndex& last_animation_frame) const;
 
   [[nodiscard]] int GetTotalAnimationTimeMs() const;
 

@@ -86,6 +86,11 @@ class Registry {
     return map.at(id);
   }
 
+  template <typename T>
+  const auto& GetComponentConst(EntityId id) const {
+    return GetComponent<T>(id);
+  }
+
   // Removes the id from all component maps.
   void RemoveComponent(EntityId id) {
     std::apply([&](auto&&... args) { RemoveComponentImpl(id, args...); }, maps_tuple_);

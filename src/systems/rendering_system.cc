@@ -29,10 +29,10 @@ olc::Sprite::Flip GetFlip(EntityId id, const Registry& registry) {
   // 		enum Flip { NONE = 0, HORIZ = 1, VERT = 2 };
   // This is a bitmask.
   const auto facing = registry.GetComponent<FacingDirection>(id).facing;
-  if(facing == Direction::LEFT) {
+  if (facing == Direction::LEFT) {
     return olc::Sprite::Flip::HORIZ;
   }
-  if(facing == Direction::DOWN) {
+  if (facing == Direction::DOWN) {
     return olc::Sprite::Flip::VERT;
   }
   return olc::Sprite::Flip::NONE;
@@ -262,8 +262,8 @@ void RenderingSystem::RenderEntities() {
     const bool draw_bounding_box =
         parameter_server_->GetParameter<double>("viz/draw.player.collisions") == 1.;
     // if (draw_bounding_box) {
-    //   const auto [player_top_left_px_x, player_top_left_px_y] = GetPixelLocation(position, sprite);
-    //   RenderEntityCollisionBox(player_top_left_px_x, player_top_left_px_y, id);
+    //   const auto [player_top_left_px_x, player_top_left_px_y] = GetPixelLocation(position,
+    //   sprite); RenderEntityCollisionBox(player_top_left_px_x, player_top_left_px_y, id);
     // }
   }
 
@@ -281,21 +281,20 @@ void RenderingSystem::RenderEntities() {
   // }
 
   for (auto id : registry_->GetView<Position, Particle>()) {
-    const auto &position = registry_->GetComponent<Position>(id);
+    const auto& position = registry_->GetComponent<Position>(id);
     const auto [px_x, px_y] = GetPixelLocation(position);
     engine_ptr_->Draw(px_x, px_y, olc::WHITE);
   }
 }
 
-Vector2i RenderingSystem::GetPixelLocation(const Position& world_pos){
+Vector2i RenderingSystem::GetPixelLocation(const Position& world_pos) {
   const auto position_in_screen = Vector2d{world_pos.x, world_pos.y} - GetCameraPosition();
   const int top_left_px_x = static_cast<int>(position_in_screen.x * tile_size_);
-  const int top_left_px_y =
-      kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
+  const int top_left_px_y = kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
   return {top_left_px_x, top_left_px_y};
 }
 
-Vector2i RenderingSystem::GetPixelLocation(const Position& world_pos, const Sprite& sprite){
+Vector2i RenderingSystem::GetPixelLocation(const Position& world_pos, const Sprite& sprite) {
   auto [top_left_px_x, top_left_px_y] = GetPixelLocation(world_pos);
   top_left_px_x -= sprite.draw_offset_x;
   top_left_px_y -= (sprite.sprite_ptr->height - sprite.draw_offset_y);
@@ -304,13 +303,13 @@ Vector2i RenderingSystem::GetPixelLocation(const Position& world_pos, const Spri
 
 void RenderingSystem::DrawSprite(const EntityId id) {
   RB_CHECK(registry_->HasComponent<Position>(id));
-  const auto &position = registry_->GetComponent<Position>(id);
+  const auto& position = registry_->GetComponent<Position>(id);
   const auto sprite = animation_manager_->GetSprite(id);
   // TODO(BT-14): Sprite offset not applied properly for flipped sprites
   const auto [top_left_px_x, top_left_px_y] = GetPixelLocation(position, sprite);
   const auto flip = GetFlip(id, *registry_);
-  engine_ptr_->DrawSprite(top_left_px_x, top_left_px_y,
-                          const_cast<olc::Sprite*>(sprite.sprite_ptr), 1, flip);
+  engine_ptr_->DrawSprite(top_left_px_x, top_left_px_y, const_cast<olc::Sprite*>(sprite.sprite_ptr),
+                          1, flip);
 }
 
 void RenderingSystem::RenderEntityCollisionBox(int entity_top_left_px_x,

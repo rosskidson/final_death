@@ -98,24 +98,26 @@ inline std::string ToString(State state) {
   return "unknown state";
 }
 
-// class StateAccess {
-//  public:
-//   StateAccess() = default;
-//   StateAccess(State state) : state_{state} {}
-//   [[nodiscard]] State GetState() const { return state_; }
-//   void SetState(State state ) {
-//     if (state_ == state) {
-//       return;
-//     }
-//     state_set_at_ = GameClock::NowGlobal();
-//     state_ = state;
-//   }
+class StateAccess {
+ public:
+  StateAccess() = default;
+  StateAccess(State state) : state_{state} {}
+  [[nodiscard]] State GetState() const { return state_; }
+  void SetState(State state, bool reset = false) {
+    if (state_ == state && !reset) {
+      return;
+    }
+    state_set_at_ = GameClock::NowGlobal();
+    state_ = state;
+  }
 
-//   [[nodiscard]] TimePoint GetStateSetAt() const { return state_set_at_; }
+  [[nodiscard]] TimePoint GetStateSetAt() const { return state_set_at_; }
 
-//  private:
-//   State state_{State::Idle};
-//   TimePoint state_set_at_{GameClock::NowGlobal()};
-// };
+  [[nodiscard]] State operator*() const { return state_; }
+
+ private:
+  State state_{State::Idle};
+  TimePoint state_set_at_{GameClock::NowGlobal()};
+};
 
 }  // namespace platformer

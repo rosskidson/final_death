@@ -123,10 +123,11 @@ bool SetHardLandingState(const ParameterServer& parameter_server,
 }
 
 bool AnimationExpired(const State state, const std::vector<AnimationEvent>& animation_events) {
-  return std::any_of(
-      animation_events.begin(), animation_events.end(), [&](const AnimationEvent& event) {
-        return event.event_name == "AnimationEnded" && event.animation_state == state;
-      });
+  return std::any_of(animation_events.begin(), animation_events.end(),
+                     [&](const AnimationEvent& event) {
+                       return event.event_name ==
+                              "AnimationEnded";  // && event.animation_key == GetKey(actor, state);
+                     });
 }
 
 bool EventOccurred(const std::string& event_name,
@@ -141,7 +142,7 @@ void UpdatePlayerState(const EntityId player_id,
                        const PhysicsSystem& physics_system,
                        Registry& registry) {
   auto& state_component = registry.GetComponent<StateComponent>(player_id);
-  const auto& state = state_component.state;
+  const auto& state = state_component.state.GetState();
   const auto& collisions = registry.GetComponent<Collision>(player_id);
   const auto& requested_states = registry.GetComponent<PlayerComponent>(player_id).requested_states;
   const bool animation_expired = AnimationExpired(state, animation_events);
@@ -160,6 +161,7 @@ void UpdatePlayerState(const EntityId player_id,
     //   state_component.state.SetStateWithoutUpdatingOtherVariables(State::Shoot);
     //   return;
     // }
+    // ^^^ This needs to be implemented in the update animation function ^^^
 
     // Transition from Roll to PostRoll
     // TODO(BT-01):: ints in parameter server
@@ -192,7 +194,8 @@ void UpdatePlayerState(const EntityId player_id,
     return;
   }
   if (requested_states.count(State::Shoot)) {
-    state_component.state.SetState(GetShootState(requested_states, state, collisions), animation_expired);
+    state_component.state.SetState(GetShootState(requested_states, state, collisions),
+                                   animation_expired);
     return;
   }
 
@@ -294,10 +297,13 @@ void UpdatePlayerComponentsFromState(EntityId player_id,
   }
 
   // Add vertical velocity for Jumping.
-  if (std::any_of(
-          animation_events.begin(), animation_events.end(), [](const AnimationEvent& event) {
-            return event.event_name == "AnimationEnded" && event.animation_state == State::PreJump;
-          })) {
+  if (std::any_of(animation_events.begin(), animation_events.end(),
+                  [&state](const AnimationEvent& event) {
+                    return event.event_name == "AnimationEnded" &&
+                           // Note: I don't like checking the animation key, like this, would rather 
+                           // check the state, but it seems to somehow already be out of sync at this stage.
+                           event.animation_key.find(ToString(State::PreJump)) != std::string::npos;
+                  })) {
     const auto jump_velocity = parameter_server.GetParameter<double>("physics/jump.velocity");
     velocity.x = cached_velocity.x;
     velocity.y = jump_velocity;

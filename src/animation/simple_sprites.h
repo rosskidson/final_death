@@ -4,7 +4,7 @@
 
 namespace platformer {
 
-  AnimatedSprite CreateShotgunPelletSprite();
-  AnimatedSprite CreateSmallWallHitEffectSprite();
+AnimatedSprite CreateShotgunPelletSprite();
+AnimatedSprite CreateSmallWallHitEffectSprite();
 
-}
+}  // namespace platformer

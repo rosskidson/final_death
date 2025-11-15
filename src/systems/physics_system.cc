@@ -228,7 +228,8 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
         int y_sign = velocity.y > 0 ? -1 : 1;
         particle_vel.x = x_sign * (rand() % 50) / 10.;
         particle_vel.y = y_sign * (rand() % 50) / 10.;
-        registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{}, TimeToDespawn{0.5});
+        registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{},
+                                 TimeToDespawn{0.5});
       }
 
       registry_->RemoveComponent(id);
@@ -268,7 +269,7 @@ void PhysicsSystem::ApplyFriction(const double delta_t) {
       continue;
     }
     std::string ground_friction_key = "physics/ground.friction";
-    if (state.state == State::BackDodgeShot) {
+    if (*state.state == State::BackDodgeShot) {
       ground_friction_key = "physics/slide.friction";
     }
     const auto ground_friction = parameter_server_->GetParameter<double>(ground_friction_key);
