@@ -226,12 +226,17 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
         ResolvePointCollision(collisions_grid_, Axis::Y, particle_pos, particle_vel);
         int x_sign = velocity.x > 0 ? -1 : 1;
         int y_sign = velocity.y > 0 ? -1 : 1;
+        // TODO(BT-18):: use rng
         particle_vel.x = x_sign * (rand() % 50) / 10.;
         particle_vel.y = y_sign * (rand() % 50) / 10.;
+        DrawFunction draw_function{};
+        const uint8_t color = 128 + (rand() % 128);
+        draw_function.draw_fn = [color](int px, int py, olc::PixelGameEngine* engine_ptr) {
+          engine_ptr->Draw(px, py, olc::Pixel{color, color, color});
+        };
         registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{},
-                                 TimeToDespawn{0.5});
+                                 TimeToDespawn{0.5}, draw_function);
       }
-
       registry_->RemoveComponent(id);
     }
   }

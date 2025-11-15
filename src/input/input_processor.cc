@@ -90,7 +90,7 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
   if (input_.GetKey(InputAction::Console).pressed) {
     GameClock::PauseGlobal();
     engine_ptr_->ConsoleShow(olc::Key::TAB, false);
-    engine_ptr_->ConsoleCaptureStdOut(true);
+    // engine_ptr_->ConsoleCaptureStdOut(true);
     PrintConsoleWelcome();
   }
   if (!engine_ptr_->IsConsoleShowing()) {

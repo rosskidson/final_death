@@ -5,8 +5,8 @@
 #include <memory>
 
 #include "animation/animated_sprite.h"
-#include "animation/animation_manager.h"
 #include "animation/simple_sprites.h"
+#include "animation/sprite_manager.h"
 #include "common_types/actor_state.h"
 #include "common_types/components.h"
 #include "common_types/entity.h"
@@ -95,13 +95,14 @@ std::shared_ptr<ParameterServer> CreateParameterServer() {
   parameter_server->AddParameter("physics/jump.velocity", kJumpVel,
                                  "The instantaneous vertical velocity when you jump, unit: tile/s");
 
+  parameter_server->AddParameter("debug/enable.timing", 0., "Spam the console with timing debug");
+
   return parameter_server;
 }
 
-std::shared_ptr<AnimationManager> InitializeAnimationManager(
-    const ParameterServer& parameter_server,
-    EntityId player_id,
-    std::shared_ptr<Registry> registry) {
+std::shared_ptr<SpriteManager> InitializeAnimationManager(const ParameterServer& parameter_server,
+                                                          EntityId player_id,
+                                                          std::shared_ptr<Registry> registry) {
   const auto player_path = std::filesystem::path(SOURCE_DIR) / "assets" / "player";
   constexpr int kWidth = 80;
   std::vector<AnimationInfo> animations = {
@@ -129,7 +130,7 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
       {player_path / "player_fire_backdodge.png", false, 0, -1, -1, false, State::BackDodgeShot},
   };
 
-  auto animation_manager = std::make_shared<AnimationManager>(std::move(registry));
+  auto animation_manager = std::make_shared<SpriteManager>(std::move(registry));
   for (const auto& animation : animations) {
     auto animated_sprite = AnimatedSprite::CreateAnimatedSprite(
         animation.sprite_path, animation.loops, animation.start_frame_idx, animation.end_frame_idx,
@@ -162,7 +163,7 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
   }
 
   // shotgun pellet
-  animation_manager->AddAnimation("pellet", CreateShotgunPelletSprite());
+  animation_manager->AddSprite("pellet", 1, 2, CreateShotgunPelletSprite());
 
   animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::BackDodgeShot), {58, 12});
   animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::BackShot), {9, 27});
@@ -175,7 +176,7 @@ std::shared_ptr<AnimationManager> InitializeAnimationManager(
   return animation_manager;
 }
 
-void SetAnimationCallbacks(AnimationManager& animation_manager) {
+void SetAnimationCallbacks(SpriteManager& animation_manager) {
   auto& a = animation_manager;
   const std::string shoot = "PlayerShoot";
   const std::string reload = "ReloadShotgun";
@@ -279,7 +280,8 @@ void Platformer::UpdateAnimatedSpriteComponentFromState() {
     const auto& state = registry_->GetComponentConst<StateComponent>(id);
     auto& animated_sprite = registry_->GetComponent<AnimatedSpriteComponent>(id);
     const auto new_key = MakeKey(state.actor_type, state.state.GetState());
-    if (new_key != animated_sprite.key) {
+    if (new_key != animated_sprite.key ||
+        animated_sprite.start_time != state.state.GetStateSetAt()) {
       animated_sprite.key = new_key;
       animated_sprite.last_animation_frame_idx.Reset();
       animated_sprite.start_time = state.state.GetStateSetAt();
@@ -326,7 +328,9 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_system_->RenderForeground();
   profiler_.LogEvent("03_render");
 
-  // profiler_.PrintTimings();
+  if (parameter_server_->GetParameter<double>("debug/enable.timing") > 0) {
+    profiler_.PrintTimings();
+  }
   rate_.Sleep(false);
   return true;
 }

@@ -10,6 +10,7 @@
 #include "common_types/tileset.h"
 #include "config.h"
 #include "global_defs.h"
+#include "registry.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
 
@@ -43,7 +44,7 @@ olc::Sprite::Flip GetFlip(EntityId id, const Registry& registry) {
 RenderingSystem::RenderingSystem(olc::PixelGameEngine* engine_ptr,
                                  Level level,
                                  std::shared_ptr<ParameterServer> parameter_server,
-                                 std::shared_ptr<AnimationManager> animation_manager,
+                                 std::shared_ptr<SpriteManager> animation_manager,
                                  std::shared_ptr<Registry> registry)
     : engine_ptr_{engine_ptr},
       level_{std::move(level)},
@@ -256,34 +257,23 @@ void RenderingSystem::RenderTiles() {
 }
 
 void RenderingSystem::RenderEntities() {
-  for (auto id : registry_->GetView<Position, AnimatedSpriteComponent>()) {
+  for (auto id : CombineViews(registry_->GetView<Position, AnimatedSpriteComponent>(),
+                              registry_->GetView<Position, SpriteComponent>())) {
     this->DrawSprite(id);
 
     const bool draw_bounding_box =
         parameter_server_->GetParameter<double>("viz/draw.player.collisions") == 1.;
+    // TODO(BT-19):: Fix this
     // if (draw_bounding_box) {
     //   const auto [player_top_left_px_x, player_top_left_px_y] = GetPixelLocation(position,
     //   sprite); RenderEntityCollisionBox(player_top_left_px_x, player_top_left_px_y, id);
     // }
   }
 
-  // for (auto id : registry_->GetView<Position, Projectile>()) {
-  //   auto [position] = registry_->GetComponents<Position>(id);
-  //   const auto position_in_screen = Vector2d{position.x, position.y} - GetCameraPosition();
-  //   const int px_x = static_cast<int>(position_in_screen.x * tile_size_);
-  //   const int px_y =
-  //       kScreenHeightPx - static_cast<int>(position_in_screen.y * tile_size_);
-  //   engine_ptr_->Draw(px_x, px_y, olc::WHITE);
-  //   engine_ptr_->Draw(px_x+1, px_y, olc::WHITE);
-  //   engine_ptr_->Draw(px_x, px_y+1, olc::WHITE);
-  //   engine_ptr_->Draw(px_x-1, px_y, olc::WHITE);
-  //   engine_ptr_->Draw(px_x, px_y-1, olc::WHITE);
-  // }
-
-  for (auto id : registry_->GetView<Position, Particle>()) {
-    const auto& position = registry_->GetComponent<Position>(id);
+  for(auto id:registry_->GetView<Position, DrawFunction>()) {
+    auto [position, fn] = registry_->GetComponents<Position, DrawFunction>(id);
     const auto [px_x, px_y] = GetPixelLocation(position);
-    engine_ptr_->Draw(px_x, px_y, olc::WHITE);
+    fn.draw_fn(px_x, px_y, engine_ptr_);
   }
 }
 

@@ -4,7 +4,7 @@
 #include <chrono>
 
 #include "animation/animation_event.h"
-#include "animation/animation_manager.h"
+#include "animation/sprite_manager.h"
 #include "common_types/actor_state.h"
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
@@ -156,12 +156,11 @@ void UpdatePlayerState(const EntityId player_id,
   if (!animation_expired && !IsInterruptibleState(state)) {
     // If the player is shooting in the air and lands, transition the animation to the standing
     // pose.  Only do this after the first few frame to avoid double fire.
-    // if ((state == State::InAirShot || state == State::InAirDownShot) && collisions.bottom &&
-    //     (ToMs(GameClock::NowGlobal() - state_component.state.GetStateSetAt()) > 300)) {
-    //   state_component.state.SetStateWithoutUpdatingOtherVariables(State::Shoot);
-    //   return;
-    // }
-    // ^^^ This needs to be implemented in the update animation function ^^^
+    if ((state == State::InAirShot || state == State::InAirDownShot) && collisions.bottom &&
+        (ToMs(GameClock::NowGlobal() - state_component.state.GetStateSetAt()) > 200)) {
+      state_component.state.SetStateWithoutUpdatingTimeSet(State::Shoot);
+      return;
+    }
 
     // Transition from Roll to PostRoll
     // TODO(BT-01):: ints in parameter server

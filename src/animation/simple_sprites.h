@@ -1,10 +1,11 @@
 #pragma once
 
+#include <memory>
 #include "animated_sprite.h"
 
 namespace platformer {
 
-AnimatedSprite CreateShotgunPelletSprite();
+std::unique_ptr<olc::Sprite> CreateShotgunPelletSprite();
 AnimatedSprite CreateSmallWallHitEffectSprite();
 
 }  // namespace platformer

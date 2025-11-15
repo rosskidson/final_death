@@ -111,6 +111,11 @@ class StateAccess {
     state_ = state;
   }
 
+  // USE WITH CAUTION
+  void SetStateWithoutUpdatingTimeSet(State state) {
+    state_ = state;
+  }
+
   [[nodiscard]] TimePoint GetStateSetAt() const { return state_set_at_; }
 
   [[nodiscard]] State operator*() const { return state_; }
