@@ -1,3 +1,4 @@
+#include "common_types/entity.h"
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
@@ -109,7 +110,6 @@ TEST_CASE("GetComponent") {
   r.GetMap<Acceleration>()[id_1].x = 0.2;
 
   CHECK_EQ(acc.x, 0.2);
-
 }
 
 TEST_CASE("RemoveComponent") {
@@ -127,7 +127,6 @@ TEST_CASE("RemoveComponent") {
   CHECK_EQ(r.GetMap<Position>()[id_2].y, 1.);
   CHECK_EQ(r.GetMap<Velocity>()[id_2].x, 20.);
   CHECK_EQ(r.GetMap<Velocity>()[id_2].y, 0.);
-
 }
 
 TEST_CASE("player component") {
@@ -135,4 +134,17 @@ TEST_CASE("player component") {
   platformer::Registry r{};
   auto id_1 = r.AddComponents(PlayerComponent{});
   REQUIRE(r.GetMap<PlayerComponent>().count(id_1));
+}
+
+TEST_CASE("CombineViews") {
+  std::vector<platformer::EntityId> vec1{0, 1, 2, 3};
+  std::vector<platformer::EntityId> vec2{3, 4, 5, 6};
+  std::vector<platformer::EntityId> vec3{6, 7, 8};
+  const auto combined = platformer::CombineViews(vec1, vec2, vec3);
+
+  REQUIRE_EQ(combined.size(), 9);
+  auto itr = combined.begin();
+  for (int i = 0; i < 9; ++i, ++itr) {
+    CHECK_EQ(*itr, i);
+  }
 }

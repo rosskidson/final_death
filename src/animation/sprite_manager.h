@@ -18,17 +18,21 @@ struct InsideSpriteLocation {
   int y_px{};  // Measured from the bottom
 };
 
-class AnimationManager {
+class SpriteManager {
  public:
-  AnimationManager(std::shared_ptr<Registry> registry) : registry_{std::move(registry)} {}
+  SpriteManager(std::shared_ptr<Registry> registry) : registry_{std::move(registry)} {}
 
   void AddAnimation(const std::string& key, AnimatedSprite sprite);
-
   AnimatedSprite& GetAnimation(const std::string& key);
   const AnimatedSprite& GetAnimation(const std::string& key) const;
 
-  void AddInsideSpriteLocation(const std::string& key, InsideSpriteLocation location);
+  void AddSprite(const std::string& key,
+                 int draw_offset_x,
+                 int draw_offset_y,
+                 std::unique_ptr<olc::Sprite> sprite);
+  [[nodiscard]] Sprite GetSprite(const std::string& key) const;
 
+  void AddInsideSpriteLocation(const std::string& key, InsideSpriteLocation location);
   [[nodiscard]] std::optional<InsideSpriteLocation> GetInsideSpriteLocation(EntityId id) const;
 
   [[nodiscard]] std::vector<AnimationEvent> GetAnimationEvents();
@@ -36,8 +40,15 @@ class AnimationManager {
   [[nodiscard]] Sprite GetSprite(EntityId id) const;
 
  private:
+  struct SpriteStorage {
+    std::unique_ptr<olc::Sprite> sprite;
+    int draw_offset_x;
+    int draw_offset_y;
+  };
+
   std::map<std::string, AnimatedSprite> animated_sprites_;
   std::map<std::string, InsideSpriteLocation> inside_sprite_locations_;
+  std::map<std::string, SpriteStorage> sprites_;
   std::shared_ptr<Registry> registry_;
 };
 }  // namespace platformer

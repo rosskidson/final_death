@@ -1,5 +1,7 @@
 #include "projectile_system.h"
 
+#include "common_types/components.h"
+
 namespace platformer {
 
 constexpr double kShotgunProjectileVelocity = 30.0;
@@ -7,7 +9,7 @@ constexpr double kShotgunNumPellets = 25.0;  // TODO(BT-01): parameter server ty
 constexpr double kRifleProjectileVelocity = 30.0;
 
 ProjectileSystem::ProjectileSystem(std::shared_ptr<ParameterServer> parameter_server,
-                                   std::shared_ptr<const AnimationManager> animation_manager,
+                                   std::shared_ptr<const SpriteManager> animation_manager,
                                    std::shared_ptr<const RandomNumberGenerator> rng,
                                    std::shared_ptr<Registry> registry,
                                    int tile_size)
@@ -84,10 +86,18 @@ void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
   for (int i = 0; i < num_pellets; ++i) {
     const auto pos = GetBulletSpawnLocation(entity_id);
 
-    registry_->AddComponents(
-        Position{pos.x, pos.y}, GetShotgunPelletVelocity(state, facing_direction),
-        AnimatedSpriteComponent{GameClock::NowGlobal(), {}, "pellet"},  // TODO: make non animated
-        Projectile{});
+    DrawFunction draw_function{};
+    draw_function.draw_fn = [](int px, int py, olc::PixelGameEngine* engine_ptr) {
+      engine_ptr->Draw(px, py, olc::WHITE);
+      engine_ptr->Draw(px + 1, py, olc::WHITE);
+      engine_ptr->Draw(px, py + 1, olc::WHITE);
+      engine_ptr->Draw(px - 1, py, olc::WHITE);
+      engine_ptr->Draw(px, py - 1, olc::WHITE);
+    };
+
+    registry_->AddComponents(Position{pos.x, pos.y},
+                             GetShotgunPelletVelocity(state, facing_direction),
+                             SpriteComponent{"pellet"}, draw_function, Projectile{});
   }
 }
 

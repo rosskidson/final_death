@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "animation/animation_manager.h"
+#include "animation/sprite_manager.h"
 #include "common_types/game_configuration.h"
 #include "input/input_processor.h"
 #include "olcPixelGameEngine.h"
@@ -47,7 +47,7 @@ class Platformer : public olc::PixelGameEngine {
   std::unique_ptr<InputProcessor> input_processor_;
   std::shared_ptr<SoundPlayer> sound_player_;
   std::shared_ptr<SoundProcessor> sound_processor_;
-  std::shared_ptr<AnimationManager> animation_manager_;
+  std::shared_ptr<SpriteManager> animation_manager_;
   std::shared_ptr<RandomNumberGenerator> rng_;
   std::unique_ptr<ProjectileSystem> projectile_system_;
 

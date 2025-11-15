@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "common_types/components.h"
+#include "common_types/entity.h"
 #include "registry_helpers.h"
 #include "utils/check.h"
 
@@ -111,13 +112,21 @@ class Registry {
              std::unordered_map<EntityId, FacingDirection>,
              std::unordered_map<EntityId, StateComponent>,
              std::unordered_map<EntityId, PlayerComponent>,
-             std::unordered_map<EntityId, SpriteComponent>,
              std::unordered_map<EntityId, AnimatedSpriteComponent>,
+             std::unordered_map<EntityId, SpriteComponent>,
+             std::unordered_map<EntityId, DrawFunction>,
              std::unordered_map<EntityId, DistanceFallen>,
              std::unordered_map<EntityId, Projectile>,
              std::unordered_map<EntityId, Particle>,
              std::unordered_map<EntityId, TimeToDespawn>>
       maps_tuple_;
 };
+
+template <typename... Vecs>
+std::set<EntityId> CombineViews(const Vecs&... vecs) {
+    std::set<EntityId> out;
+    (out.insert(vecs.begin(), vecs.end()), ...);
+    return out;
+}
 
 }  // namespace platformer

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <limits>
 #include <set>
 
@@ -7,6 +8,10 @@
 #include "common_types/actor_state.h"
 #include "common_types/basic_types.h"
 #include "utils/game_clock.h"
+
+namespace olc {
+class PixelGameEngine;
+}
 
 namespace platformer {
 
@@ -55,28 +60,6 @@ struct PlayerComponent {
   Weapon weapon{Weapon::Rifle};
 };
 
-// **** Sprite refactor ******
-//
-// All the animation state will be moved/copied from StateComponent to AnimatedSpriteComponent
-//
-// 1. Remove last_animation_frame_idx from StateAccess               (DONE)
-// 2. Add a function after UpdatePlayerState that updates the AnimatedSpriteComponent
-//     This will contain special setting logic
-//        - transition from flyingshoot -> standingshoot -> don't reset start time
-//        - Reset timer if shooting and animation expired
-// 3. Rendering only iterates over AnimatedSprite components         (DONE)
-// 4. AnimationManager also now knows nothing about StateComponent   (DONE)
-// 
-//  You removed the state object and state set at, but you need this after all to 
-//  transition between roll states.  Add it back
-//
-//   TEST
-//
-// 5. Rename animation manager to sprite manager
-// 6. Add a sprite map
-// 7. Get sprite simply checks if the entity has animated or non animated sprite, then
-//     looks in the corresponding map.
-
 struct SpriteComponent {
   std::string key;
 };
@@ -85,6 +68,12 @@ struct AnimatedSpriteComponent {
   TimePoint start_time{GameClock::NowGlobal()};
   AnimationFrameIndex last_animation_frame_idx{};
   std::string key{};
+};
+
+struct DrawFunction {
+  // Arguments are pixel coordinates of the entity's position and an olc engine ptr
+  // (Entity must also have a Position Component)
+  std::function<void(int, int, olc::PixelGameEngine*)> draw_fn;
 };
 
 struct DistanceFallen {
@@ -97,7 +86,7 @@ struct Particle {};
 
 struct TimeToDespawn {
   TimeToDespawn() = default;
-  TimeToDespawn(double seconds): time_to_despawn(GameClock::NowGlobal() + FromSecs(seconds)) {}
+  TimeToDespawn(double seconds) : time_to_despawn(GameClock::NowGlobal() + FromSecs(seconds)) {}
   TimePoint time_to_despawn{};
 };
 

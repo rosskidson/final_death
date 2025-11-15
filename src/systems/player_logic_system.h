@@ -1,6 +1,6 @@
 #pragma once
 #include "animation/animation_event.h"
-#include "animation/animation_manager.h"
+#include "animation/sprite_manager.h"
 #include "registry.h"
 #include "systems/physics_system.h"
 #include "utils/parameter_server.h"
