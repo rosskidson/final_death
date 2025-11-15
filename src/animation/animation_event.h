@@ -1,7 +1,8 @@
 #pragma once
 
+#include <string>
+
 #include "common_types/entity.h"
-#include "common_types/actor_state.h"
 
 namespace platformer {
 
@@ -11,4 +12,4 @@ struct AnimationEvent {
   std::string event_name;
 };
 
-}
+}  // namespace platformer

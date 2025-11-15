@@ -3,9 +3,7 @@
 #include <optional>
 
 #include "animation/animated_sprite.h"
-#include "common_types/actor_state.h"
 #include "common_types/entity.h"
-#include "registry_helpers.h"
 #include "utils/check.h"
 #include "utils/logging.h"
 
@@ -25,7 +23,7 @@ const AnimatedSprite& AnimationManager::GetAnimation(const std::string& key) con
 
 void AnimationManager::AddInsideSpriteLocation(const std::string& key,
                                                InsideSpriteLocation location) {
-  inside_sprite_locations_.try_emplace(key, std::move(location));
+  inside_sprite_locations_.try_emplace(key, location);
 }
 
 std::optional<InsideSpriteLocation> AnimationManager::GetInsideSpriteLocation(
@@ -34,8 +32,8 @@ std::optional<InsideSpriteLocation> AnimationManager::GetInsideSpriteLocation(
     return std::nullopt;
   }
   const auto& component = registry_->GetComponent<AnimatedSpriteComponent>(entity_id);
-  const auto itr =  inside_sprite_locations_.find(component.key);
-  if(itr == inside_sprite_locations_.end()) {
+  const auto itr = inside_sprite_locations_.find(component.key);
+  if (itr == inside_sprite_locations_.end()) {
     return std::nullopt;
   }
   return itr->second;
@@ -46,12 +44,11 @@ std::vector<AnimationEvent> AnimationManager::GetAnimationEvents() {
 
   for (EntityId id : registry_->GetView<AnimatedSpriteComponent>()) {
     auto& animated_sprite_component = registry_->GetComponent<AnimatedSpriteComponent>(id);
-    const auto& animated_sprite =
-        animated_sprites_.at(animated_sprite_component.key);
+    const auto& animated_sprite = animated_sprites_.at(animated_sprite_component.key);
 
     for (const auto& event_name :
-        animated_sprite.GetAnimationEvents(animated_sprite_component.start_time, 
-                                           animated_sprite_component.last_animation_frame_idx)) {
+         animated_sprite.GetAnimationEvents(animated_sprite_component.start_time,
+                                            animated_sprite_component.last_animation_frame_idx)) {
       events.push_back(AnimationEvent{id, animated_sprite_component.key, event_name});
     }
   }
@@ -59,14 +56,12 @@ std::vector<AnimationEvent> AnimationManager::GetAnimationEvents() {
 }
 
 Sprite AnimationManager::GetSprite(EntityId id) const {
-  RB_CHECK(registry_->HasComponent<AnimatedSpriteComponent>(id) || 
-           registry_->HasComponent<SpriteComponent>(id));
-  RB_CHECK(registry_->HasComponent<AnimatedSpriteComponent>(id) &&
+  RB_CHECK(registry_->HasComponent<AnimatedSpriteComponent>(id) ||
            registry_->HasComponent<SpriteComponent>(id));
 
-  if(registry_->HasComponent<AnimatedSpriteComponent>(id)) {
-    const auto &animated_sprite_component = registry_->GetComponent<AnimatedSpriteComponent>(id);
-    const auto &animated_sprite = animated_sprites_.at(animated_sprite_component.key);
+  if (registry_->HasComponent<AnimatedSpriteComponent>(id)) {
+    const auto& animated_sprite_component = registry_->GetComponent<AnimatedSpriteComponent>(id);
+    const auto& animated_sprite = animated_sprites_.at(animated_sprite_component.key);
     return animated_sprite.GetFrame(animated_sprite_component.start_time);
   }
 

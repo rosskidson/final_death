@@ -46,7 +46,7 @@ struct FacingDirection {
 
 struct StateComponent {
   Actor actor_type{};
-  State state{};
+  StateAccess state{State::Idle};
 };
 
 struct PlayerComponent {

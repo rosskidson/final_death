@@ -33,6 +33,7 @@ class Platformer : public olc::PixelGameEngine {
   Level& GetCurrentLevel() { return config_.levels.at(level_idx_); };
 
   void RemoveComponentsWithTimeToLive();
+  void UpdateAnimatedSpriteComponentFromState();
 
   GameConfiguration config_;
   int level_idx_;
