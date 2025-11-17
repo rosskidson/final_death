@@ -3,6 +3,7 @@
 #include <memory>
 
 #include "animation/sprite_manager.h"
+#include "common_types/entity.h"
 #include "utils/parameter_server.h"
 #include "utils/random_number_generator.h"
 #include "registry.h"
@@ -26,8 +27,8 @@ class ProjectileSystem {
     Vector2d GetBulletSpawnLocation(const EntityId entity_id) const;
     Velocity GetShotgunPelletVelocity(const State state,
                                       const Direction facing_direction) const;
-    Velocity GetRifleBulletVelocity(const State state,
-                                    const Direction facing_direction) const;
+    Velocity GetRifleBulletVelocity(EntityId id) const; //const State state,
+                                    //const Direction facing_direction) const;
 
     std::shared_ptr<ParameterServer> parameter_server_;
     std::shared_ptr<const SpriteManager> animation_manager_;

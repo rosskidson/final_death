@@ -1,6 +1,7 @@
 #include "projectile_system.h"
 
 #include "common_types/components.h"
+#include "common_types/entity.h"
 
 namespace platformer {
 
@@ -63,12 +64,17 @@ Velocity ProjectileSystem::GetShotgunPelletVelocity(const State state,
   return vel;
 }
 
-Velocity ProjectileSystem::GetRifleBulletVelocity(const State state,
-                                                  const Direction facing_direction) const {
+Velocity ProjectileSystem::GetRifleBulletVelocity(const EntityId id) const {
+  const auto& state = registry_->GetComponent<StateComponent>(id).state.GetState();
+  const auto& facing_direction = registry_->GetComponent<FacingDirection>(id).facing;
+  const auto& entity_vel = registry_->GetComponent<Velocity>(id);
   const auto bullet_vel = parameter_server_->GetParameter<double>("projectiles/rifle.vel");
   if (state == State::UpShot || state == State::InAirDownShot) {
     Velocity vel{0, bullet_vel};
     vel.y = state == State::InAirDownShot ? vel.y *= -1 : vel.y;
+    if (entity_vel.y < 0) {
+      vel.y += entity_vel.y;
+    }
     return vel;
   }
   Velocity vel{bullet_vel, 0};
@@ -102,10 +108,8 @@ void ProjectileSystem::SpawnShotgunProjectiles(const EntityId entity_id) {
 }
 
 void ProjectileSystem::SpawnRifleProjectile(const EntityId entity_id) {
-  const auto& state = registry_->GetComponent<StateComponent>(entity_id).state.GetState();
-  const auto& facing_direction = registry_->GetComponent<FacingDirection>(entity_id).facing;
   const auto pos = GetBulletSpawnLocation(entity_id);
-  const auto vel = GetRifleBulletVelocity(state, facing_direction);
+  const auto vel = GetRifleBulletVelocity(entity_id);
 
   std::string key{"bullet_01"};
   FacingDirection facing{};

@@ -260,14 +260,10 @@ void RenderingSystem::RenderEntities() {
   for (auto id : CombineViews(registry_->GetView<Position, AnimatedSpriteComponent>(),
                               registry_->GetView<Position, SpriteComponent>())) {
     this->DrawSprite(id);
+  }
 
-    const bool draw_bounding_box =
-        parameter_server_->GetParameter<double>("viz/draw.player.collisions") == 1.;
-    // TODO(BT-19):: Fix this
-    if (draw_bounding_box) {
-      // const auto& position = registry_->GetComponent<Position>(id);
-      // const auto [player_top_left_px_x, player_top_left_px_y] = GetPixelLocation(position,
-      // sprite);
+  if (parameter_server_->GetParameter<double>("viz/draw.player.collisions") == 1.) {
+    for (auto id : registry_->GetView<Position, Collision, CollisionBox>()) {
       RenderEntityCollisionBox(id);
     }
   }
