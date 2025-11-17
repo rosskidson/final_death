@@ -257,6 +257,7 @@ void RenderingSystem::RenderTiles() {
   }
 }
 
+// TODO(BT-21): Copy-pasta from RenderTiles
 void RenderingSystem::RenderOccupancyGrid(const Grid<EntityId>& grid) {
   const auto position = GetCameraPosition();
   olc::Sprite red{tile_size_, tile_size_};
@@ -287,12 +288,6 @@ void RenderingSystem::RenderOccupancyGrid(const Grid<EntityId>& grid) {
       const int x_px = static_cast<int>(std::round((x_itr - x_fraction) * tile_size_));
       const int y_px =
           static_cast<int>(std::round(kScreenHeightPx - (y_itr + 1 - y_fraction) * tile_size_));
-      //   std::cout << " itrs " << x_itr << " " << y_itr << " "                        //
-      //             << " global " << lookup_x << " " << lookup_y << " "                //
-      //             << " global floor " << lookup_x_int << " " << lookup_y_int << " "  //
-      //             << " faction " << x_fraction << " " << y_fraction << " "           //
-      //             << " pixel " << x_px << " " << y_px << " "                         //
-      //             << " tile " << tile_idx << std::endl;                              //
 
       engine_ptr_->DrawSprite(x_px, y_px, &red);
     }
