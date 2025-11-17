@@ -221,7 +221,7 @@ Platformer::Platformer() : parameter_server_{CreateParameterServer()}, rate_(kGa
 bool Platformer::OnUserDestroy() { return true; }
 
 bool Platformer::OnUserCreate() {
-  this->SetPixelMode(olc::Pixel::Mode::MASK);
+  this->SetPixelMode(olc::Pixel::Mode::ALPHA);
 
   rng_ = std::make_shared<RandomNumberGenerator>(RandomNumberGenerator::Mode::Hardware);
 
@@ -321,6 +321,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_system_->RenderTiles();
   rendering_system_->RenderEntities();
   rendering_system_->RenderForeground();
+  rendering_system_->RenderOccupancyGrid(physics_system_->GetOccupancyGrid());
   profiler_.LogEvent("03_render");
 
   if (parameter_server_->GetParameter<double>("debug/enable.timing") > 0) {

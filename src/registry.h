@@ -108,7 +108,7 @@ class Registry {
     ((args.erase(id)), ...);
   }
 
-  EntityId next_id_{};
+  EntityId next_id_{1};  // Zero is reserved.
   std::tuple<std::unordered_map<EntityId, Position>,
              std::unordered_map<EntityId, Velocity>,
              std::unordered_map<EntityId, Acceleration>,

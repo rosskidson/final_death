@@ -4,6 +4,7 @@
 
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
+#include "common_types/entity.h"
 #include "common_types/game_configuration.h"
 #include "registry.h"
 #include "registry_helpers.h"
@@ -34,6 +35,8 @@ class PhysicsSystem {
                                                   const CollisionBox& bounding_box,
                                                   Axis axis) const;
 
+  const Grid<EntityId>& GetOccupancyGrid() { return occupancy_grid_; }
+
  private:
   void PhysicsStepImpl(double delta_t);
   void CheckPlayerCollision(EntityId id, const Axis& axis);
@@ -43,8 +46,11 @@ class PhysicsSystem {
                          bool lower_collision,
                          bool upper_collision);
 
+  void UpdateOccupancyGrid();
+
   int tile_size_;
   Grid<int> collisions_grid_;
+  Grid<EntityId> occupancy_grid_;
   std::shared_ptr<ParameterServer> parameter_server_;
   std::shared_ptr<Registry> registry_;
 };

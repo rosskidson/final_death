@@ -3,6 +3,8 @@
 #include <memory>
 #include <optional>
 
+#include "common_types/entity.h"
+#include "common_types/grid.h"
 #include "common_types/sprite.h"
 #include "animation/animated_sprite.h"
 #include "animation/sprite_manager.h"
@@ -57,6 +59,8 @@ class RenderingSystem {
   // Use this either if 1) you don't have a background or
   //                    2) All your background layers have transparency.
   void AddFoundationBackgroundLayer(uint8_t r, uint8_t g, uint8_t b);
+
+  void RenderOccupancyGrid(const Grid<EntityId>& grid);
 
  private:
   struct BackgroundLayer {

@@ -165,6 +165,7 @@ PhysicsSystem::PhysicsSystem(const Level& level,
                              std::shared_ptr<Registry> registry)
     : tile_size_{level.level_tileset->GetTileSize()},
       collisions_grid_{level.property_grid},
+      occupancy_grid_{collisions_grid_.GetWidth(), collisions_grid_.GetHeight()},
       parameter_server_{std::move(parameter_server)},
       registry_{std::move(registry)} {
   parameter_server_->AddParameter("physics/gravity", kGravity, "Gravity, unit is tile/s^2");
@@ -318,6 +319,8 @@ void PhysicsSystem::PhysicsStep(const double delta_t) {
   for (EntityId id : registry_->GetView<Collision>()) {
     UpdateCollisionsChanged(registry_->GetComponent<Collision>(id), old_collisions[id]);
   }
+
+  UpdateOccupancyGrid();
 }
 
 void PhysicsSystem::CheckPlayerCollision(EntityId id, const Axis& axis) {
@@ -334,6 +337,34 @@ void PhysicsSystem::CheckPlayerCollision(EntityId id, const Axis& axis) {
     return;
   }
   ResolveCollisions(id, axis, tile_size_, lower_collision, upper_collision);
+}
+
+void PhysicsSystem::UpdateOccupancyGrid() {
+  // TODO:: add reset to grid
+  occupancy_grid_ = Grid<EntityId>(collisions_grid_.GetWidth(), collisions_grid_.GetHeight());
+  for (const EntityId id : registry_->GetView<Position, CollisionBox>()) {
+    const auto& [position, collision_box] =
+        registry_->GetComponentsConst<Position, CollisionBox>(id);
+    const double bb_height = collision_box.collision_height_px / static_cast<double>(tile_size_);
+    const double bb_width = collision_box.collision_width_px / static_cast<double>(tile_size_);
+    const double bb_x_offset = collision_box.x_offset_px / static_cast<double>(tile_size_);
+    const double bb_y_offset = collision_box.y_offset_px / static_cast<double>(tile_size_);
+    int min_x = static_cast<int>(position.x + bb_x_offset);
+    int max_x = static_cast<int>(position.x + bb_x_offset + bb_width);
+    int min_y = static_cast<int>(position.y + bb_y_offset);
+    int max_y = static_cast<int>(position.y + bb_y_offset + bb_height);
+
+    min_x = std::max(0, min_x);
+    max_x = std::min(max_x, occupancy_grid_.GetWidth() - 1);
+    min_y = std::max(0, min_y);
+    max_y = std::min(max_y, occupancy_grid_.GetHeight() - 1);
+
+    for (int i = min_x; i <= max_x; ++i) {
+      for (int j = min_y; j <= max_y; ++j) {
+        occupancy_grid_.SetTile(i, j, id);
+      }
+    }
+  }
 }
 
 }  // namespace platformer

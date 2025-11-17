@@ -6,6 +6,7 @@
 #include "animation/animated_sprite.h"
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
+#include "common_types/entity.h"
 #include "common_types/game_configuration.h"
 #include "common_types/tileset.h"
 #include "config.h"
@@ -252,6 +253,48 @@ void RenderingSystem::RenderTiles() {
       //             << " tile " << tile_idx << std::endl;                              //
 
       engine_ptr_->DrawSprite(x_px, y_px, tile);
+    }
+  }
+}
+
+void RenderingSystem::RenderOccupancyGrid(const Grid<EntityId>& grid) {
+  const auto position = GetCameraPosition();
+  olc::Sprite red{tile_size_, tile_size_};
+  for (int y = 0; y < red.height; ++y) {
+    for (int x = 0; x < red.width; ++x) {
+      red.SetPixel(x, y, olc::Pixel{0, 255, 0, 100});
+    }
+  }
+
+  for (int y_itr = 0; y_itr <= viewport_height_ + 1; ++y_itr) {
+    for (int x_itr = 0; x_itr <= viewport_width_ + 1; ++x_itr) {
+      const double lookup_x = position.x + x_itr;
+      const double lookup_y = position.y + y_itr;
+      const int lookup_x_int = static_cast<int>(std::floor(lookup_x));
+      const int lookup_y_int = static_cast<int>(std::floor(lookup_y));
+      EntityId entity_id{};
+      if (lookup_x_int >= 0 && lookup_x_int < grid.GetWidth() && lookup_y_int >= 0 &&
+          lookup_y_int < grid.GetHeight()) {
+        entity_id = grid.GetTile(lookup_x_int, lookup_y_int);
+      }
+      if (entity_id == 0) {
+        continue;
+      }
+
+      const double x_fraction = lookup_x - lookup_x_int;
+      const double y_fraction = lookup_y - lookup_y_int;
+
+      const int x_px = static_cast<int>(std::round((x_itr - x_fraction) * tile_size_));
+      const int y_px =
+          static_cast<int>(std::round(kScreenHeightPx - (y_itr + 1 - y_fraction) * tile_size_));
+      //   std::cout << " itrs " << x_itr << " " << y_itr << " "                        //
+      //             << " global " << lookup_x << " " << lookup_y << " "                //
+      //             << " global floor " << lookup_x_int << " " << lookup_y_int << " "  //
+      //             << " faction " << x_fraction << " " << y_fraction << " "           //
+      //             << " pixel " << x_px << " " << y_px << " "                         //
+      //             << " tile " << tile_idx << std::endl;                              //
+
+      engine_ptr_->DrawSprite(x_px, y_px, &red);
     }
   }
 }
