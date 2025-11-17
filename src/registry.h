@@ -41,6 +41,11 @@ class Registry {
     return map.count(id) != 0;
   }
 
+  template <typename... Components>
+  bool HasComponents(EntityId id) const {
+    return (HasComponent<Components>(id) && ...);
+  }
+
   // Usage:
   // auto id = registry.AddComponent(Position{1., 2.},
   //                                 Velocity{10., 0.},

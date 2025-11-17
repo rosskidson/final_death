@@ -264,13 +264,15 @@ void RenderingSystem::RenderEntities() {
     const bool draw_bounding_box =
         parameter_server_->GetParameter<double>("viz/draw.player.collisions") == 1.;
     // TODO(BT-19):: Fix this
-    // if (draw_bounding_box) {
-    //   const auto [player_top_left_px_x, player_top_left_px_y] = GetPixelLocation(position,
-    //   sprite); RenderEntityCollisionBox(player_top_left_px_x, player_top_left_px_y, id);
-    // }
+    if (draw_bounding_box) {
+      // const auto& position = registry_->GetComponent<Position>(id);
+      // const auto [player_top_left_px_x, player_top_left_px_y] = GetPixelLocation(position,
+      // sprite);
+      RenderEntityCollisionBox(id);
+    }
   }
 
-  for(auto id:registry_->GetView<Position, DrawFunction>()) {
+  for (auto id : registry_->GetView<Position, DrawFunction>()) {
     auto [position, fn] = registry_->GetComponents<Position, DrawFunction>(id);
     const auto [px_x, px_y] = GetPixelLocation(position);
     fn.draw_fn(px_x, px_y, engine_ptr_);
@@ -302,19 +304,17 @@ void RenderingSystem::DrawSprite(const EntityId id) {
                           1, flip);
 }
 
-void RenderingSystem::RenderEntityCollisionBox(int entity_top_left_px_x,
-                                               int entity_top_left_px_y,
-                                               int sprite_height_px,
-                                               EntityId entity_id) {
-  if (!registry_->HasComponent<CollisionBox>(entity_id) ||
-      !registry_->HasComponent<Collision>(entity_id)) {  //
+void RenderingSystem::RenderEntityCollisionBox(EntityId id) {
+  if (!registry_->HasComponents<Position, Collision, CollisionBox>(id)) {
     return;
   }
-  auto [collision_box, collisions] = registry_->GetComponents<CollisionBox, Collision>(entity_id);
+  auto [position, collision_box, collisions] =
+      registry_->GetComponents<Position, CollisionBox, Collision>(id);
+  const auto pixel_pos = this->GetPixelLocation(position);
   const auto& bb_width = collision_box.collision_width_px;
   const auto& bb_height = collision_box.collision_height_px;
-  const auto bb_bottom_left_x = entity_top_left_px_x + collision_box.x_offset_px;
-  const auto bb_bottom_left_y = entity_top_left_px_y + sprite_height_px + collision_box.y_offset_px;
+  const auto bb_bottom_left_x = pixel_pos.x + collision_box.x_offset_px;
+  const auto bb_bottom_left_y = pixel_pos.y + collision_box.y_offset_px;
   auto color = collisions.bottom ? olc::WHITE : olc::BLACK;
   engine_ptr_->DrawLine(bb_bottom_left_x, bb_bottom_left_y, bb_bottom_left_x + bb_width,
                         bb_bottom_left_y, color);

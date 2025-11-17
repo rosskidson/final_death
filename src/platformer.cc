@@ -300,24 +300,19 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   // Model
   const auto events = animation_manager_->GetAnimationEvents();
   sound_processor_->ProcessAnimationEvents(events);
-
   UpdatePlayerState(*parameter_server_, events, *physics_system_, *registry_);
   SetFacingDirection(*registry_);
   UpdateComponentsFromState(*parameter_server_, *registry_);
   UpdatePlayerComponentsFromState(*parameter_server_, events, *registry_);
   UpdateAnimatedSpriteComponentFromState();
-
   projectile_system_->SpawnProjectiles(events);
-
   RemoveComponentsWithTimeToLive();
-
   profiler_.LogEvent("01_update_states");
 
   physics_system_->ApplyGravity();
   physics_system_->ApplyFriction(delta_t);
   physics_system_->PhysicsStep(delta_t);
   physics_system_->SetDistanceFallen(delta_t);
-
   profiler_.LogEvent("02_physics");
 
   // View

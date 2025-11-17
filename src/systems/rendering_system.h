@@ -69,10 +69,7 @@ class RenderingSystem {
   void DrawSprite(EntityId id);
   void KeepCameraInBounds();
   void RenderBackgroundLayer(const BackgroundLayer& background_layer);
-  void RenderEntityCollisionBox(int entity_top_left_px_x,
-                                int entity_top_left_px_y,
-                                int sprite_height_px,
-                                EntityId entity_id);
+  void RenderEntityCollisionBox(EntityId entity_id);
 
   olc::PixelGameEngine* engine_ptr_;
 
