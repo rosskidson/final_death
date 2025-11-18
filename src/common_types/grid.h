@@ -14,6 +14,10 @@ class Grid {
     grid_.resize(width * height);
   }
 
+  bool ValidCoord(const int x, const int y) {
+    return (x < width_ && y < height_ && x >= 0 && y >= 0);
+  }
+
   void SetTile(const int x, const int y, T value) {
     RB_CHECK(x < width_ && y < height_ && x >= 0 && y >= 0);
     grid_[y * width_ + x] = value;

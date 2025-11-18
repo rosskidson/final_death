@@ -108,6 +108,9 @@ bool SetHardLandingState(const ParameterServer& parameter_server,
       registry.GetComponents<Velocity, Collision, StateComponent, DistanceFallen>(player_id);
   const auto hard_fall_distance =
       parameter_server.GetParameter<double>("physics/hard.fall.distance");
+  // Potential bug: falling distance is set with a velocity / distance fallen combo,
+  // but only reset with a combo with collision + state.
+  // Consider doing all the code in physics, and sending an event.
   if (collisions.bottom) {
     if (distance_fallen.distance_fallen > hard_fall_distance) {
       distance_fallen.distance_fallen = 0;

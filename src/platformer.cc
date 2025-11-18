@@ -313,6 +313,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_system_->ApplyFriction(delta_t);
   physics_system_->PhysicsStep(delta_t);
   physics_system_->SetDistanceFallen(delta_t);
+  physics_system_->DetectProjectileCollisions();
   profiler_.LogEvent("02_physics");
 
   // View

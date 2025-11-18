@@ -238,7 +238,21 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
         registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{},
                                  TimeToDespawn{0.5}, draw_function);
       }
-      registry_->RemoveComponent(id);
+      if(registry_->HasComponent<FacingDirection>(id)){
+        auto &facing = registry_->GetComponent<FacingDirection>(id).facing;
+        if(facing == Direction::UP) {
+          facing = Direction::DOWN;
+        } else if (facing == Direction::DOWN) {
+          facing = Direction::UP;
+        } else if (facing == Direction::LEFT) {
+          facing = Direction::RIGHT;
+        } else {
+          facing = Direction::LEFT;
+        }
+      }
+      velocity.x *= -1;
+      velocity.y *= -1;
+      // registry_->RemoveComponent(id);
     }
   }
 
@@ -364,6 +378,22 @@ void PhysicsSystem::UpdateOccupancyGrid() {
         occupancy_grid_.SetTile(i, j, id);
       }
     }
+  }
+}
+
+void PhysicsSystem::DetectProjectileCollisions() {
+  for(const EntityId id: registry_->GetView<Position, Projectile>()){
+    const auto& position = registry_->GetComponentConst<Position>(id);
+    const int pos_x = static_cast<int>(std::floor(position.x));
+    const int pos_y = static_cast<int>(std::floor(position.y));
+    if(!occupancy_grid_.ValidCoord(pos_x, pos_y)) {
+      continue;
+    }
+    const EntityId other_id = occupancy_grid_.GetTile(pos_x, pos_y);
+    if(other_id == 0) {
+      continue;
+    }
+    // LOG_INFO(id << ":\t Potential collision with " << other_id);
   }
 }
 

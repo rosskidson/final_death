@@ -30,6 +30,7 @@ class PhysicsSystem {
   void ApplyGravity();
   void ApplyFriction(double delta_t);
   void SetDistanceFallen(double delta_t);
+  void DetectProjectileCollisions();
 
   [[nodiscard]] AxisCollisions CheckAxisCollision(const Position& position,
                                                   const CollisionBox& bounding_box,
