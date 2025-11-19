@@ -9,6 +9,7 @@
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/parameter_server.h"
+#include <optional>
 
 namespace platformer {
 
@@ -46,6 +47,8 @@ class PhysicsSystem {
                          int tile_size,
                          bool lower_collision,
                          bool upper_collision);
+  std::optional<BoundingBox> GetBoundingBox(const EntityId id) const;
+  bool PointCollidesWithEntity(const Position& point, const EntityId id);
 
   void UpdateOccupancyGrid();
 

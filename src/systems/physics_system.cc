@@ -357,21 +357,18 @@ void PhysicsSystem::UpdateOccupancyGrid() {
   // TODO:: add reset to grid
   occupancy_grid_ = Grid<EntityId>(collisions_grid_.GetWidth(), collisions_grid_.GetHeight());
   for (const EntityId id : registry_->GetView<Position, CollisionBox>()) {
-    const auto& [position, collision_box] =
-        registry_->GetComponentsConst<Position, CollisionBox>(id);
-    const double bb_height = collision_box.collision_height_px / static_cast<double>(tile_size_);
-    const double bb_width = collision_box.collision_width_px / static_cast<double>(tile_size_);
-    const double bb_x_offset = collision_box.x_offset_px / static_cast<double>(tile_size_);
-    const double bb_y_offset = collision_box.y_offset_px / static_cast<double>(tile_size_);
-    int min_x = static_cast<int>(position.x + bb_x_offset);
-    int max_x = static_cast<int>(position.x + bb_x_offset + bb_width);
-    int min_y = static_cast<int>(position.y + bb_y_offset);
-    int max_y = static_cast<int>(position.y + bb_y_offset + bb_height);
+    auto bounding_box = GetBoundingBox(id);
+    RB_CHECK(bounding_box.has_value());
+
+    int min_x = bounding_box->left;
+    int max_x = bounding_box->right;
+    int min_y = bounding_box->bottom;
+    int max_y = bounding_box->top;
 
     min_x = std::max(0, min_x);
-    max_x = std::min(max_x, occupancy_grid_.GetWidth() - 1);
+    max_x = std::min(max_x, collisions_grid_.GetWidth() - 1);
     min_y = std::max(0, min_y);
-    max_y = std::min(max_y, occupancy_grid_.GetHeight() - 1);
+    max_y = std::min(max_y, collisions_grid_.GetHeight() - 1);
 
     for (int i = min_x; i <= max_x; ++i) {
       for (int j = min_y; j <= max_y; ++j) {
@@ -379,6 +376,38 @@ void PhysicsSystem::UpdateOccupancyGrid() {
       }
     }
   }
+}
+
+std::optional<BoundingBox> PhysicsSystem::GetBoundingBox(const EntityId id) const {
+  if(!registry_->HasComponents<Position, CollisionBox>(id)) {
+    return std::nullopt;
+  }
+  const auto& [position, collision_box] =
+      registry_->GetComponentsConst<Position, CollisionBox>(id);
+  const double bb_height = collision_box.collision_height_px / static_cast<double>(tile_size_);
+  const double bb_width = collision_box.collision_width_px / static_cast<double>(tile_size_);
+  const double bb_x_offset = collision_box.x_offset_px / static_cast<double>(tile_size_);
+  const double bb_y_offset = collision_box.y_offset_px / static_cast<double>(tile_size_);
+
+  return BoundingBox{
+    position.x + bb_x_offset,
+    position.x + bb_x_offset + bb_width,
+    position.y + bb_y_offset,
+    position.y + bb_y_offset + bb_height,
+  };
+}
+
+bool PhysicsSystem::PointCollidesWithEntity(const Position& point,
+                                            const EntityId id) {
+  const auto bounding_box = GetBoundingBox(id);                                                
+  if(!bounding_box.has_value()) {
+    return false;
+  }
+
+  return point.x >= bounding_box->left &&
+         point.x <= bounding_box->right &&
+         point.y >= bounding_box->bottom &&
+         point.y <= bounding_box->top;
 }
 
 void PhysicsSystem::DetectProjectileCollisions() {
@@ -393,7 +422,11 @@ void PhysicsSystem::DetectProjectileCollisions() {
     if(other_id == 0) {
       continue;
     }
-    // LOG_INFO(id << ":\t Potential collision with " << other_id);
+
+    LOG_INFO(id << ":\t potential Collision with " << other_id);
+    if(PointCollidesWithEntity(position, other_id)) {
+      LOG_INFO(id << ":\t Collision with " << other_id);
+    }
   }
 }
 
