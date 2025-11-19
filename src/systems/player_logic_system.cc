@@ -350,7 +350,7 @@ void UpdatePlayerComponentsFromState(EntityId player_id,
   // Set bounding box based on state
   // TODO(BT-06):: Consider a bounding box system
   auto& collision_box = registry.GetComponent<CollisionBox>(player_id);
-  if (state == State::Roll) {
+  if (state == State::Roll || state==State::PreRoll || state==State::PostRoll) {
     collision_box.x_offset_px = 32;
     collision_box.y_offset_px = 0;
     collision_box.collision_width_px = 16;
@@ -360,6 +360,11 @@ void UpdatePlayerComponentsFromState(EntityId player_id,
     collision_box.y_offset_px = 0;
     collision_box.collision_width_px = 30;
     collision_box.collision_height_px = 16;
+  } else if (state == State::Crouch || state == State::CrouchShot) {
+    collision_box.x_offset_px = 20;
+    collision_box.y_offset_px = 0;
+    collision_box.collision_width_px = 30;
+    collision_box.collision_height_px = 32;
   } else {
     collision_box.x_offset_px = 30;
     collision_box.y_offset_px = 0;
