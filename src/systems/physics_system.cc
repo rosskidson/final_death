@@ -410,7 +410,8 @@ bool PhysicsSystem::PointCollidesWithEntity(const Position& point,
          point.y <= bounding_box->top;
 }
 
-void PhysicsSystem::DetectProjectileCollisions() {
+std::vector<CollisionEvent> PhysicsSystem::DetectProjectileCollisions() {
+  std::vector<CollisionEvent> events;
   for(const EntityId id: registry_->GetView<Position, Projectile>()){
     const auto& position = registry_->GetComponentConst<Position>(id);
     const int pos_x = static_cast<int>(std::floor(position.x));
@@ -423,11 +424,13 @@ void PhysicsSystem::DetectProjectileCollisions() {
       continue;
     }
 
-    LOG_INFO(id << ":\t potential Collision with " << other_id);
+    // LOG_INFO(id << ":\t potential Collision with " << other_id);
     if(PointCollidesWithEntity(position, other_id)) {
-      LOG_INFO(id << ":\t Collision with " << other_id);
+      events.emplace_back(CollisionEvent{other_id, id});
+      // LOG_INFO(id << ":\t Collision with " << other_id);
     }
   }
+  return events;
 }
 
 }  // namespace platformer

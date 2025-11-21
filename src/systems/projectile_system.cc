@@ -61,6 +61,10 @@ Velocity ProjectileSystem::GetShotgunPelletVelocity(const State state,
                rng_->RandomFloat(-kHalfSpreadWidth, kHalfSpreadWidth)};
   vel.x = facing_direction == Direction::LEFT ? vel.x *= -1 : vel.x;
   vel.x = state == State::BackShot ? vel.x *= -1 : vel.x;
+  if (state == State::Suicide) {
+    vel.x *= -1.0;
+    vel.y += kSpreadWidth;
+  }
   return vel;
 }
 
@@ -80,6 +84,11 @@ Velocity ProjectileSystem::GetRifleBulletVelocity(const EntityId id) const {
   Velocity vel{bullet_vel, 0};
   vel.x = facing_direction == Direction::LEFT ? vel.x *= -1 : vel.x;
   vel.x = state == State::BackShot ? vel.x *= -1 : vel.x;
+  if (state == State::Suicide) {
+    vel.x *= -0.5;
+    vel.y = std::abs(vel.x);
+  }
+
   return vel;
 }
 

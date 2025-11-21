@@ -52,6 +52,7 @@ bool IsInterruptibleState(State state) {
     case State::PreJump:
     case State::HardLanding:
     case State::Suicide:
+    case State::Dying:
       return false;
   }
   return true;
@@ -67,6 +68,17 @@ bool MovementDisallowed(State state) {
     case State::HardLanding:
     case State::PreSuicide:
     case State::Suicide:
+    case State::Dying:
+    case State::Dead:
+      return true;
+  }
+  return false;
+}
+bool DirectionChangeDisallowed(State state) {
+  switch (state) {
+    case State::Suicide:
+    case State::Dying:
+    case State::Dead:
       return true;
   }
   return false;
@@ -150,7 +162,13 @@ void UpdatePlayerState(const EntityId player_id,
   const auto& requested_states = registry.GetComponent<PlayerComponent>(player_id).requested_states;
   const bool animation_expired = AnimationExpired(state, animation_events);
 
-  // There is one thing that can interrupt non interuptable actions: Hard falling.
+  // TODO:: We don't actually ever transition to dead, just stuck in the dying state.
+  if (state == State::Suicide || state == State::Dying || state==State::Dead) {
+    return;
+  }
+
+  // There is one thing (other than being dead) that can interrupt non interuptable actions: 
+  // Hard falling.
   if (SetHardLandingState(parameter_server, player_id, registry)) {
     return;
   }
@@ -193,6 +211,11 @@ void UpdatePlayerState(const EntityId player_id,
       state_component.state.SetState(State::BackDodgeShot);
       return;
     }
+
+    // if(state == State::Suicide && animation_expired) {
+    //   state_component.state.SetState(State::Dead);
+    //   return;
+    // }
     return;
   }
   if (requested_states.count(State::Shoot)) {
@@ -299,13 +322,13 @@ void UpdatePlayerComponentsFromState(EntityId player_id,
   }
 
   // Add vertical velocity for Jumping.
-  if (std::any_of(animation_events.begin(), animation_events.end(),
-                  [&state](const AnimationEvent& event) {
-                    return event.event_name == "AnimationEnded" &&
-                           // Note: I don't like checking the animation key, like this, would rather 
-                           // check the state, but it seems to somehow already be out of sync at this stage.
-                           event.animation_key.find(ToString(State::PreJump)) != std::string::npos;
-                  })) {
+  if (std::any_of(
+          animation_events.begin(), animation_events.end(), [&state](const AnimationEvent& event) {
+            return event.event_name == "AnimationEnded" &&
+                   // Note: I don't like checking the animation key, like this, would rather
+                   // check the state, but it seems to somehow already be out of sync at this stage.
+                   event.animation_key.find(ToString(State::PreJump)) != std::string::npos;
+          })) {
     const auto jump_velocity = parameter_server.GetParameter<double>("physics/jump.velocity");
     velocity.x = cached_velocity.x;
     velocity.y = jump_velocity;
@@ -350,7 +373,7 @@ void UpdatePlayerComponentsFromState(EntityId player_id,
   // Set bounding box based on state
   // TODO(BT-06):: Consider a bounding box system
   auto& collision_box = registry.GetComponent<CollisionBox>(player_id);
-  if (state == State::Roll || state==State::PreRoll || state==State::PostRoll) {
+  if (state == State::Roll || state == State::PreRoll || state == State::PostRoll) {
     collision_box.x_offset_px = 32;
     collision_box.y_offset_px = 0;
     collision_box.collision_width_px = 16;
@@ -398,6 +421,13 @@ void UpdatePlayerComponentsFromState(const ParameterServer& parameter_server,
 
 void SetFacingDirection(Registry& registry) {
   for (const auto id : registry.GetView<Acceleration, FacingDirection>()) {
+    if(registry.HasComponent<StateComponent>(id)){
+      const auto state = registry.GetComponent<StateComponent>(id).state.GetState();
+      if(DirectionChangeDisallowed(state)) {
+        continue;
+      }
+    }
+
     // Disallow change of direction if non interruptible state
     // More realistic, but I didn't like how it felt.
     // if(registry.HasComponent<StateComponent>(id)){

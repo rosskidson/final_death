@@ -7,6 +7,10 @@
 
 namespace platformer {
 
+struct ConsoleEvent {
+  std::string event;
+};
+
 void PrintConsoleWelcome();
 
 void DeveloperConsole(const std::string& sCommand,

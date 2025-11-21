@@ -21,6 +21,13 @@ struct AxisCollisions {
   bool upper_collision{false};
 };
 
+// TODO:: Consider unifying the events (generalize / inheritence)
+//        Or maybe just defining them all in one header
+struct CollisionEvent {
+  EntityId entity_id;
+  EntityId projectile_id;
+};
+
 class PhysicsSystem {
  public:
   PhysicsSystem(const Level& level,
@@ -31,7 +38,7 @@ class PhysicsSystem {
   void ApplyGravity();
   void ApplyFriction(double delta_t);
   void SetDistanceFallen(double delta_t);
-  void DetectProjectileCollisions();
+  [[nodiscard]] std::vector<CollisionEvent> DetectProjectileCollisions();
 
   [[nodiscard]] AxisCollisions CheckAxisCollision(const Position& position,
                                                   const CollisionBox& bounding_box,

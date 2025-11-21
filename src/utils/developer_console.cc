@@ -35,6 +35,10 @@ void DeveloperConsole(const std::string& sCommand,
   if (split_string.empty()) {
     std::cout << "No command entered." << std::endl;
   }
+  if (split_string[0] == "event") {
+    // return a vector, process the events either synchronously, or store in the class and process
+    // them at some point in the main loop
+  }
   if (split_string[0] == "param") {
     if (split_string.size() == 1) {
       std::cout << "Sub commands:" << std::endl << std::endl;

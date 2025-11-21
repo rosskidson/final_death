@@ -128,6 +128,7 @@ std::shared_ptr<SpriteManager> InitializeAnimationManager(const ParameterServer&
       {player_path / "player_fire_killself_fire.png", false, 0, -1, -1, false, State::Suicide},
       {player_path / "player_fire_backshot.png", false, 0, -1, -1, false, State::BackShot},
       {player_path / "player_fire_backdodge.png", false, 0, -1, -1, false, State::BackDodgeShot},
+      {player_path / "player_hit_dead.png", false, 0, -1, -1, false, State::Dying},
   };
 
   auto animation_manager = std::make_shared<SpriteManager>(std::move(registry));
@@ -172,6 +173,7 @@ std::shared_ptr<SpriteManager> InitializeAnimationManager(const ParameterServer&
   animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::InAirDownShot), {46, 11});
   animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::Shoot), {62, 36});
   animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::UpShot), {43, 47});
+  animation_manager->AddInsideSpriteLocation(MakePlayerKey(State::Suicide), {30, 50});
 
   return animation_manager;
 }
@@ -313,8 +315,17 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_system_->ApplyFriction(delta_t);
   physics_system_->PhysicsStep(delta_t);
   physics_system_->SetDistanceFallen(delta_t);
-  physics_system_->DetectProjectileCollisions();
+  const auto collisions_events = physics_system_->DetectProjectileCollisions();
   profiler_.LogEvent("02_physics");
+
+  for (const auto& event : collisions_events) {
+    if (registry_->HasComponent<StateComponent>(event.entity_id)) {
+      auto& state = registry_->GetComponent<StateComponent>(player_id_).state;
+      state.SetState(State::Dying);
+      // Spawn blood particles
+    }
+    registry_->RemoveComponent(event.projectile_id);
+  }
 
   // View
   rendering_system_->KeepPlayerInFrame(player_id_);
@@ -322,7 +333,7 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   rendering_system_->RenderTiles();
   rendering_system_->RenderEntities();
   rendering_system_->RenderForeground();
-  rendering_system_->RenderOccupancyGrid(physics_system_->GetOccupancyGrid());
+  // rendering_system_->RenderOccupancyGrid(physics_system_->GetOccupancyGrid());
   profiler_.LogEvent("03_render");
 
   if (parameter_server_->GetParameter<double>("debug/enable.timing") > 0) {
