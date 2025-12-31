@@ -12,6 +12,7 @@
 #include "systems/physics_system.h"
 #include "systems/projectile_system.h"
 #include "systems/rendering_system.h"
+#include "utils/developer_console.h"
 #include "utils/parameter_server.h"
 #include "utils/random_number_generator.h"
 #include "utils/rate_timer.h"
@@ -34,6 +35,8 @@ class Platformer : public olc::PixelGameEngine {
 
   void RemoveComponentsWithTimeToLive();
   void UpdateAnimatedSpriteComponentFromState();
+  void ProcessCollisionEvents(const std::vector<CollisionEvent>& collision_events);
+  void ProcessConsoleEvent(const ConsoleEvent& console_event);
 
   GameConfiguration config_;
   int level_idx_;

@@ -291,6 +291,27 @@ void Platformer::UpdateAnimatedSpriteComponentFromState() {
   }
 }
 
+// TODO:: probably go somewhere else
+void Platformer::ProcessCollisionEvents(const std::vector<CollisionEvent>& collision_events) {
+  for (const auto& event : collision_events) {
+    if (registry_->HasComponent<StateComponent>(event.entity_id)) {
+      auto& state = registry_->GetComponent<StateComponent>(player_id_).state;
+      state.SetState(State::Dying);
+      // Spawn blood particles
+    }
+    registry_->RemoveComponent(event.projectile_id);
+  }
+}
+
+void Platformer::ProcessConsoleEvent(const ConsoleEvent& console_event) {
+  if (console_event.event == "respawn") {
+    for (EntityId id : registry_->GetView<StateComponent, PlayerComponent>()) {
+      auto& entity = registry_->GetComponent<StateComponent>(id);
+      entity.state.SetState(State::Idle);
+    }
+  }
+}
+
 bool Platformer::OnUserUpdate(float fElapsedTime) {
   const double delta_t = std::chrono::duration<double>(rate_.GetFrameDuration()).count();
   profiler_.Reset();
@@ -315,17 +336,9 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   physics_system_->ApplyFriction(delta_t);
   physics_system_->PhysicsStep(delta_t);
   physics_system_->SetDistanceFallen(delta_t);
-  const auto collisions_events = physics_system_->DetectProjectileCollisions();
+  const auto collision_events = physics_system_->DetectProjectileCollisions();
+  ProcessCollisionEvents(collision_events);
   profiler_.LogEvent("02_physics");
-
-  for (const auto& event : collisions_events) {
-    if (registry_->HasComponent<StateComponent>(event.entity_id)) {
-      auto& state = registry_->GetComponent<StateComponent>(player_id_).state;
-      state.SetState(State::Dying);
-      // Spawn blood particles
-    }
-    registry_->RemoveComponent(event.projectile_id);
-  }
 
   // View
   rendering_system_->KeepPlayerInFrame(player_id_);
@@ -344,7 +357,10 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 }
 
 bool Platformer::OnConsoleCommand(const std::string& sCommand) {
-  DeveloperConsole(sCommand, parameter_server_);
+  const auto event = DeveloperConsole(sCommand, parameter_server_);
+  if (event.has_value()) {
+    ProcessConsoleEvent(*event);
+  }
   return true;
 }
 

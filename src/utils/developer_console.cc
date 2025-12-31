@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -19,6 +20,7 @@ std::vector<std::string> split(const std::string& input) {
   return result;
 }
 
+// TODO:: Add all 'event_commands'
 void PrintConsoleWelcome() {
   std::cout << "#######################################" << std::endl;
   std::cout << "   D E V E L O P E R    C O N S O L E   " << std::endl;
@@ -28,18 +30,20 @@ void PrintConsoleWelcome() {
 }
 
 // TODO(BT-08):: clean up this mess!!! Do a class structure to handle nested commands, usage etc.
-void DeveloperConsole(const std::string& sCommand,
-                      std::shared_ptr<ParameterServer>& parameter_server) {
+std::optional<ConsoleEvent> DeveloperConsole(const std::string& sCommand,
+                                             std::shared_ptr<ParameterServer>& parameter_server) {
   std::cout << std::endl;
   const auto split_string = split(sCommand);
   if (split_string.empty()) {
     std::cout << "No command entered." << std::endl;
+    return {};
   }
-  if (split_string[0] == "event") {
-    // return a vector, process the events either synchronously, or store in the class and process
-    // them at some point in the main loop
+  std::set<std::string> event_commands{"respawn"};
+  const auto& command = split_string[0];
+  if (event_commands.find(command) != event_commands.end()) {
+    return ConsoleEvent{command};
   }
-  if (split_string[0] == "param") {
+  if (command == "param") {
     if (split_string.size() == 1) {
       std::cout << "Sub commands:" << std::endl << std::endl;
       std::cout << "  list" << std::endl;
@@ -73,7 +77,7 @@ void DeveloperConsole(const std::string& sCommand,
       const auto val = std::stod(split_string[3]);
       if (!parameter_server->ParameterExists(param)) {
         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-        return;
+        return {};
       }
       // TODO(BT-01):: We either need a type erased version of set parameter,
       // Or we need to detect the type and call it correctly.
@@ -89,7 +93,7 @@ void DeveloperConsole(const std::string& sCommand,
       const auto& param = split_string[2];
       if (!parameter_server->ParameterExists(param)) {
         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-        return;
+        return {};
       }
       std::cout << parameter_server->GetParameter<double>(param) << std::endl << std::endl;
     }
@@ -98,16 +102,17 @@ void DeveloperConsole(const std::string& sCommand,
         std::cout << "Usage: " << std::endl;
         std::cout << "param info <parameter>" << std::endl;
         std::cout << "e.g. > param info physics/gravity" << std::endl << std::endl;
-        return;
+        return {};
       }
       const auto& param = split_string[2];
       if (!parameter_server->ParameterExists(param)) {
         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-        return;
+        return {};
       }
       std::cout << parameter_server->GetParameterInfo(param) << std::endl << std::endl;
     }
   }
+  return {};
 }
 
 }  // namespace platformer

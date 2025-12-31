@@ -3,6 +3,7 @@
 #include <utils/parameter_server.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 namespace platformer {
@@ -13,7 +14,8 @@ struct ConsoleEvent {
 
 void PrintConsoleWelcome();
 
-void DeveloperConsole(const std::string& sCommand,
-                      std::shared_ptr<ParameterServer>& parameter_server);
+[[nodiscard]] std::optional<ConsoleEvent> DeveloperConsole(
+    const std::string& sCommand,
+    std::shared_ptr<ParameterServer>& parameter_server);
 
 }  // namespace platformer
