@@ -1,5 +1,6 @@
 #include "developer_console.h"
 
+#include <array>
 #include <iostream>
 #include <memory>
 #include <set>
@@ -9,6 +10,8 @@
 #include "parameter_server.h"
 
 namespace platformer {
+
+constexpr std::array<std::string_view, 2> kCommands = {"param", "respawn"};
 
 std::vector<std::string> split(const std::string& input) {
   std::istringstream iss(input);
@@ -20,13 +23,15 @@ std::vector<std::string> split(const std::string& input) {
   return result;
 }
 
-// TODO:: Add all 'event_commands'
 void PrintConsoleWelcome() {
   std::cout << "#######################################" << std::endl;
   std::cout << "   D E V E L O P E R    C O N S O L E   " << std::endl;
   std::cout << "#######################################" << std::endl << std::endl;
   std::cout << " Available commands: " << std::endl;
-  std::cout << " param " << std::endl << std::endl;
+  for (const auto& command : kCommands) {
+    std::cout << " " << command << std::endl;
+  }
+  std::cout << std::endl;
 }
 
 // TODO(BT-08):: clean up this mess!!! Do a class structure to handle nested commands, usage etc.

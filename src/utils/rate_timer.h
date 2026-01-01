@@ -13,13 +13,17 @@ class RateTimer {
   explicit RateTimer(double rate) {
     std::chrono::duration<double> period(1. / rate);
     single_frame_ = std::chrono::duration_cast<Duration>(period);
-    frame_end_ = Clock::now();
+    frame_end_ = GameClock::NowGlobal();
   }
 
-  void Reset() { frame_end_ = Clock::now(); }
+  void Reset() { frame_end_ = GameClock::NowGlobal(); }
 
   void Sleep(const bool debug) {
-    const auto now = Clock::now();
+    if (GameClock::IsPausedGlobal()) {
+      std::this_thread::sleep_for(single_frame_);
+      return;
+    }
+    const auto now = GameClock::NowGlobal();
     last_frame_duration_ = single_frame_;
 
     if (now > frame_end_) {
@@ -35,7 +39,7 @@ class RateTimer {
       Reset();
     }
 
-    std::this_thread::sleep_until(frame_end_);
+    std::this_thread::sleep_for(frame_end_ - now);
     frame_end_ += single_frame_;
   }
 

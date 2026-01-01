@@ -296,7 +296,7 @@ void Platformer::ProcessCollisionEvents(const std::vector<CollisionEvent>& colli
   for (const auto& event : collision_events) {
     if (registry_->HasComponent<StateComponent>(event.entity_id)) {
       auto& state = registry_->GetComponent<StateComponent>(player_id_).state;
-      state.SetState(State::Dying);
+      // state.SetState(State::Dying);
       // Spawn blood particles
     }
     registry_->RemoveComponent(event.projectile_id);
@@ -319,6 +319,11 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
   // Control
   RETURN_FALSE_IF_FAILED(input_processor_->ProcessInputs(player_id_));
   profiler_.LogEvent("00_control");
+
+  if (GameClock::IsPausedGlobal()) {
+    rate_.Sleep(false);
+    return true;
+  }
 
   // Model
   const auto events = animation_manager_->GetAnimationEvents();
