@@ -11,24 +11,30 @@ class GameClock {
  public:
   GameClock() : start_{Clock::now()}, paused_{false}, pause_offset_{0} {}
 
+  [[nodiscard]] TimePoint ScaledNow() const {
+    Duration raw = Clock::now() - start_;
+    const auto scaled = std::chrono::duration<double>(raw) * 0.5;
+    return start_ + std::chrono::duration_cast<Duration>(scaled);
+  }
+
   // ---- Instance methods ----
   [[nodiscard]] TimePoint Now() const {
     if (paused_) {
       return paused_at_ - pause_offset_;
     }
-    return Clock::now() - pause_offset_;
+    return ScaledNow() - pause_offset_;
   }
 
   void Pause() {
     if (!paused_) {
-      paused_at_ = Clock::now();
+      paused_at_ = ScaledNow();
       paused_ = true;
     }
   }
 
   void Resume() {
     if (paused_) {
-      pause_offset_ += Clock::now() - paused_at_;
+      pause_offset_ += ScaledNow() - paused_at_;
       paused_ = false;
     }
   }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
@@ -9,7 +10,6 @@
 #include "registry.h"
 #include "registry_helpers.h"
 #include "utils/parameter_server.h"
-#include <optional>
 
 namespace platformer {
 
@@ -47,8 +47,9 @@ class PhysicsSystem {
   const Grid<EntityId>& GetOccupancyGrid() { return occupancy_grid_; }
 
  private:
+  std::vector<Axis> MoveParticleCheckCollision(const EntityId id, const double delta_t);
   void PhysicsStepImpl(double delta_t);
-  void CheckPlayerCollision(EntityId id, const Axis& axis);
+  void CheckCollisionBox(EntityId id, const Axis& axis);
   void ResolveCollisions(EntityId id,
                          const Axis& axis,
                          int tile_size,

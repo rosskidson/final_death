@@ -185,6 +185,49 @@ PhysicsSystem::PhysicsSystem(const Level& level,
                                   "Controls deceleration in the air.");
 }
 
+std::vector<Axis> PhysicsSystem::MoveParticleCheckCollision(const EntityId id,
+                                                            const double delta_t) {
+  auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
+  Position new_position{position.x + velocity.x * delta_t,  //
+                        position.y + velocity.y * delta_t};
+  const auto old_x = static_cast<int>(std::floor(position.x));
+  const auto old_y = static_cast<int>(std::floor(position.y));
+  auto new_x = static_cast<int>(std::floor(new_position.x));
+  auto new_y = static_cast<int>(std::floor(new_position.y));
+
+  if (old_x == new_x && old_y == new_y) {
+    std::swap(position, new_position);
+    return {};
+  }
+  if (!IsCollision(collisions_grid_, new_position.x, new_position.y)) {
+    std::swap(position, new_position);
+    return {};
+  }
+  // Handle traversal of multiple cells later
+  RB_CHECK(std::abs(new_x - old_x) < 2 && std::abs(new_y - old_y) < 2);
+  if (std::abs(new_x - old_x) != 0) {
+    if (velocity.x < 0) {
+      new_x += 1;
+    }
+    const double x_dist = new_x - position.x;
+    const double gradient = (new_position.y - position.y) / (new_position.x - position.x);
+    new_position.x = new_x - std::copysign(1e-3, velocity.x);
+    new_position.y = position.y + gradient * x_dist;
+    std::swap(position, new_position);
+    return {Axis::X};
+  }
+  // TODO we don't handle x and y together
+  if (velocity.y < 0) {
+    new_y += 1;
+  }
+  const double y_dist = new_y - position.y;
+  const double gradient = (new_position.x - position.x) / (new_position.y - position.y);
+  new_position.x = position.x + gradient * y_dist;
+  new_position.y = new_y - std::copysign(1e-3, velocity.y);
+  std::swap(position, new_position);
+  return {Axis::Y};
+}
+
 void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
   for (auto id : registry_->GetView<Acceleration, Velocity>()) {
     auto [acceleration, velocity] = registry_->GetComponents<Acceleration, Velocity>(id);
@@ -205,55 +248,67 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
     collisions = {};
 
     position.x += velocity.x * delta_t;
-    this->CheckPlayerCollision(id, Axis::X);
+    this->CheckCollisionBox(id, Axis::X);
 
     position.y += velocity.y * delta_t;
-    this->CheckPlayerCollision(id, Axis::Y);
+    this->CheckCollisionBox(id, Axis::Y);
 
     UpdateCollisionsChanged(collisions, old_collisions);
   }
 
   for (auto id : registry_->GetView<Velocity, Position, Projectile>()) {
+    const auto axes = MoveParticleCheckCollision(id, delta_t);
     auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
-    position.x += velocity.x * delta_t;
-    position.y += velocity.y * delta_t;
+    // position.x += velocity.x * delta_t;
+    // position.y += velocity.y * delta_t;
 
-    if (IsCollision(collisions_grid_, position.x, position.y)) {
-      // Spawn particles
-      for (int i = 0; i < 5; ++i) {
-        Position particle_pos = position;
-        Velocity particle_vel = velocity;
-        ResolvePointCollision(collisions_grid_, Axis::X, particle_pos, particle_vel);
-        ResolvePointCollision(collisions_grid_, Axis::Y, particle_pos, particle_vel);
-        int x_sign = velocity.x > 0 ? -1 : 1;
-        int y_sign = velocity.y > 0 ? -1 : 1;
-        // TODO(BT-18):: use rng
-        particle_vel.x = x_sign * (rand() % 50) / 10.;
-        particle_vel.y = y_sign * (rand() % 50) / 10.;
-        DrawFunction draw_function{};
-        const uint8_t color = 128 + (rand() % 128);
-        draw_function.draw_fn = [color](int px, int py, olc::PixelGameEngine* engine_ptr) {
-          engine_ptr->Draw(px, py, olc::Pixel{color, color, color});
-        };
-        registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{},
-                                 TimeToDespawn{0.5}, draw_function);
-      }
-      if(registry_->HasComponent<FacingDirection>(id)){
-        auto &facing = registry_->GetComponent<FacingDirection>(id).facing;
-        if(facing == Direction::UP) {
-          facing = Direction::DOWN;
-        } else if (facing == Direction::DOWN) {
-          facing = Direction::UP;
-        } else if (facing == Direction::LEFT) {
-          facing = Direction::RIGHT;
-        } else {
-          facing = Direction::LEFT;
-        }
-      }
-      velocity.x *= -1;
-      velocity.y *= -1;
-      // registry_->RemoveComponent(id);
+    if (axes.empty()) {
+      continue;
     }
+
+    // Doesn't handle both
+    if (axes.front() == Axis::X) {
+      velocity.x *= -1;
+    } else {
+      velocity.y *= -1;
+    }
+
+    if (registry_->HasComponent<FacingDirection>(id)) {
+      auto& facing = registry_->GetComponent<FacingDirection>(id).facing;
+      if (facing == Direction::UP) {
+        facing = Direction::DOWN;
+      } else if (facing == Direction::DOWN) {
+        facing = Direction::UP;
+      } else if (facing == Direction::LEFT) {
+        facing = Direction::RIGHT;
+      } else {
+        facing = Direction::LEFT;
+      }
+    }
+
+    // if (IsCollision(collisions_grid_, position.x, position.y)) {
+    // Spawn particles
+    for (int i = 0; i < 5; ++i) {
+      Position particle_pos = position;
+      Velocity particle_vel = velocity;
+      // ResolvePointCollision(collisions_grid_, Axis::X, particle_pos, particle_vel);
+      // ResolvePointCollision(collisions_grid_, Axis::Y, particle_pos, particle_vel);
+      // int x_sign = velocity.x > 0 ? 1 : -1;
+      // int y_sign = velocity.y > 0 ? 1 : -1;
+      // TODO(BT-18):: use rng
+      particle_vel.x = std::copysign((rand() % 50) / 10., velocity.x);
+      particle_vel.y = std::copysign((rand() % 50) / 10., velocity.y);
+      DrawFunction draw_function{};
+      const uint8_t color = 128 + (rand() % 128);
+      draw_function.draw_fn = [color](int px, int py, olc::PixelGameEngine* engine_ptr) {
+        engine_ptr->Draw(px, py, olc::Pixel{color, color, color});
+      };
+      registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{},
+                               TimeToDespawn{0.5}, draw_function);
+    }
+
+    // registry_->RemoveComponent(id);
+    // }
   }
 
   for (auto id : registry_->GetView<Velocity, Position, Particle>()) {
@@ -337,7 +392,7 @@ void PhysicsSystem::PhysicsStep(const double delta_t) {
   UpdateOccupancyGrid();
 }
 
-void PhysicsSystem::CheckPlayerCollision(EntityId id, const Axis& axis) {
+void PhysicsSystem::CheckCollisionBox(EntityId id, const Axis& axis) {
   auto [position, collision_box, collisions] =
       registry_->GetComponents<Position, CollisionBox, Collision>(id);
   const auto [lower_collision, upper_collision] = CheckAxisCollision(position, collision_box, axis);
@@ -379,53 +434,49 @@ void PhysicsSystem::UpdateOccupancyGrid() {
 }
 
 std::optional<BoundingBox> PhysicsSystem::GetBoundingBox(const EntityId id) const {
-  if(!registry_->HasComponents<Position, CollisionBox>(id)) {
+  if (!registry_->HasComponents<Position, CollisionBox>(id)) {
     return std::nullopt;
   }
-  const auto& [position, collision_box] =
-      registry_->GetComponentsConst<Position, CollisionBox>(id);
+  const auto& [position, collision_box] = registry_->GetComponentsConst<Position, CollisionBox>(id);
   const double bb_height = collision_box.collision_height_px / static_cast<double>(tile_size_);
   const double bb_width = collision_box.collision_width_px / static_cast<double>(tile_size_);
   const double bb_x_offset = collision_box.x_offset_px / static_cast<double>(tile_size_);
   const double bb_y_offset = collision_box.y_offset_px / static_cast<double>(tile_size_);
 
   return BoundingBox{
-    position.x + bb_x_offset,
-    position.x + bb_x_offset + bb_width,
-    position.y + bb_y_offset,
-    position.y + bb_y_offset + bb_height,
+      position.x + bb_x_offset,
+      position.x + bb_x_offset + bb_width,
+      position.y + bb_y_offset,
+      position.y + bb_y_offset + bb_height,
   };
 }
 
-bool PhysicsSystem::PointCollidesWithEntity(const Position& point,
-                                            const EntityId id) {
-  const auto bounding_box = GetBoundingBox(id);                                                
-  if(!bounding_box.has_value()) {
+bool PhysicsSystem::PointCollidesWithEntity(const Position& point, const EntityId id) {
+  const auto bounding_box = GetBoundingBox(id);
+  if (!bounding_box.has_value()) {
     return false;
   }
 
-  return point.x >= bounding_box->left &&
-         point.x <= bounding_box->right &&
-         point.y >= bounding_box->bottom &&
-         point.y <= bounding_box->top;
+  return point.x >= bounding_box->left && point.x <= bounding_box->right &&
+         point.y >= bounding_box->bottom && point.y <= bounding_box->top;
 }
 
 std::vector<CollisionEvent> PhysicsSystem::DetectProjectileCollisions() {
   std::vector<CollisionEvent> events;
-  for(const EntityId id: registry_->GetView<Position, Projectile>()){
+  for (const EntityId id : registry_->GetView<Position, Projectile>()) {
     const auto& position = registry_->GetComponentConst<Position>(id);
     const int pos_x = static_cast<int>(std::floor(position.x));
     const int pos_y = static_cast<int>(std::floor(position.y));
-    if(!occupancy_grid_.ValidCoord(pos_x, pos_y)) {
+    if (!occupancy_grid_.ValidCoord(pos_x, pos_y)) {
       continue;
     }
     const EntityId other_id = occupancy_grid_.GetTile(pos_x, pos_y);
-    if(other_id == 0) {
+    if (other_id == 0) {
       continue;
     }
 
     // LOG_INFO(id << ":\t potential Collision with " << other_id);
-    if(PointCollidesWithEntity(position, other_id)) {
+    if (PointCollidesWithEntity(position, other_id)) {
       events.emplace_back(CollisionEvent{other_id, id});
       // LOG_INFO(id << ":\t Collision with " << other_id);
     }
