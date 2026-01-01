@@ -9,11 +9,12 @@ namespace platformer {
 
 class GameClock {
  public:
-  GameClock() : start_{Clock::now()}, paused_{false}, pause_offset_{0} {}
+  GameClock(const double scale = 1.0)
+      : start_{Clock::now()}, paused_{false}, pause_offset_{0}, scale_{scale} {}
 
   [[nodiscard]] TimePoint ScaledNow() const {
     Duration raw = Clock::now() - start_;
-    const auto scaled = std::chrono::duration<double>(raw) * 0.5;
+    const auto scaled = std::chrono::duration<double>(raw) * scale_;
     return start_ + std::chrono::duration_cast<Duration>(scaled);
   }
 
@@ -57,6 +58,7 @@ class GameClock {
   bool paused_;
   Duration pause_offset_;
   TimePoint paused_at_;
+  double scale_;
 };
 
 }  // namespace platformer

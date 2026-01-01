@@ -44,13 +44,14 @@ BoundingBox GetCollisionBoxInGlobalCoordinates(const Position& position,
 }
 
 bool IsCollision(const Grid<int>& collision_grid, double x, double y) {
+  constexpr int kSolid = 1;
   const int int_x = static_cast<int>(std::floor(x));
   const int int_y = static_cast<int>(std::floor(y));
   if (int_x < 0 || int_y < 0 || int_x >= collision_grid.GetWidth() ||
       int_y >= collision_grid.GetHeight()) {
     return false;
   }
-  return collision_grid.GetTile(int_x, int_y) == 1;
+  return collision_grid.GetTile(int_x, int_y) == kSolid;
 }
 
 void ResolvePointCollision(const Grid<int>& collision_grid,
@@ -187,45 +188,56 @@ PhysicsSystem::PhysicsSystem(const Level& level,
 
 std::vector<Axis> PhysicsSystem::MoveParticleCheckCollision(const EntityId id,
                                                             const double delta_t) {
+  constexpr double kEps = 1e-4;
   auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
-  Position new_position{position.x + velocity.x * delta_t,  //
-                        position.y + velocity.y * delta_t};
-  const auto old_x = static_cast<int>(std::floor(position.x));
-  const auto old_y = static_cast<int>(std::floor(position.y));
-  auto new_x = static_cast<int>(std::floor(new_position.x));
-  auto new_y = static_cast<int>(std::floor(new_position.y));
+  Position trial_position{position.x + velocity.x * delta_t,  //
+                          position.y + velocity.y * delta_t};
+  auto tile_x = static_cast<int>(std::floor(position.x));
+  auto tile_y = static_cast<int>(std::floor(position.y));
+  auto trial_tile_x = static_cast<int>(std::floor(trial_position.x));
+  auto trial_tile_y = static_cast<int>(std::floor(trial_position.y));
 
-  if (old_x == new_x && old_y == new_y) {
-    std::swap(position, new_position);
+  if (tile_x == trial_tile_x && tile_y == trial_tile_y) {
+    std::swap(position, trial_position);
     return {};
   }
-  if (!IsCollision(collisions_grid_, new_position.x, new_position.y)) {
-    std::swap(position, new_position);
-    return {};
-  }
-  // Handle traversal of multiple cells later
-  RB_CHECK(std::abs(new_x - old_x) < 2 && std::abs(new_y - old_y) < 2);
-  if (std::abs(new_x - old_x) != 0) {
-    if (velocity.x < 0) {
-      new_x += 1;
+  std::vector<Axis> return_axes;
+  // This 'walks' the trial position back to the starting position, one boundary at a time.
+  // Each time it is moved it is checked for collisions again.
+  // This approach works for crossing diagonally, and crossing multiple cells.
+  int attempts{};
+  constexpr int kMaxAttempts = 10;
+  while (IsCollision(collisions_grid_, trial_position.x, trial_position.y) &&
+         attempts++ < kMaxAttempts) {
+    trial_tile_x = static_cast<int>(std::floor(trial_position.x));
+    trial_tile_y = static_cast<int>(std::floor(trial_position.y));
+    if (trial_tile_x != tile_x) {
+      if (velocity.x < 0) {
+        trial_tile_x += 1;
+      }
+      const double x_dist = trial_tile_x - position.x;
+      const double gradient = (trial_position.y - position.y) / (trial_position.x - position.x);
+      trial_position.x = trial_tile_x - std::copysign(kEps, velocity.x);
+      trial_position.y = position.y + gradient * x_dist;
+      return_axes.push_back(Axis::X);
+      continue;
     }
-    const double x_dist = new_x - position.x;
-    const double gradient = (new_position.y - position.y) / (new_position.x - position.x);
-    new_position.x = new_x - std::copysign(1e-3, velocity.x);
-    new_position.y = position.y + gradient * x_dist;
-    std::swap(position, new_position);
-    return {Axis::X};
+    if (trial_tile_y != tile_y) {
+      if (velocity.y < 0) {
+        trial_tile_y += 1;
+      }
+      const double y_dist = trial_tile_y - position.y;
+      const double gradient = (trial_position.x - position.x) / (trial_position.y - position.y);
+      trial_position.x = position.x + gradient * y_dist;
+      trial_position.y = trial_tile_y - std::copysign(kEps, velocity.y);
+      return_axes.push_back(Axis::Y);
+    }
   }
-  // TODO we don't handle x and y together
-  if (velocity.y < 0) {
-    new_y += 1;
+  if (attempts >= kMaxAttempts) {
+    LOG_ERROR("GOT STUCK ATTEMPTING TO MOVE PARTICLE");
   }
-  const double y_dist = new_y - position.y;
-  const double gradient = (new_position.x - position.x) / (new_position.y - position.y);
-  new_position.x = position.x + gradient * y_dist;
-  new_position.y = new_y - std::copysign(1e-3, velocity.y);
-  std::swap(position, new_position);
-  return {Axis::Y};
+  position = trial_position;
+  return return_axes;
 }
 
 void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
@@ -259,17 +271,15 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
   for (auto id : registry_->GetView<Velocity, Position, Projectile>()) {
     const auto axes = MoveParticleCheckCollision(id, delta_t);
     auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
-    // position.x += velocity.x * delta_t;
-    // position.y += velocity.y * delta_t;
 
     if (axes.empty()) {
       continue;
     }
 
-    // Doesn't handle both
-    if (axes.front() == Axis::X) {
+    if (std::find(axes.begin(), axes.end(), Axis::X) != axes.end()) {
       velocity.x *= -1;
-    } else {
+    }
+    if (std::find(axes.begin(), axes.end(), Axis::Y) != axes.end()) {
       velocity.y *= -1;
     }
 
@@ -286,15 +296,10 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
       }
     }
 
-    // if (IsCollision(collisions_grid_, position.x, position.y)) {
     // Spawn particles
     for (int i = 0; i < 5; ++i) {
       Position particle_pos = position;
       Velocity particle_vel = velocity;
-      // ResolvePointCollision(collisions_grid_, Axis::X, particle_pos, particle_vel);
-      // ResolvePointCollision(collisions_grid_, Axis::Y, particle_pos, particle_vel);
-      // int x_sign = velocity.x > 0 ? 1 : -1;
-      // int y_sign = velocity.y > 0 ? 1 : -1;
       // TODO(BT-18):: use rng
       particle_vel.x = std::copysign((rand() % 50) / 10., velocity.x);
       particle_vel.y = std::copysign((rand() % 50) / 10., velocity.y);
@@ -306,18 +311,11 @@ void PhysicsSystem::PhysicsStepImpl(const double delta_t) {
       registry_->AddComponents(Acceleration{}, particle_vel, particle_pos, Particle{},
                                TimeToDespawn{0.5}, draw_function);
     }
-
     // registry_->RemoveComponent(id);
-    // }
   }
 
   for (auto id : registry_->GetView<Velocity, Position, Particle>()) {
-    bool collision{};
-    auto [velocity, position] = registry_->GetComponents<Velocity, Position>(id);
-    position.x += velocity.x * delta_t;
-    ResolvePointCollision(collisions_grid_, Axis::X, position, velocity);
-    position.y += velocity.y * delta_t;
-    ResolvePointCollision(collisions_grid_, Axis::Y, position, velocity);
+    MoveParticleCheckCollision(id, delta_t);
   }
 }
 
