@@ -25,6 +25,7 @@ InputProcessor::InputProcessor(std::shared_ptr<ParameterServer> parameter_server
       engine_ptr_{engine_ptr} {
   parameter_server_->AddParameter("physics/player.acceleration", kAcceleration,
                                   "Horizontal acceleration of the player, unit: tile/s²");
+  parameter_server_->AddParameter("console/capture.std.out", 1.0, "Display std out to the console");
 }
 
 bool InputProcessor::ProcessInputs(EntityId player_id) {
@@ -83,19 +84,20 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
   }
 
   if (input_.GetKey(InputAction::NextWeapon).pressed) {
-    state.weapon = static_cast<Weapon>(
-      (static_cast<int>(state.weapon) + 1) % static_cast<int>(Weapon::SIZE));
+    state.weapon =
+        static_cast<Weapon>((static_cast<int>(state.weapon) + 1) % static_cast<int>(Weapon::SIZE));
   }
 
   if (input_.GetKey(InputAction::Console).pressed) {
     GameClock::PauseGlobal();
     engine_ptr_->ConsoleShow(olc::Key::TAB, false);
-    // engine_ptr_->ConsoleCaptureStdOut(true);
+    const bool capture_std_out =
+        (parameter_server_->GetParameter<double>("console/capture.std.out") == 1.0);
+    engine_ptr_->ConsoleCaptureStdOut(capture_std_out);
     PrintConsoleWelcome();
   }
   if (!engine_ptr_->IsConsoleShowing()) {
     GameClock::ResumeGlobal();
-    // engine_ptr_->ConsoleCaptureStdOut(false);
   }
 
   if (input_.GetKey(InputAction::Quit).released) {
