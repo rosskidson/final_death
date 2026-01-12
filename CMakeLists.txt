@@ -89,6 +89,7 @@ add_library(platformer_lib
   src/systems/rendering_system.cc
 
   src/utils/developer_console.cc
+  src/utils/console_commands.cc
 
   src/load_game_configuration.cc
   src/platformer.cc
