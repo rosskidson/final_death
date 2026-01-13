@@ -25,15 +25,16 @@ std::vector<std::string> split(const std::string& input) {
 
 bool CommandInterface::ParseInput(const std::string& input) {
   auto split_string = split(input);
-  // if (split_string.size() < this->GetMinNumberArguments()) {
-  //   std::cout << "Not enough arguments for command '" << command_name_ << "'. Expected "
-  //             << this->GetMinNumberArguments() << ", got " << split_string.size() << std::endl;
-  //   return false;
-  // }
+  if (split_string.size() < this->GetMinNumberArguments()) {
+    std::cout << std::endl << GetHelp() << std::endl;
+    // std::cout << "Not enough arguments for command '" << command_name_ << "'. Expected "
+    //           << this->GetMinNumberArguments() << ", got " << split_string.size() << std::endl;
+    return false;
+  }
   return this->ProcessInput(std::move(split_string));
 }
 
-std::string CommandList::GetSubCommandsFormatted() {
+std::string CommandList::GetSubCommandsFormatted() const {
   std::stringstream ss;
   for (const auto& sub_command : sub_commands_) {
     ss << sub_command->CommandName() << std::endl;
@@ -41,16 +42,16 @@ std::string CommandList::GetSubCommandsFormatted() {
   return ss.str();
 }
 
-std::string CommandList::GetHelp() {
+std::string CommandList::GetHelp() const {
   std::stringstream ss;
-  ss << std::endl << "Sub Commands:" << std::endl;
+  ss << "Sub Commands:" << std::endl;
   ss << GetSubCommandsFormatted();
   return ss.str();
 }
 
 bool CommandList::ProcessInput(std::vector<std::string> arguments) {
-  if(arguments.empty()) {
-    std::cout << GetHelp();
+  if (arguments.empty()) {
+    std::cout << std::endl << GetHelp() << std::endl;
     return true;
   }
 
@@ -63,6 +64,14 @@ bool CommandList::ProcessInput(std::vector<std::string> arguments) {
   std::cout << "Command '" << arguments[0] << "' not found. Available commands:" << std::endl
             << GetSubCommandsFormatted();
   return false;
+}
+
+bool Command::ProcessInput(std::vector<std::string> arguments) {
+  if (arguments.size() < GetMinNumberArguments()) {
+    std::cout << std::endl << GetHelp() << std::endl;
+    return false;
+  }
+  return callback_(std::move(arguments));
 }
 
 // Command::Command() {}

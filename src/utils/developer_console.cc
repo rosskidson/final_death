@@ -30,113 +30,104 @@ void PrintConsoleWelcome() {
   std::cout << "   D E V E L O P E R    C O N S O L E   " << std::endl;
   std::cout << "#######################################" << std::endl << std::endl;
   std::cout << " Available commands: " << std::endl;
-  for (const auto& command : kCommands) {
-    std::cout << " " << command << std::endl;
-  }
+  // for (const auto& command : kCommands) {
+  //   std::cout << " " << command << std::endl;
+  // }
   std::cout << std::endl;
 }
 
 std::optional<ConsoleEvent> DeveloperConsole(const std::string& sCommand,
                                              std::shared_ptr<ParameterServer>& parameter_server) {
   std::vector<std::unique_ptr<CommandInterface>> param_commands;
-  param_commands.emplace_back(std::make_unique<Command>("get"));
-  param_commands.emplace_back(std::make_unique<Command>("set"));
-  param_commands.emplace_back(std::make_unique<Command>("list"));
+  {
+    std::stringstream ss;
+    ss << "Usage: " << std::endl;
+    ss << "param get <parameter>" << std::endl;
+    ss << "e.g. > param get physics/gravity" << std::endl;
+    CallbackFn callback = [parameter_server](std::vector<std::string> arguments) -> bool {
+      const auto& param = arguments[0];
+      if (!parameter_server->ParameterExists(param)) {
+        std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
+        return false;
+      }
+      std::cout << parameter_server->GetParameter<double>(param) << std::endl << std::endl;
+      return true;
+    };
+    param_commands.emplace_back(std::make_unique<Command>("get", 1, ss.str(), callback));
+  }
+  {
+    std::stringstream ss;
+    ss << "Usage: " << std::endl << std::endl;
+    ss << "param set <parameter> <value>" << std::endl;
+    ss << "e.g. > param set physics/gravity 10" << std::endl;
+    CallbackFn callback = [parameter_server](std::vector<std::string> arguments) -> bool {
+      const auto& param = arguments[0];
+      // TODO(BT-09):: stod throws std::invalid_argument
+      const auto val = std::stod(arguments[1]);
+      if (!parameter_server->ParameterExists(param)) {
+        std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
+        return false;
+      }
+      // TODO(BT-01):: We either need a type erased version of set parameter,
+      // Or we need to detect the type and call it correctly.
+      parameter_server->SetParameter(param, val);
+      std::cout << "Parameter set to " << val << "." << std::endl << std::endl;
+      return true;
+    };
+    param_commands.emplace_back(std::make_unique<Command>("set", 2, ss.str(), callback));
+  }
+  {
+    CallbackFn callback = [parameter_server](std::vector<std::string> /*arguments*/) -> bool {
+      int max_param_key_length = 0;
+      for (const auto& key : parameter_server->ListParameterKeys()) {
+        max_param_key_length = std::max(max_param_key_length, static_cast<int>(key.size()));
+      }
+      for (const auto& key : parameter_server->ListParameterKeys()) {
+        std::cout << key;
+        for (int i = 0; i < max_param_key_length + 3 - key.length(); ++i) {
+          std::cout << " ";
+        }
+        // TODO(BT-01):: type erasure.
+        std::cout << parameter_server->GetParameter<double>(key) << std::endl;
+      }
+      std::cout << std::endl;
+      return true;
+    };
+    param_commands.emplace_back(std::make_unique<Command>("list", 0, "", callback));
+  }
+  {
+    std::stringstream ss;
+    ss << "Usage: " << std::endl;
+    ss << "param info <parameter>" << std::endl;
+    ss << "e.g. > param info physics/gravity" << std::endl;
+    CallbackFn callback = [parameter_server](std::vector<std::string> arguments) -> bool {
+      const auto& param = arguments[0];
+      if (!parameter_server->ParameterExists(param)) {
+        std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
+        return {};
+      }
+      std::cout << std::endl << parameter_server->GetParameterInfo(param) << std::endl;
+      return true;
+    };
+    param_commands.emplace_back(std::make_unique<Command>("info", 1, ss.str(), callback));
+  }
   auto param = std::make_unique<CommandList>("param", std::move(param_commands));
 
   std::vector<std::unique_ptr<CommandInterface>> top_level_commands;
   top_level_commands.emplace_back(std::move(param));
+
+  std::optional<ConsoleEvent> console_event;
+  {
+    CallbackFn callback = [&console_event](std::vector<std::string> /*arguments*/) -> bool {
+      console_event = ConsoleEvent{"respawn"};
+      return true;
+    };
+    top_level_commands.emplace_back(std::make_unique<Command>("respawn", 0, "", callback));
+  }
+
   auto top_level = std::make_unique<CommandList>("top_level", std::move(top_level_commands));
-
   top_level->ParseInput(sCommand);
-  return std::nullopt;
+  return console_event;
 }
-
-// TODO(BT-08):: clean up this mess!!! Do a class structure to handle nested commands, usage etc.
-// std::optional<ConsoleEvent> DeveloperConsole(const std::string& sCommand,
-//                                              std::shared_ptr<ParameterServer>& parameter_server)
-//                                              {
-//   std::cout << std::endl;
-//   const auto split_string = split(sCommand);
-//   if (split_string.empty()) {
-//     std::cout << "No command entered." << std::endl;
-//     return {};
-//   }
-//   std::set<std::string> event_commands{"respawn"};
-//   const auto& command = split_string[0];
-//   if (event_commands.find(command) != event_commands.end()) {
-//     return ConsoleEvent{command};
-//   }
-//   if (command == "param") {
-//     if (split_string.size() == 1) {
-//       std::cout << "Sub commands:" << std::endl << std::endl;
-//       std::cout << "  list" << std::endl;
-//       std::cout << "  set" << std::endl;
-//       std::cout << "  get" << std::endl;
-//       std::cout << "  info" << std::endl << std::endl;
-//     }
-//     if (split_string[1] == "list") {
-//       int max_param_key_length = 0;
-//       for (const auto& key : parameter_server->ListParameterKeys()) {
-//         max_param_key_length = std::max(max_param_key_length, static_cast<int>(key.size()));
-//       }
-//       for (const auto& key : parameter_server->ListParameterKeys()) {
-//         std::cout << key;
-//         for (int i = 0; i < max_param_key_length + 3 - key.length(); ++i) {
-//           std::cout << " ";
-//         }
-//         // TODO(BT-01):: type erasure.
-//         std::cout << parameter_server->GetParameter<double>(key) << std::endl;
-//       }
-//       std::cout << std::endl;
-//     }
-//     if (split_string[1] == "set") {
-//       if (split_string.size() < 4) {
-//         std::cout << "Usage: " << std::endl << std::endl;
-//         std::cout << "param set <parameter> <value>" << std::endl;
-//         std::cout << "e.g. > param set physics/gravity 10" << std::endl << std::endl;
-//       }
-//       const auto& param = split_string[2];
-//       // TODO(BT-09):: stod throws std::invalid_argument
-//       const auto val = std::stod(split_string[3]);
-//       if (!parameter_server->ParameterExists(param)) {
-//         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-//         return {};
-//       }
-//       // TODO(BT-01):: We either need a type erased version of set parameter,
-//       // Or we need to detect the type and call it correctly.
-//       parameter_server->SetParameter(param, val);
-//       std::cout << "Parameter set to " << val << "." << std::endl << std::endl;
-//     }
-//     if (split_string[1] == "get") {
-//       if (split_string.size() < 3) {
-//         std::cout << "Usage: " << std::endl;
-//         std::cout << "param get <parameter>" << std::endl;
-//         std::cout << "e.g. > param get physics/gravity" << std::endl << std::endl;
-//       }
-//       const auto& param = split_string[2];
-//       if (!parameter_server->ParameterExists(param)) {
-//         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-//         return {};
-//       }
-//       std::cout << parameter_server->GetParameter<double>(param) << std::endl << std::endl;
-//     }
-//     if (split_string[1] == "info") {
-//       if (split_string.size() < 3) {
-//         std::cout << "Usage: " << std::endl;
-//         std::cout << "param info <parameter>" << std::endl;
-//         std::cout << "e.g. > param info physics/gravity" << std::endl << std::endl;
-//         return {};
-//       }
-//       const auto& param = split_string[2];
-//       if (!parameter_server->ParameterExists(param)) {
-//         std::cout << "Parameter `" << param << "` doesn't exist" << std::endl << std::endl;
-//         return {};
-//       }
-//       std::cout << parameter_server->GetParameterInfo(param) << std::endl << std::endl;
-//     }
-//   }
-//   return {};
-// }
 
 }  // namespace platformer
