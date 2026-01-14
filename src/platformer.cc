@@ -18,9 +18,9 @@
 #include "registry.h"
 #include "sound/sound_player.h"
 #include "sound/sound_processor.h"
+#include "systems/developer_console.h"
 #include "systems/player_logic_system.h"
 #include "systems/rendering_system.h"
-#include "utils/developer_console.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
 
@@ -261,6 +261,7 @@ bool Platformer::OnUserCreate() {
   projectile_system_ =
       std::make_unique<ProjectileSystem>(parameter_server_, animation_manager_, rng_, registry_,
                                          GetCurrentLevel().level_tileset->GetTileSize());
+  developer_console_ = std::make_unique<DeveloperConsole>(parameter_server_, registry_);
 
   LOG_SIMPLE("Initialization successful.");
   rate_.Reset();
@@ -300,15 +301,6 @@ void Platformer::ProcessCollisionEvents(const std::vector<CollisionEvent>& colli
       // Spawn blood particles
     }
     registry_->RemoveComponent(event.projectile_id);
-  }
-}
-
-void Platformer::ProcessConsoleEvent(const ConsoleEvent& console_event) {
-  if (console_event.event == "respawn") {
-    for (EntityId id : registry_->GetView<StateComponent, PlayerComponent>()) {
-      auto& entity = registry_->GetComponent<StateComponent>(id);
-      entity.state.SetState(State::Idle);
-    }
   }
 }
 
@@ -362,10 +354,8 @@ bool Platformer::OnUserUpdate(float fElapsedTime) {
 }
 
 bool Platformer::OnConsoleCommand(const std::string& sCommand) {
-  const auto event = DeveloperConsole(sCommand, parameter_server_);
-  if (event.has_value()) {
-    ProcessConsoleEvent(*event);
-  }
+  const bool success = developer_console_->ProcessCommandLine(sCommand);
+  // Do not return false here, it will end the application.
   return true;
 }
 

@@ -9,10 +9,10 @@
 #include "registry.h"
 #include "sound/sound_player.h"
 #include "sound/sound_processor.h"
+#include "systems/developer_console.h"
 #include "systems/physics_system.h"
 #include "systems/projectile_system.h"
 #include "systems/rendering_system.h"
-#include "utils/developer_console.h"
 #include "utils/parameter_server.h"
 #include "utils/random_number_generator.h"
 #include "utils/rate_timer.h"
@@ -36,7 +36,6 @@ class Platformer : public olc::PixelGameEngine {
   void RemoveComponentsWithTimeToLive();
   void UpdateAnimatedSpriteComponentFromState();
   void ProcessCollisionEvents(const std::vector<CollisionEvent>& collision_events);
-  void ProcessConsoleEvent(const ConsoleEvent& console_event);
 
   GameConfiguration config_;
   int level_idx_;
@@ -53,6 +52,7 @@ class Platformer : public olc::PixelGameEngine {
   std::shared_ptr<SpriteManager> animation_manager_;
   std::shared_ptr<RandomNumberGenerator> rng_;
   std::unique_ptr<ProjectileSystem> projectile_system_;
+  std::unique_ptr<DeveloperConsole> developer_console_;
 
   std::map<std::string, olc::Sprite*> static_sprite_storage_;
 

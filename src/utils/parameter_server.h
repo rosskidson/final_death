@@ -66,9 +66,9 @@ class ParameterServer {
     }
 
     std::ostringstream oss;
-    oss << "Key: " << key << std::endl
-        << ", Type: " << it->second.value.type().name() << std::endl
-        << ", Description: " << it->second.description << std::endl;
+    oss << "Key:         " << key << std::endl
+        << "Type:        " << it->second.value.type().name() << std::endl
+        << "Description: " << it->second.description << std::endl;
     return oss.str();
   }
 

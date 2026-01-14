@@ -6,8 +6,8 @@
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
 #include "input/input_capture.h"
+// #include "systems/developer_console.h"
 #include "utils/check.h"
-#include "utils/developer_console.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
 #include "utils/parameter_server.h"
@@ -94,7 +94,7 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
     const bool capture_std_out =
         (parameter_server_->GetParameter<double>("console/capture.std.out") == 1.0);
     engine_ptr_->ConsoleCaptureStdOut(capture_std_out);
-    PrintConsoleWelcome();
+    // PrintConsoleWelcome();
   }
   if (!engine_ptr_->IsConsoleShowing()) {
     GameClock::ResumeGlobal();

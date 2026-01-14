@@ -83,12 +83,12 @@ add_library(platformer_lib
   src/sound/sound_player.cc
   src/sound/sound_processor.cc
 
+  src/systems/developer_console.cc
   src/systems/physics_system.cc
   src/systems/projectile_system.cc
   src/systems/player_logic_system.cc
   src/systems/rendering_system.cc
 
-  src/utils/developer_console.cc
   src/utils/console_commands.cc
 
   src/load_game_configuration.cc

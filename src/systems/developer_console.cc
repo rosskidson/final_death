@@ -8,12 +8,14 @@
 #include <string>
 #include <vector>
 
-#include "parameter_server.h"
 #include "utils/console_commands.h"
+#include "utils/parameter_server.h"
 
 namespace platformer {
 
 constexpr std::array<std::string_view, 2> kCommands = {"param", "respawn"};
+
+namespace {
 
 std::vector<std::string> split(const std::string& input) {
   std::istringstream iss(input);
@@ -25,19 +27,8 @@ std::vector<std::string> split(const std::string& input) {
   return result;
 }
 
-void PrintConsoleWelcome() {
-  std::cout << "#######################################" << std::endl;
-  std::cout << "   D E V E L O P E R    C O N S O L E   " << std::endl;
-  std::cout << "#######################################" << std::endl << std::endl;
-  std::cout << " Available commands: " << std::endl;
-  // for (const auto& command : kCommands) {
-  //   std::cout << " " << command << std::endl;
-  // }
-  std::cout << std::endl;
-}
-
-std::optional<ConsoleEvent> DeveloperConsole(const std::string& sCommand,
-                                             std::shared_ptr<ParameterServer>& parameter_server) {
+std::unique_ptr<CommandList> CreateParamCommandList(
+    const std::shared_ptr<ParameterServer>& parameter_server) {
   std::vector<std::unique_ptr<CommandInterface>> param_commands;
   {
     std::stringstream ss;
@@ -111,23 +102,49 @@ std::optional<ConsoleEvent> DeveloperConsole(const std::string& sCommand,
     };
     param_commands.emplace_back(std::make_unique<Command>("info", 1, ss.str(), callback));
   }
-  auto param = std::make_unique<CommandList>("param", std::move(param_commands));
+  return std::make_unique<CommandList>("param", std::move(param_commands));
+}
 
+std::unique_ptr<Command> CreateRespawnCommand(const std::shared_ptr<Registry>& registry) {
+  CallbackFn callback = [registry](std::vector<std::string> /*arguments*/) -> bool {
+    std::cout << "cb called" << std::endl;
+    for (EntityId id : registry->GetView<StateComponent, PlayerComponent>()) {
+      auto& entity = registry->GetComponent<StateComponent>(id);
+      entity.state.SetState(State::Idle);
+    }
+    return true;
+  };
+  return std::make_unique<Command>("respawn", 0, "", std::move(callback));
+}
+
+}  // namespace
+
+DeveloperConsole::DeveloperConsole(std::shared_ptr<ParameterServer> parameter_server,
+                                   std::shared_ptr<Registry> registry)
+    : parameter_server_{std::move(parameter_server)},
+      registry_{std::move(registry)},
+      console_opened_before_{false} {
   std::vector<std::unique_ptr<CommandInterface>> top_level_commands;
-  top_level_commands.emplace_back(std::move(param));
+  top_level_commands.emplace_back(CreateParamCommandList(parameter_server_));
+  top_level_commands.emplace_back(CreateRespawnCommand(registry_));
+  top_level_command_list_ =
+      std::make_unique<CommandList>("top_level", std::move(top_level_commands));
+}
 
-  std::optional<ConsoleEvent> console_event;
-  {
-    CallbackFn callback = [&console_event](std::vector<std::string> /*arguments*/) -> bool {
-      console_event = ConsoleEvent{"respawn"};
-      return true;
-    };
-    top_level_commands.emplace_back(std::make_unique<Command>("respawn", 0, "", callback));
+void DeveloperConsole::PrintConsoleWelcome() {
+  if (console_opened_before_) {
+    return;
   }
+  std::cout << "#######################################" << std::endl;
+  std::cout << "   D E V E L O P E R    C O N S O L E   " << std::endl;
+  std::cout << "#######################################" << std::endl << std::endl;
+  std::cout << " Available commands: " << std::endl;
+  std::cout << top_level_command_list_->GetSubCommandsFormatted() << std::endl;
+  console_opened_before_ = true;
+}
 
-  auto top_level = std::make_unique<CommandList>("top_level", std::move(top_level_commands));
-  top_level->ParseInput(sCommand);
-  return console_event;
+bool DeveloperConsole::ProcessCommandLine(const std::string& command) {
+  return top_level_command_list_->ParseInput(command);
 }
 
 }  // namespace platformer
