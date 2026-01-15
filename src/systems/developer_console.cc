@@ -107,7 +107,6 @@ std::unique_ptr<CommandList> CreateParamCommandList(
 
 std::unique_ptr<Command> CreateRespawnCommand(const std::shared_ptr<Registry>& registry) {
   CallbackFn callback = [registry](std::vector<std::string> /*arguments*/) -> bool {
-    std::cout << "cb called" << std::endl;
     for (EntityId id : registry->GetView<StateComponent, PlayerComponent>()) {
       auto& entity = registry->GetComponent<StateComponent>(id);
       entity.state.SetState(State::Idle);
@@ -115,6 +114,31 @@ std::unique_ptr<Command> CreateRespawnCommand(const std::shared_ptr<Registry>& r
     return true;
   };
   return std::make_unique<Command>("respawn", 0, "", std::move(callback));
+}
+
+std::unique_ptr<Command> CreateWeaponCommand(const std::shared_ptr<Registry>& registry) {
+  CallbackFn callback = [registry](std::vector<std::string> arguments) -> bool {
+    for (EntityId id : registry->GetView<PlayerComponent>()) {
+      auto& state = registry->GetComponent<PlayerComponent>(id);
+      if (arguments[0] == "shotgun") {
+        state.weapon = Weapon::Shotgun;
+      } else if (arguments[0] == "rifle") {
+        state.weapon = Weapon::Rifle;
+      } else if (arguments[0] == "next") {
+        state.weapon = static_cast<Weapon>((static_cast<int>(state.weapon) + 1) %
+                                           static_cast<int>(Weapon::SIZE));
+      }
+    }
+    return true;
+  };
+  std::stringstream ss;
+  ss << "Usage: " << std::endl << std::endl;
+  ss << "  weapon <weapon_type>" << std::endl;
+  ss << "  weapon next" << std::endl << std::endl;
+  ss << "  weapons: " << std::endl;
+  ss << "   shotgun" << std::endl;
+  ss << "   rifle" << std::endl;
+  return std::make_unique<Command>("weapon", 1, ss.str(), std::move(callback));
 }
 
 }  // namespace
@@ -127,6 +151,7 @@ DeveloperConsole::DeveloperConsole(std::shared_ptr<ParameterServer> parameter_se
   std::vector<std::unique_ptr<CommandInterface>> top_level_commands;
   top_level_commands.emplace_back(CreateParamCommandList(parameter_server_));
   top_level_commands.emplace_back(CreateRespawnCommand(registry_));
+  top_level_commands.emplace_back(CreateWeaponCommand(registry_));
   top_level_command_list_ =
       std::make_unique<CommandList>("top_level", std::move(top_level_commands));
 }

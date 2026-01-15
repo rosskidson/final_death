@@ -16,7 +16,6 @@ InputCapture::InputCapture(olc::PixelGameEngine* engine_ptr) : engine_ptr_{engin
   bindings_[olc::Key::Q] = InputAction::Quit;
   bindings_[olc::Key::ESCAPE] = InputAction::Menu;
   bindings_[olc::Key::TAB] = InputAction::Console;
-  bindings_[olc::Key::N] = InputAction::NextWeapon;
 }
 
 void InputCapture::Capture() {

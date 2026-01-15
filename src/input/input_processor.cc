@@ -6,7 +6,7 @@
 #include "common_types/basic_types.h"
 #include "common_types/components.h"
 #include "input/input_capture.h"
-// #include "systems/developer_console.h"
+#include "systems/developer_console.h"
 #include "utils/check.h"
 #include "utils/game_clock.h"
 #include "utils/logging.h"
@@ -17,10 +17,12 @@ namespace platformer {
 constexpr double kAcceleration = 50.0;
 
 InputProcessor::InputProcessor(std::shared_ptr<ParameterServer> parameter_server,
+                               std::shared_ptr<DeveloperConsole> developer_console,
                                std::shared_ptr<Registry> registry,
                                olc::PixelGameEngine* engine_ptr)
     : input_{engine_ptr},
       parameter_server_{std::move(parameter_server)},
+      developer_console_{std::move(developer_console)},
       registry_{std::move(registry)},
       engine_ptr_{engine_ptr} {
   parameter_server_->AddParameter("physics/player.acceleration", kAcceleration,
@@ -83,18 +85,13 @@ bool InputProcessor::ProcessInputs(EntityId player_id) {
     state.requested_states.insert(State::PreSuicide);
   }
 
-  if (input_.GetKey(InputAction::NextWeapon).pressed) {
-    state.weapon =
-        static_cast<Weapon>((static_cast<int>(state.weapon) + 1) % static_cast<int>(Weapon::SIZE));
-  }
-
   if (input_.GetKey(InputAction::Console).pressed) {
     GameClock::PauseGlobal();
     engine_ptr_->ConsoleShow(olc::Key::TAB, false);
     const bool capture_std_out =
         (parameter_server_->GetParameter<double>("console/capture.std.out") == 1.0);
     engine_ptr_->ConsoleCaptureStdOut(capture_std_out);
-    // PrintConsoleWelcome();
+    developer_console_->PrintConsoleWelcome();
   }
   if (!engine_ptr_->IsConsoleShowing()) {
     GameClock::ResumeGlobal();

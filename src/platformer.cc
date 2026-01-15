@@ -255,13 +255,14 @@ bool Platformer::OnUserCreate() {
   sound_processor_ = std::make_shared<SoundProcessor>(sound_player_);
   // sound_player_->PlaySample("music", true, 0.2);
 
+  developer_console_ = std::make_shared<DeveloperConsole>(parameter_server_, registry_);
   physics_system_ =
       std::make_unique<PhysicsSystem>(GetCurrentLevel(), parameter_server_, registry_);
-  input_processor_ = std::make_unique<InputProcessor>(parameter_server_, registry_, this);
+  input_processor_ =
+      std::make_unique<InputProcessor>(parameter_server_, developer_console_, registry_, this);
   projectile_system_ =
       std::make_unique<ProjectileSystem>(parameter_server_, animation_manager_, rng_, registry_,
                                          GetCurrentLevel().level_tileset->GetTileSize());
-  developer_console_ = std::make_unique<DeveloperConsole>(parameter_server_, registry_);
 
   LOG_SIMPLE("Initialization successful.");
   rate_.Reset();
